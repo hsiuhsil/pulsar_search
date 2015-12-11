@@ -92,9 +92,9 @@ def search_pulsar(hduls):
                     if scope <= 0.25:
                         if pulsar[i][j][0] == 'J0030+0451':
                             for jj in xrange(len(keys)):
-                                J0030[keys[jj]][ii,:] = hduls[1].data[k][keys[jj]][:]
+                                J0030[keys[jj]][ii,:] = hduls[1].data[k][keys[jj]]
                                 ii += 1
                         elif pulsar[i][j][0] == 'J0051+0423':
                             for jj in xrange(len(keys)):
-                                J0051[keys[jj]][ii,:] = hduls[1].data[k][keys[jj]][:]
+                                J0051[keys[jj]][ii,:] = hduls[1].data[k][keys[jj]]
                                 ii += 1
