@@ -2,48 +2,6 @@ import h5py
 import pyfits
 import numpy as np
 
-
-J0030 = h5py.File('J0030.hdf5','a')
-J0030_TSUBINT = J0030.create_dataset('TSUBINT', (10,1), maxshape=(None,1), dtype=np.float64)
-J0030_OFFS_SUB = J0030.create_dataset('OFFS_SUB', (10,1), maxshape=(None,1), dtype=np.float64)
-J0030_LST_SUB = J0030.create_dataset('LST_SUB', (10,1), maxshape=(None,1), dtype=np.float64)
-J0030_RA_SUB = J0030.create_dataset('RA_SUB', (10,1), maxshape=(None,1), dtype=np.float64)
-J0030_DEC_SUB = J0030.create_dataset('DEC_SUB', (10,1), maxshape=(None,1), dtype=np.float64)
-J0030_GLON_SUB = J0030.create_dataset('GLON_SUB', (10,1), maxshape=(None,1), dtype=np.float64)
-J0030_GLAT_SUB = J0030.create_dataset('GLAT_SUB', (10,1), maxshape=(None,1), dtype=np.float64)
-J0030_FD_ANG = J0030.create_dataset('FD_ANG', (10,1), maxshape=(None,1), dtype=np.float32)
-J0030_POS_ANG = J0030.create_dataset('POS_ANG', (10,1), maxshape=(None,1), dtype=np.float32)
-J0030_PAR_ANG = J0030.create_dataset('PAR_ANG', (10,1), maxshape=(None,1), dtype=np.float32)
-J0030_TEL_AZ = J0030.create_dataset('TEL_AZ', (10,1), maxshape=(None,1), dtype=np.float32)
-J0030_TEL_ZEN = J0030.create_dataset('TEL_SEN', (10,1), maxshape=(None,1), dtype=np.float32)
-J0030_DAT_FREQ = J0030.create_dataset('DAT_FREQ', (10,4096), maxshape=(None,4096), dtype=np.float32)
-J0030_DAT_WTS = J0030.create_dataset('DAT_WTS', (10,4096), maxshape=(None,4096), dtype=np.float32)
-J0030_DAT_OFFS = J0030.create_dataset('DAT_OFFS', (10,16384), maxshape=(None,16384), dtype=np.float32)
-J0030_DAT_SCL = J0030.create_dataset('DAT_SCL', (10,16384), maxshape=(None,16384), dtype=np.float32)
-J0030_DATA = J0030.create_dataset('DATA', (10,2048,4,4096,1), maxshape=(None,2048,4,4096,1))
-
-J0051 = h5py.File('J0051.hdf5','a')
-J0051_TSUBINT = J0051.create_dataset('TSUBINT', (10,1), maxshape=(None,1), dtype=np.float64)
-J0051_OFFS_SUB = J0051.create_dataset('OFFS_SUB', (10,1), maxshape=(None,1), dtype=np.float64)
-J0051_LST_SUB = J0051.create_dataset('LST_SUB', (10,1), maxshape=(None,1), dtype=np.float64)
-J0051_RA_SUB = J0051.create_dataset('RA_SUB', (10,1), maxshape=(None,1), dtype=np.float64)
-J0051_DEC_SUB = J0051.create_dataset('DEC_SUB', (10,1), maxshape=(None,1), dtype=np.float64)
-J0051_GLON_SUB = J0051.create_dataset('GLON_SUB', (10,1), maxshape=(None,1), dtype=np.float64)
-J0051_GLAT_SUB = J0051.create_dataset('GLAT_SUB', (10,1), maxshape=(None,1), dtype=np.float64)
-J0051_FD_ANG = J0051.create_dataset('FD_ANG', (10,1), maxshape=(None,1), dtype=np.float32)
-J0051_POS_ANG = J0051.create_dataset('POS_ANG', (10,1), maxshape=(None,1), dtype=np.float32)
-J0051_PAR_ANG = J0051.create_dataset('PAR_ANG', (10,1), maxshape=(None,1), dtype=np.float32)
-J0051_TEL_AZ = J0051.create_dataset('TEL_AZ', (10,1), maxshape=(None,1), dtype=np.float32)
-J0051_TEL_ZEN = J0051.create_dataset('TEL_SEN', (10,1), maxshape=(None,1), dtype=np.float32)
-J0051_DAT_FREQ = J0051.create_dataset('DAT_FREQ', (10,4096), maxshape=(None,4096), dtype=np.float32)
-J0051_DAT_WTS = J0051.create_dataset('DAT_WTS', (10,4096), maxshape=(None,4096), dtype=np.float32)
-J0051_DAT_OFFS = J0051.create_dataset('DAT_OFFS', (10,16384), maxshape=(None,16384), dtype=np.float32)
-J0051_DAT_SCL = J0051.create_dataset('DAT_SCL', (10,16384), maxshape=(None,16384), dtype=np.float32)
-J0051_DATA = J0051.create_dataset('DATA', (10,2048,4,4096,1), maxshape=(None,2048,4,4096,1))
-
-
-
-
 class FileSource(object):
     def __init__(self, fitsfile):
         self._filename = fitsfile
@@ -81,6 +39,19 @@ def search_pulsar(hduls):
     """ pulsar[i][0] is wigglez field, pulsar[i][j][1] is its ra, and  pulsar[i][j][2] is its dec."""
 
     keys = hduls[1].columns.names
+    
+    '''create dataset for each pulsar location'''
+    
+    files = {}
+    for i in xrange(len(pulsar)):
+        for j in xrange(1,len(pulsar[i])):
+            this_file = h5py.File(pulsar[i][j][0] + 'h5','a')
+            for dataset_name in keys:
+                first_data = hduls[1].data[0][dataset_name]
+                this_file.create_dataset(dataset_name, (0,) + first_data.shape, maxshape = (None,) +first_data.shape, dtype=first_data.dtype)
+            files[pulsar[i][j][0]] = this_file
+
+
     ii = 0
     for k in xrange(len(hduls[1].data)):
         for i in xrange(len(pulsar)):
