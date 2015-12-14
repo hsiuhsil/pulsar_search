@@ -1,17 +1,29 @@
+import sys
+import os.path
+
 import h5py
 import pyfits
 import numpy as np
 
-class FileSource(object):
-    def __init__(self, fitsfile):
-        self._filename = fitsfile
+#class FileSource(object):
+#    def __init__(self, fitsfile):
+#        self._filename = fitsfile
 
-    def get_records(self):
-        hduls = pyfits.open(self._filename, 'readonly')
-        data = read_records(hduls)
-        hduls.close()
-        return data
+#    def get_records(self):
+#        hduls = pyfits.open(self._filename, 'readonly')
+#        data = read_records(hduls)
+#        hduls.close()
+#        return data
 
+def main():
+    args = sys.argv[1:]
+    for filename in args:
+        try:
+            hduls = pyfits.open(filename)
+            print len(hduls[1].data)
+            search_pulsar(hduls)
+        except (IOError, ValueError):
+            print filename
 
 def search_pulsar(hduls):
 
@@ -34,13 +46,14 @@ def search_pulsar(hduls):
     
     '''create dataset for each pulsar location'''
     
-    files = {}
-    for i in xrange(len(pulsar)):
-        this_file = h5py.File(pulsar[i][0] + 'h5','a')
-        for dataset_name in keys:
-            first_data = hduls[1].data[0][dataset_name]
-            this_file.create_dataset(dataset_name, (0,) + first_data.shape, maxshape = (None,) +first_data.shape, dtype=first_data.dtype)
-        files[pulsar[i][0]] = this_file
+    if os.path.isfile('/home/p/pen/hsiuhsil/pulsar_search/J0030+0451h5') != True:
+        files = {}
+        for i in xrange(len(pulsar)):
+            this_file = h5py.File(pulsar[i][0] + 'h5',"w")
+            for dataset_name in keys:
+                first_data = hduls[1].data[0][dataset_name]
+                this_file.create_dataset(dataset_name, (0,) + first_data.shape, maxshape = (None,) +first_data.shape, dtype=first_data.dtype)
+            files[pulsar[i][0]] = this_file
 
     '''search pulsar location, and copy the data to h5df file if condition matched'''
 
@@ -50,9 +63,14 @@ def search_pulsar(hduls):
             delta_dec = hduls[1].data[k]['DEC_SUB'] - pulsar[i][2]
             scope = np.sqrt(delta_ra**2 + delta_dec**2)
             if scope <= 0.25:
-                print k
+                print pulsar[i][0]
                 for dataset_name in keys:
                     current_len = files[pulsar[i][0]][dataset_name].shape[0]
                     files[pulsar[i][0]][dataset_name].resize(current_len + 1, 0)
                     files[pulsar[i][0]][dataset_name][current_len-1,...] = hduls[1].data[k][dataset_name]
+
+
+if __name__ == '__main__':
+    main()
+
 
