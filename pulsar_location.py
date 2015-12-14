@@ -64,7 +64,7 @@ def search_pulsar(hduls, filename):
             delta_ra = hduls[1].data[k]['RA_SUB'] - pulsar[i][1]
             delta_dec = hduls[1].data[k]['DEC_SUB'] - pulsar[i][2]
             scope = np.sqrt(delta_ra**2 + delta_dec**2)
-            if scope <= 0.25:
+            if scope <= 0.15:
                 print filename
                 print pulsar[i][0]
                 print k
