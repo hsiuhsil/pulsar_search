@@ -5,16 +5,6 @@ import h5py
 import pyfits
 import numpy as np
 
-#class FileSource(object):
-#    def __init__(self, fitsfile):
-#        self._filename = fitsfile
-
-#    def get_records(self):
-#        hduls = pyfits.open(self._filename, 'readonly')
-#        data = read_records(hduls)
-#        hduls.close()
-#        return data
-
 def main():
     args = sys.argv[1:]
     for filename in args:
@@ -42,18 +32,27 @@ def search_pulsar(hduls, filename):
     """ pulsar[i][0] is pulsar's name, pulsar[i][1] is its ra, and  pulsar[i][2] is its dec."""
 
     keys = hduls[1].columns.names
-    
+    keys.append('ABS_TIME')
+    keys.append('TBIN')    
+
     '''create dataset for each pulsar location'''
     files = {} 
-    if os.path.isfile('/home/p/pen/hsiuhsil/pulsar_search/J0030+0451h5') == True:
+    if os.path.isfile('/home/p/pen/hsiuhsil/pulsar_search/J2222-0137h5') == True:
         for i in xrange(len(pulsar)):
             files[pulsar[i][0]] = h5py.File(pulsar[i][0] + 'h5',"r+")
     else:
         for i in xrange(len(pulsar)):
             this_file = h5py.File(pulsar[i][0] + 'h5',"w")
             for dataset_name in keys:
-                first_data = hduls[1].data[0][dataset_name]
-                this_file.create_dataset(dataset_name, (0,) + first_data.shape, maxshape = (None,) +first_data.shape, dtype=first_data.dtype, chunks=True)
+                if dataset_name == 'ABS_TIME':
+                    first_data = hduls[1].data[0]['OFFS_SUB']
+                    this_file.create_dataset(dataset_name, (0,) + first_data.shape, maxshape = (None,) +first_data.shape, dtype=first_data.dtype, chunks=True)
+                elif dataset_name == 'TBIN':
+                    first_data = hduls[1].data[0]['TSUBINT']
+                    this_file.create_dataset(dataset_name, (0,) + first_data.shape, maxshape = (None,) +first_data.shape, dtype=first_data.dtype, chunks=True)
+                else:
+                    first_data = hduls[1].data[0][dataset_name]
+                    this_file.create_dataset(dataset_name, (0,) + first_data.shape, maxshape = (None,) +first_data.shape, dtype=first_data.dtype, chunks=True)
             files[pulsar[i][0]] = this_file
 
 
@@ -71,10 +70,15 @@ def search_pulsar(hduls, filename):
                 for dataset_name in keys:
                     current_len = files[pulsar[i][0]][dataset_name].shape[0]
                     files[pulsar[i][0]][dataset_name].resize(current_len + 1, 0)
-                    files[pulsar[i][0]][dataset_name][current_len-1,...] = hduls[1].data[k][dataset_name]
-#            else:
-#                print pulsar[i][0]
-#                print scope
+                    if dataset_name == 'ABS_TIME':
+                        abs_time = hduls[0].header['STT_IMJD']*86400 + hduls[0].header['STT_SMJD'] + hduls[0].header['STT_OFFS'] + hduls[1].data[k]['OFFS_SUB']
+                        print abs_time
+                        files[pulsar[i][0]]['ABS_TIME'][current_len-1,...] = abs_time
+                    elif dataset_name == 'TBIN':
+                        files[pulsar[i][0]]['TBIN'][current_len-1,...] = hduls[1].header['TBIN']
+                        print hduls[1].header['TBIN']
+                    else:
+                        files[pulsar[i][0]][dataset_name][current_len-1,...] = hduls[1].data[k][dataset_name]
 
 if __name__ == '__main__':
     main()
