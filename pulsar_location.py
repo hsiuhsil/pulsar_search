@@ -66,16 +66,15 @@ def search_pulsar(hduls, filename):
                 print pulsar[i][0]
                 print k
                 for dataset_name in keys:
-                    print dataset_name
                     current_len = files[pulsar[i][0]][dataset_name].shape[0]
                     files[pulsar[i][0]][dataset_name].resize(current_len + 1, 0)
                     if dataset_name == 'ABS_TIME':
                         abs_time = hduls[0].header['STT_IMJD']*86400 + hduls[0].header['STT_SMJD'] + hduls[0].header['STT_OFFS'] + hduls[1].data[k]['OFFS_SUB']
-                        print abs_time
+#                        print abs_time
                         files[pulsar[i][0]]['ABS_TIME'][current_len-1,...] = abs_time
                     elif dataset_name == 'TBIN':
                         files[pulsar[i][0]]['TBIN'][current_len-1,...] = hduls[1].header['TBIN']
-                        print hduls[1].header['TBIN']
+#                        print hduls[1].header['TBIN']
                     else:
                         files[pulsar[i][0]][dataset_name][current_len-1,...] = hduls[1].data[k][dataset_name]
 
