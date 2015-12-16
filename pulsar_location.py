@@ -31,9 +31,7 @@ def search_pulsar(hduls, filename):
              ]
     """ pulsar[i][0] is pulsar's name, pulsar[i][1] is its ra, and  pulsar[i][2] is its dec."""
 
-    keys = hduls[1].columns.names
-    keys.append('ABS_TIME')
-    keys.append('TBIN')    
+    keys = hduls[1].columns.names + ['ABS_TIME'] + ['TBIN']    
 
     '''create dataset for each pulsar location'''
     files = {} 
@@ -68,6 +66,7 @@ def search_pulsar(hduls, filename):
                 print pulsar[i][0]
                 print k
                 for dataset_name in keys:
+                    print dataset_name
                     current_len = files[pulsar[i][0]][dataset_name].shape[0]
                     files[pulsar[i][0]][dataset_name].resize(current_len + 1, 0)
                     if dataset_name == 'ABS_TIME':
