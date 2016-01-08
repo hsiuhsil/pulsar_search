@@ -35,7 +35,7 @@ def search_pulsar(hduls, filename):
 
     '''create dataset for each pulsar location'''
     files = {} 
-    if os.path.isfile('/home/p/pen/hsiuhsil/pulsar_search/J2222-0137h5') == True:
+    if os.path.isfile('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_search/J2222-0137h5') == True:
         for i in xrange(len(pulsar)):
             files[pulsar[i][0]] = h5py.File(pulsar[i][0] + 'h5',"r+")
     else:
