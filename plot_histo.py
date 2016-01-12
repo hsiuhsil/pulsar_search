@@ -13,17 +13,12 @@ def main():
         except (IOError, ValueError):
             print 'Skipped:'+ filename
 
-#f = h5py.File('/home/p/pen/hsiuhsil/pulsar_search/J2139+00h5', 'r')
-
 def plot_time(filename):
     f = h5py.File(filename, 'r')
     time_days = []
     time_months = []
     for ii in xrange(len(f['ABS_TIME'])-1):
         time_days.append(f['ABS_TIME'][ii]/86400)
-#        print time_days[0]
-#        print time_days[-1]
-#        time_days[1:] = time_days[1:] - time_days[1]
         time_months.append(f['ABS_TIME'][ii]/86400/30)
 
     total_number = len(time_days)
@@ -32,7 +27,7 @@ def plot_time(filename):
 
     plt.figure(1)
     plt.subplot(211)
-    plt.hist(time_days, bins=20)
+    plt.hist(time_days, bins=200)
     plt.title(text, fontsize=20)
     plt.xlabel('MJD', fontsize=20)
     plt.ylabel('number of data', fontsize=20)
@@ -41,7 +36,7 @@ def plot_time(filename):
     plt.tick_params(axis='both', which='major', labelsize=20)
 
     plt.subplot(212)
-    plt.hist(time_months, bins=20)
+    plt.hist(time_months, bins=200)
     plt.xlabel('time(months)', fontsize=20)
     plt.ylabel('number of data', fontsize=20)
     plt.tick_params(axis='both', which='major', labelsize=20)
