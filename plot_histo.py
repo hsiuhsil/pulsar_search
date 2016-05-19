@@ -22,7 +22,7 @@ def plot_time(filename):
         time_months.append(f['ABS_TIME'][ii]/86400/30)
 
     total_number = len(time_days)
-    file_name = f.filename[35:]
+    file_name = f.filename[48:]
     text = str(file_name) + ', total number: ' + str(total_number)
 
     plt.figure(1)

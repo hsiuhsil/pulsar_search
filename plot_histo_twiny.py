@@ -24,7 +24,8 @@ def plot_time(filename):
 
     time_mjd = []
     time_days = []
-    for ii in xrange(len(f['ABS_TIME'])-1):
+#    for ii in xrange(len(f['ABS_TIME'])-1):
+    for ii in xrange(300):
         mjd = f['ABS_TIME'][ii]/86400
         time_mjd.append(mjd)
         days = (f['ABS_TIME'][ii]-f['ABS_TIME'][0])/86400
