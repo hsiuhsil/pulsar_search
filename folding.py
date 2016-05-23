@@ -37,22 +37,28 @@ def folding(filename):
     tbin = 0.001024
     print tbin
     same_modulo_num = [0]*phase_bins
-#    for ii in range(len(f['BARY_TIME'])-1):
-    for ii in range(1):
-        for jj in range(n_bins):
-            print jj
-            sample_BAT = this_file['BARY_TIME'][ii] + ( jj - n_bins/2.0 + 0.5) * tbin
-            modulo_num = np.int64(np.around((sample_BAT % pulsar_period)/(pulsar_period/phase_bins)))
-            if modulo_num == phase_bins:
-                modulo_num = 0
-            print modulo_num
-            same_modulo_num[modulo_num] += 1
-            this_file['DATA_FOLDING'][modulo_num,...] += this_file['DATA'][ii][jj]
+    for ii in range(len(this_file['BARY_TIME'])-1):
+#    for ii in range(1):
+#        print 'ii = ' + str(ii)
+        sample_BAT = this_file['BARY_TIME'][ii] + np.arange(-n_bins/2.0 + 0.5, n_bins/2.0 + 0.5)*tbin
+        modulo_num = np.int64(np.around((sample_BAT % pulsar_period)/(pulsar_period/phase_bins)))
+        for jj in range(len(modulo_num)):
+            if modulo_num[jj] == phase_bins:
+#                print 'jj = ' + str(jj)
+                modulo_num[jj] = 0
+#       print modulo_num
+        for kk in range(len(same_modulo_num)):
+#            print 'kk = ' + str(kk)
+            same_modulo_num[kk] = np.count_nonzero(modulo_num == kk)      
+#       print same_modulo_num
+        for ll in range(len(modulo_num)):
+#            print 'll = ' + str(ll)
+            this_file['DATA_FOLDING'][modulo_num[ll],...] += this_file['DATA'][ii][ll]
     return this_file['DATA_FOLDING']
 
-    for modulo_num in range(len(same_modulo_num)):
-        if same_modulo_num[modulo_num] != 0:
-            this_file['DATA_FOLDING'][ii,...] = this_file['DATA_FOLDING'][ii,...]/same_modulo_num[ii]
+    for mm in range(len(same_modulo_num)):
+        if same_modulo_num[mm] != 0:
+            this_file['DATA_FOLDING'][ii,...] = this_file['DATA_FOLDING'][ii,...]/same_modulo_num[mm]
     return this_file['DATA_FOLDING']
 
 if __name__ == '__main__':
