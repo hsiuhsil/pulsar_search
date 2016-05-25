@@ -16,50 +16,36 @@ def main():
 
 def folding(filename):
     this_file = h5py.File(filename, "r+")
-
-    '''Create 'DATA_FOLDING' to record folding data'''
-    
-    first_data = this_file['DATA'][0][0]
-    this_file.create_dataset('DATA_FOLDING', (0,) + first_data.shape, maxshape = (None,) +first_data.shape, dtype=first_data.dtype, chunks=True)
-
-    '''Define phase_bins parameter'''
-
     phase_bins = 100
     pulsar_period = 0.312470
-    for ii in range(0,phase_bins):
-        modulo = pulsar_period/phase_bins*ii
-        current_len = this_file['DATA_FOLDING'].shape[0]
-        this_file['DATA_FOLDING'].resize(current_len + 1, 0)
-        this_file['DATA_FOLDING'][ii] = np.float64(modulo)
-
-    '''collecting data which satisfies the folding condition'''
     n_bins = 2048
     tbin = 0.001024
-    print tbin
+    
+    first_data = this_file['DATA'][0][0]
+    data_folding = np.zeros((phase_bins,) + first_data.shape)
+
+    '''collecting data which satisfies the folding condition'''
     same_modulo_num = [0]*phase_bins
     for ii in range(len(this_file['BARY_TIME'])-1):
-#    for ii in range(1):
 #        print 'ii = ' + str(ii)
         sample_BAT = this_file['BARY_TIME'][ii] + np.arange(-n_bins/2.0 + 0.5, n_bins/2.0 + 0.5)*tbin
         modulo_num = np.int64(np.around((sample_BAT % pulsar_period)/(pulsar_period/phase_bins)))
         for jj in range(len(modulo_num)):
             if modulo_num[jj] == phase_bins:
-#                print 'jj = ' + str(jj)
                 modulo_num[jj] = 0
-#       print modulo_num
         for kk in range(len(same_modulo_num)):
-#            print 'kk = ' + str(kk)
-            same_modulo_num[kk] = np.count_nonzero(modulo_num == kk)      
-#       print same_modulo_num
+            same_modulo_num[kk] += np.count_nonzero(modulo_num == kk)      
+
+        this_record_data = this_file['DATA'][ii]
         for ll in range(len(modulo_num)):
-#            print 'll = ' + str(ll)
-            this_file['DATA_FOLDING'][modulo_num[ll],...] += this_file['DATA'][ii][ll]
-    return this_file['DATA_FOLDING']
+            data_folding[modulo_num[ll],...] += this_record_data[ll]
 
     for mm in range(len(same_modulo_num)):
         if same_modulo_num[mm] != 0:
-            this_file['DATA_FOLDING'][ii,...] = this_file['DATA_FOLDING'][ii,...]/same_modulo_num[mm]
-    return this_file['DATA_FOLDING']
+            data_folding[mm,...] = data_folding[mm,...]/same_modulo_num[mm]
+
+    this_file.create_dataset('DATA_FOLDING', data_folding.shape, maxshape = data_folding.shape, dtype=data_folding.dtype, chunks=True)
+    this_file['DATA_FOLDING'][...]=data_folding[...]
 
 if __name__ == '__main__':
     main()
