@@ -14,13 +14,59 @@ def main():
         except (IOError, ValueError):
             print IOError
 
+def preprocess(data):
+    
+    sigma_threshold = 5
+    print sigma_threshold
+    bad_chans = False
+    var = np.empty(data.shape[3], dtype=np.float64)
+    skew = np.empty(data.shape[3], dtype=np.float64)
+    kurt = np.empty(data.shape[3], dtype=np.float64)
+#    for ii in range(len(data)-1):
+    for ii in range(1):
+        data[ii] = data[ii]/np.mean(data[ii]) -1
+        std = np.sqrt(np.var(data[ii]))
+        for jj in range(data.shape[3]):
+            var[jj] = np.var(data[ii,:,0,jj])
+        print 'jj_done'
+        bad_chans_var = abs(var - np.mean(var)) > sigma_threshold * np.std(var)
+        bad_chans = np.logical_or(bad_chans, bad_chans_var)
+        var[bad_chans] = np.mean(var)
+        for kk in range(len(np.where(bad_chans==True)[0])):
+            data[ii,:,0,np.where(bad_chans==True)[0][kk]]=0
+        print 'kk_done'
+        data[ii] = data[ii]-np.mean(data[ii])
+        for ll in range(data.shape[3]):
+            var[ll] = np.var(data[ii,:,0,ll])
+            skew[ll] = np.mean((data[ii,:,0,ll] - np.mean(data[ii,:,0,ll])**3))
+            kurt[ll] = np.mean((data[ii,:,0,ll] - np.mean(data[ii,:,0,ll])**4))
+        print 'll_done'
+        bad_chans_var = abs(var - np.mean(var)) > sigma_threshold * np.std(var)
+        bad_chans_skew = abs(skew - np.mean(skew)) > sigma_threshold * np.std(skew)
+        bad_chans_kurt = abs(kurt - np.mean(kurt)) > sigma_threshold * np.std(kurt)
+        bad_chans = np.logical_or(bad_chans, bad_chans_var)
+        bad_chans = np.logical_or(bad_chans, bad_chans_skew)
+        bad_chans = np.logical_or(bad_chans, bad_chans_kurt)
+        var[bad_chans] = np.mean(var)
+        skew[bad_chans] = np.mean(skew)
+        kurt[bad_chans] = np.mean(kurt)
+        for mm in range(len(np.where(bad_chans==True)[0])):
+            data[ii,:,0,np.where(bad_chans==True)[0][mm]]=0
+        print 'mm_done'
+#    return data
+ 
+
 def folding(filename):
     this_file = h5py.File(filename, "r+")
     phase_bins = 100
     pulsar_period = 0.312470
     n_bins = 2048
     tbin = 0.001024
-    
+    preprocessing = True
+ 
+    if preprocessing == True:
+        data_preprocessing=preprocess(this_file['DATA'])    
+
     first_data = this_file['DATA'][0][0]
     data_folding = np.zeros((phase_bins,) + first_data.shape)
 
