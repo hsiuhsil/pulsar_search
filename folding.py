@@ -29,16 +29,17 @@ def preprocessing(input_data):
 
     sigma_threshold = 5
     for ii in range(1):
-#    for ii in range(len(data)-1):
+#    for ii in range(len(input_data)-1):
         print 'ii= '+str(ii)
         data = input_data[ii,:,0,:,0].T
-        print data.shape
-        data = data/np.mean(data) -1
+        m = np.mean(data[:],axis=1)
+        m[m==0]=1 
+        for jj in range(len(data)):
+            data[jj] = data[jj]/m[jj] - 1
+        return data
         preprocess.remove_noisy_freq(data, sigma_threshold)
         data = data-np.mean(data)
-        for jj in xrange(len(data)):
-            data[jj] = time_slope(data[jj])
-        print 'jj done'
+        data = time_slope(data)
         preprocess.remove_noisy_freq(data, sigma_threshold)
         this_file['DATA'][ii,:,0,:,0] = data.T
        
