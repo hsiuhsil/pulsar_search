@@ -49,14 +49,14 @@ def folding(filename):
     tbin = 0.001024
     do_preprocess = True   
 
-    first_data = this_file['DATA'][0][0]
-    data_folding = np.zeros((phase_bins,) + first_data.shape)
-
+    first_data = this_file['DATA'][0]
+    data_folding = np.zeros((phase_bins,) + (first_data.shape[0], first_data.shape[2]))
+    
     '''collecting data which satisfies the folding condition'''
     same_modulo_num = [0]*phase_bins
-    for ii in range(1):
-#    for ii in range(len(this_file['BARY_TIME'])-1):
-#        print 'ii = ' + str(ii)
+#    for ii in range(1):
+    for ii in range(len(this_file['BARY_TIME'])-1):
+        print 'ii = ' + str(ii)
         sample_BAT = this_file['BARY_TIME'][ii] + np.arange(-n_bins/2.0 + 0.5, n_bins/2.0 + 0.5)*tbin
         modulo_num = np.int64(np.around((sample_BAT % pulsar_period)/(pulsar_period/phase_bins)))
         for jj in range(len(modulo_num)):
