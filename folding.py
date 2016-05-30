@@ -24,6 +24,7 @@ def time_slope(input_data):
     slope_mode /= math.sqrt(np.sum(slope_mode**2))
     slope_amplitude = np.sum(input_data * slope_mode)
     input_data -= slope_amplitude * slope_mode
+    return input_data
 
 def preprocessing(input_data):
 
@@ -34,9 +35,7 @@ def preprocessing(input_data):
         data = input_data[ii,:,0,:,0].T
         m = np.mean(data[:],axis=1)
         m[m==0]=1 
-        for jj in range(len(data)):
-            data[jj] = data[jj]/m[jj] - 1
-        return data
+        data = data / m[:,None] - 1
         preprocess.remove_noisy_freq(data, sigma_threshold)
         data = data-np.mean(data)
         data = time_slope(data)
