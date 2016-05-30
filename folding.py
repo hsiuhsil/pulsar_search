@@ -29,19 +29,16 @@ def time_slope(input_data):
 def preprocessing(input_data):
 
     sigma_threshold = 5
-    for ii in range(1):
-#    for ii in range(len(input_data)-1):
-        print 'ii= '+str(ii)
-        data = input_data[ii,:,0,:,0].T
-        m = np.mean(data[:],axis=1)
-        m[m==0]=1 
-        data = data / m[:,None] - 1
-        preprocess.remove_noisy_freq(data, sigma_threshold)
-        data = data-np.mean(data)
-        data = time_slope(data)
-        preprocess.remove_noisy_freq(data, sigma_threshold)
-        this_file['DATA'][ii,:,0,:,0] = data.T
-       
+
+    data = input_data[:,0,:,0].T
+    m = np.mean(data[:],axis=1)
+    m[m==0]=1 
+    data = data / m[:,None] - 1
+    preprocess.remove_noisy_freq(data, sigma_threshold)
+    data = data-np.mean(data)
+    data = time_slope(data)
+    preprocess.remove_noisy_freq(data, sigma_threshold)
+    return data.T 
 
 def folding(filename):
     global this_file
@@ -50,17 +47,15 @@ def folding(filename):
     pulsar_period = 0.312470
     n_bins = 2048
     tbin = 0.001024
-    do_preprocess = True
- 
-    if do_preprocess == True:
-        preprocessing(this_file['DATA'])    
+    do_preprocess = True   
 
     first_data = this_file['DATA'][0][0]
     data_folding = np.zeros((phase_bins,) + first_data.shape)
 
     '''collecting data which satisfies the folding condition'''
     same_modulo_num = [0]*phase_bins
-    for ii in range(len(this_file['BARY_TIME'])-1):
+    for ii in range(1):
+#    for ii in range(len(this_file['BARY_TIME'])-1):
 #        print 'ii = ' + str(ii)
         sample_BAT = this_file['BARY_TIME'][ii] + np.arange(-n_bins/2.0 + 0.5, n_bins/2.0 + 0.5)*tbin
         modulo_num = np.int64(np.around((sample_BAT % pulsar_period)/(pulsar_period/phase_bins)))
@@ -70,7 +65,11 @@ def folding(filename):
         for kk in range(len(same_modulo_num)):
             same_modulo_num[kk] += np.count_nonzero(modulo_num == kk)      
 
-        this_record_data = this_file['DATA'][ii]
+        if do_preprocess == True:
+           this_record_data = preprocessing(this_file['DATA'][ii])
+        else:
+           this_record_data = this_file['DATA'][ii]
+
         for ll in range(len(modulo_num)):
             data_folding[modulo_num[ll],...] += this_record_data[ll]
 
