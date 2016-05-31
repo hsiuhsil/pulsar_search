@@ -29,6 +29,7 @@ def time_slope(input_data):
 def preprocessing(input_data):
 
     sigma_threshold = 5
+    remove_period = 64
 
     data = input_data[:,0,:,0].T
     m = np.mean(data[:],axis=1)
@@ -38,6 +39,7 @@ def preprocessing(input_data):
     data = data-np.mean(data)
     data = time_slope(data)
     preprocess.remove_noisy_freq(data, sigma_threshold)
+    preprocess.remove_periodic(data, remove_period)
     return data.T 
 
 def folding(filename):
