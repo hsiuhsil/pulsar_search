@@ -23,10 +23,10 @@ def main():
             print IOError
 
 def rebin_spec(input_data):
-    output_data = np.zeros((input_data.shape[0], input_data.shape[2]/rebin_factor))    
+    output_data = np.zeros((input_data.shape[0], input_data.shape[1]/rebin_factor))    
     for ii in range(len(output_data)):
         for jj in range(len(output_data[1])):
-            output_data[ii,jj]=np.mean(input_data[ii,0,jj*rebin_factor:(jj+1)*rebin_factor])
+            output_data[ii,jj]=np.mean(input_data[ii, jj*rebin_factor:(jj+1)*rebin_factor])
     return output_data
 
 def dedisperse_index(freq1, freq2):
@@ -42,8 +42,8 @@ def dedisperse_spec(input_data):
     scan_range = output_data.shape[0] - np.max(dedis_index_range)
 
     for jj in range(output_data.shape[1]):
-        for ii in range(dedis_index_range[jj], dedis_index_range[jj]+scan_range):
-            output_data[ii-dedis_index_range[jj],jj] = input_data[ii, jj]
+        for ii in range(output_data.shape[0]):
+            output_data[(ii+output_data.shape[0]-dedis_index_range[jj]) % output_data.shape[0],jj] = input_data[ii, jj]
     return output_data
 
 def ploting(filename):
@@ -51,8 +51,8 @@ def ploting(filename):
     '''Do rebin first and then do dedisperse'''
   
     if rebin == True and dedisperse == True:
-        data_first = rebin_spec(this_file['DATA_FOLDING'])
-        data = dedisperse_spec(data_first)
+        data_first = dedisperse_spec(this_file['DATA_FOLDING'][:, 0, :, 0])
+        data = rebin_spec(data_first)
     elif rebin == True and dedisperse == False:
         data = rebin_spec(this_file['DATA_FOLDING'])
     elif rebin == False and dedisperse == True:
