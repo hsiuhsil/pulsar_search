@@ -8,6 +8,16 @@ import h5py
 import numpy as np
 import math
 
+'''Define variables'''
+ntime = 2048
+sigma_threshold = 5
+remove_period = 64
+phase_bins = 100
+pulsar_period = 0.312470
+n_bins = 2048
+tbin = 0.001024
+do_preprocess = True
+
 def main():
     args = sys.argv[1:]
     for filename in args:
@@ -18,7 +28,7 @@ def main():
             print IOError
 
 def time_slope(input_data):
-    ntime = 2048
+
     slope_mode = np.arange(ntime)
     slope_mode -= np.mean(slope_mode)
     slope_mode /= math.sqrt(np.sum(slope_mode**2))
@@ -28,8 +38,6 @@ def time_slope(input_data):
 
 def preprocessing(input_data):
 
-    sigma_threshold = 5
-    remove_period = 64
     output_data = np.zeros(input_data.shape)
 
     data = input_data[:,0,:,0].T
@@ -47,12 +55,7 @@ def preprocessing(input_data):
 
 def folding(filename):
     global this_file
-    this_file = h5py.File(filename, "r+")
-    phase_bins = 100
-    pulsar_period = 0.312470
-    n_bins = 2048
-    tbin = 0.001024
-    do_preprocess = True   
+    this_file = h5py.File(filename, "r+")   
 
     first_data = this_file['DATA'][0][0]
     data_folding = np.zeros((phase_bins,) + first_data.shape)
