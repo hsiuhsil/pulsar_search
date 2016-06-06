@@ -10,13 +10,19 @@ import math
 
 '''Define variables'''
 ntime = 2048
+tbin = 0.001024
+
+do_preprocess = True
 sigma_threshold = 5
 remove_period = 64
 phase_bins = 100
-pulsar_period = 0.312470
-n_bins = 2048
-tbin = 0.001024
-do_preprocess = True
+pulsar_period = 0.35473179890
+
+dedisperse = True
+dm = 13.9
+
+rebin = True
+rebin_factor = 128 
 
 def main():
     args = sys.argv[1:]
@@ -65,7 +71,7 @@ def folding(filename):
 #    for ii in range(1):
     for ii in range(len(this_file['BARY_TIME'])-1):
         print 'ii = ' + str(ii)
-        sample_BAT = this_file['BARY_TIME'][ii] + np.arange(-n_bins/2.0 + 0.5, n_bins/2.0 + 0.5)*tbin
+        sample_BAT = this_file['BARY_TIME'][ii] + np.arange(-ntime/2.0 + 0.5, ntime/2.0 + 0.5)*tbin
         modulo_num = np.int64(np.around((sample_BAT % pulsar_period)/(pulsar_period/phase_bins)))
         for jj in range(len(modulo_num)):
             if modulo_num[jj] == phase_bins:
