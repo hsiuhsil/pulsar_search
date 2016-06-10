@@ -8,6 +8,12 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from folding import *
 
+dedisperse = True
+dm = 31.5
+
+rebin = True
+rebin_factor = 128
+
 
 def main():
     args = sys.argv[1:]
@@ -49,7 +55,8 @@ def ploting(filename):
         data_first = dedisperse_spec(this_file['DATA_FOLDING'][:, 0, :, 0])
         data = rebin_spec(data_first).T               
     elif rebin == True and dedisperse == False:
-        data = rebin_spec(this_file['DATA_FOLDING']).T
+        data_first = this_file['DATA_FOLDING'][:, 0, :, 0]
+        data = rebin_spec(data_first).T
     elif rebin == False and dedisperse == True:
         data = dedisperse_spec(this_file['DATA_FOLDING'][:, 0, :, 0]).T
     else:
@@ -57,6 +64,8 @@ def ploting(filename):
 
     '''get mean over phase_bins'''
     data2 = [0.]*len(this_file['DATA_FOLDING'][:, 0, :, 0])
+    print 'len of data2' + str(len(data2))
+    print 'len of data' + str(len(data))
     for ii in range(len(data2)):
         data2[ii] = np.mean(data_first[ii, :])  
     phase_bin_max_ind = np.argmax(data2)
