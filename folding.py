@@ -9,8 +9,8 @@ import numpy as np
 import math
 
 '''Define variables'''
-ntime = 2048
-tbin = 0.001024
+ntime = this_file['NCHAN'][0]
+tbin = this_file['TBIN'][0]
 
 do_preprocess = True
 sigma_threshold = 5
@@ -47,7 +47,7 @@ def preprocessing(input_data):
     data = data-np.mean(data)
     data = time_slope(data)
     preprocess.remove_noisy_freq(data, sigma_threshold)
-    preprocess.remove_periodic(data, remove_period)
+#    preprocess.remove_periodic(data, remove_period)
     output_data[:,0,:,0] = data.T
     output_data[:,1:4,:,0] = input_data[:,1:4,:,0]
     return output_data
@@ -88,6 +88,41 @@ def folding(filename):
 
     this_file.create_dataset('DATA_FOLDING', data_folding.shape, maxshape = data_folding.shape, dtype=data_folding.dtype, chunks=True)
     this_file['DATA_FOLDING'][...]=data_folding[...]
+
+    '''Data folding for topocentric time'''
+
+    data_folding_topo = np.zeros((phase_bins,) + first_data.shape)
+
+    '''collecting data which satisfies the folding condition'''
+    same_modulo_num_topo = [0]*phase_bins
+#    for ii in range(1):
+    for ii in range(len(this_file['TOPO_TIME'])):
+        print 'ii = ' + str(ii)
+        sample_BAT_topo = this_file['TOPO_TIME'][ii] + np.arange(-ntime/2.0 + 0.5, ntime/2.0 + 0.5)*tbin
+        modulo_num_topo = np.int64(np.around((sample_BAT_topo % pulsar_period)/(pulsar_period/phase_bins)))
+        print 'modulo_num done'
+        for jj in range(len(modulo_num_topo)):
+            if modulo_num_topo[jj] == phase_bins:
+                modulo_num_topo[jj] = 0
+        for kk in range(len(same_modulo_num_topo)):
+            same_modulo_num_topo[kk] += np.count_nonzero(modulo_num_topo == kk)
+
+        if do_preprocess == True:
+           this_record_data_topo = preprocessing(this_file['DATA'][ii])
+           print 'preprocess done'
+        else:
+           this_record_data_topo = this_file['DATA'][ii]
+
+        for ll in range(len(modulo_num_topo)):
+            data_folding_topo[modulo_num_topo[ll],...] += this_record_data[ll]
+
+    for mm in range(len(same_modulo_num_topo)):
+        if same_modulo_num_topo[mm] != 0:
+            data_folding_topo[mm,...] = data_folding_topo[mm,...]/same_modulo_num_topo[mm]
+
+    this_file.create_dataset('DATA_FOLDING_TOPO', data_folding_topo.shape, maxshape = data_folding_topo.shape, dtype=data_folding_topo.dtype, chunks=True)
+    this_file['DATA_FOLDING_TOPO'][...]=data_folding_topo[...]
+
 
 if __name__ == '__main__':
     main()
