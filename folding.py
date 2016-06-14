@@ -9,8 +9,6 @@ import numpy as np
 import math
 
 '''Define variables'''
-ntime = this_file['NCHAN'][0]
-tbin = this_file['TBIN'][0]
 
 do_preprocess = True
 sigma_threshold = 5
@@ -30,11 +28,11 @@ def main():
             print IOError
 
 def time_slope(input_data):
-    slope_mode = np.arange(ntime)
+    slope_mode = np.arange(input_data.shape[1])
     slope_mode -= np.mean(slope_mode)
     slope_mode /= math.sqrt(np.sum(slope_mode**2))
-    slope_amplitude = np.sum(input_data * slope_mode[:,None], 0)
-    input_data -= slope_amplitude * slope_mode[:,None]
+    slope_amplitude = np.sum(input_data * slope_mode[None,:], 0)
+    input_data -= slope_amplitude * slope_mode[None,:]
     return input_data
 
 def preprocessing(input_data):
@@ -55,6 +53,8 @@ def preprocessing(input_data):
 def folding(filename):
 
     this_file = h5py.File(filename, "r+")   
+    ntime = this_file['DATA'].shape[1]
+    tbin = this_file['TBIN'][0]
 
     first_data = this_file['DATA'][0][0]
     data_folding = np.zeros((phase_bins,) + first_data.shape)

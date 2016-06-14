@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from folding import *
 
-dedisperse = False
+dedisperse = True
 dm = 31.5
 
 rebin = True
@@ -96,7 +96,7 @@ def ploting(filename):
     ax3 = fig.add_subplot(413)
     ax3.set_ylabel('Freq(MHz)', fontsize=20)
     ax3.tick_params(axis='both', which='major', labelsize=20)
-    cax3 = ax3.imshow(data, extent=[0, 99, 700., 900.],aspect='auto', cmap=cm.Greys)
+    cax3 = ax3.imshow(data3, extent=[0, 99, 700., 900.],aspect='auto', cmap=cm.Greys)
     cbar = plt.colorbar(cax3)
     ax4 = fig.add_subplot(414)
     ax4.set_ylabel('Mean Amp', fontsize=20)
