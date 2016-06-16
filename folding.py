@@ -28,7 +28,7 @@ def main():
             print IOError
 
 def time_slope(input_data):
-    slope_mode = np.arange(input_data.shape[1])
+    slope_mode = np.arange(np.float(input_data.shape[1]))
     slope_mode -= np.mean(slope_mode)
     slope_mode /= math.sqrt(np.sum(slope_mode**2))
     slope_amplitude = np.sum(input_data * slope_mode[None,:], 0)
@@ -61,7 +61,7 @@ def folding(filename):
     
     '''collecting data which satisfies the folding condition'''
     same_modulo_num = [0]*phase_bins
-#    for ii in range(1):
+#    for ii in range(20):
     for ii in range(len(this_file['BARY_TIME'])):
         print 'ii = ' + str(ii)
         sample_BAT = this_file['BARY_TIME'][ii] + np.arange(-ntime/2.0 + 0.5, ntime/2.0 + 0.5)*tbin
@@ -95,7 +95,7 @@ def folding(filename):
 
     '''collecting data which satisfies the folding condition'''
     same_modulo_num_topo = [0]*phase_bins
-#    for ii in range(1):
+#    for ii in range(20):
     for ii in range(len(this_file['TOPO_TIME'])):
         print 'ii = ' + str(ii)
         sample_BAT_topo = this_file['TOPO_TIME'][ii] + np.arange(-ntime/2.0 + 0.5, ntime/2.0 + 0.5)*tbin
