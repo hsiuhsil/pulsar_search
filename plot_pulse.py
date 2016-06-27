@@ -53,30 +53,30 @@ def ploting(filename):
   
     if rebin == True and dedisperse == True:
         data_first = dedisperse_spec(this_file['DATA_FOLDING'][:, 0, :, 0])
-        data = rebin_spec(data_first).T               
+        data = rebin_spec(data_first)               
         data_third = dedisperse_spec(this_file['DATA_FOLDING_TOPO'][:, 0, :, 0])
-        data3 = rebin_spec(data_third).T
+        data3 = rebin_spec(data_third)
     elif rebin == True and dedisperse == False:
         data_first = this_file['DATA_FOLDING'][:, 0, :, 0]
-        data = rebin_spec(data_first).T
+        data = rebin_spec(data_first)
         data_third = this_file['DATA_FOLDING_TOPO'][:, 0, :, 0]
-        data3 = rebin_spec(data_third).T
+        data3 = rebin_spec(data_third)
     elif rebin == False and dedisperse == True:
-        data = dedisperse_spec(this_file['DATA_FOLDING'][:, 0, :, 0]).T
-        data3 = dedisperse_spec(this_file['DATA_FOLDING_TOPO'][:, 0, :, 0]).T
+        data = dedisperse_spec(this_file['DATA_FOLDING'][:, 0, :, 0])
+        data3 = dedisperse_spec(this_file['DATA_FOLDING_TOPO'][:, 0, :, 0])
     else:
-        data = this_file['DATA_FOLDING'][:, 0, :, 0].T
-        data3 = this_file['DATA_FOLDING_TOPO'][:, 0, :, 0].T
+        data = this_file['DATA_FOLDING'][:, 0, :, 0]
+        data3 = this_file['DATA_FOLDING_TOPO'][:, 0, :, 0]
 
     '''get mean over phase_bins'''
     data2 = [0.]*len(this_file['DATA_FOLDING'][:, 0, :, 0])
     data4 = [0.]*len(this_file['DATA_FOLDING_TOPO'][:, 0, :, 0])
 
     for ii in range(len(data2)):
-        data2[ii] = np.mean(data_first[ii, :])  
+        data2[ii] = np.mean(data[ii, :])  
     phase_bin_max_ind = np.argmax(data2)
     for ii in range(len(data4)):
-        data4[ii] = np.mean(data_third[ii, :])
+        data4[ii] = np.mean(data3[ii, :])
     phase_bin_max_ind3 = np.argmax(data4)    
 
     subtitle = 'max amp at phase bin for BARY: '+str(phase_bin_max_ind) +', TOPO: '+str(phase_bin_max_ind3) 
