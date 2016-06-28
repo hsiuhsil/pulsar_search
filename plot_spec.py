@@ -11,7 +11,7 @@ from matplotlib import cm
 import math
 
 
-interval = 1
+interval = 8
 dedisperse = False
 dm = 151.082
 
@@ -20,7 +20,7 @@ rebin_time = 16
 rebin_freq = 16
 
 sigma_threshold = 5
-remove_period = 128
+remove_period = 64
 
 def main():
     args = sys.argv[1:]

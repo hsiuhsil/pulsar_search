@@ -14,7 +14,7 @@ do_preprocess = True
 sigma_threshold = 5
 remove_period = 64
 phase_bins = 100
-pulsar_period = 0.312470
+pulsar_period = 0.368246454342
 
 
 
@@ -34,24 +34,24 @@ def time_slope(input_data):
     slope_mode /= math.sqrt(np.sum(slope_mode**2))
     slope_amplitude = np.sum(input_data * slope_mode[None,:], 0)
     input_data -= slope_amplitude * slope_mode[None,:]
-#    slope_amplitude = np.sum(input_data * slope_mode[:,None], 0)
-#    input_data -= slope_amplitude * slope_mode[:,None]
     return input_data
 
 def preprocessing(input_data):
+    '''note: preprocess need data.shape = (nfreq, ntime)'''
     output_data = np.zeros(input_data.shape)
     data = input_data[:,0,:,0].T
     m = np.mean(data[:],axis=1)
-    m[m==0]=1 
+    m[m==0]=1
     data = data / m[:,None] - 1
     preprocess.remove_noisy_freq(data, sigma_threshold)
     data = data-np.mean(data)
     data = time_slope(data)
     preprocess.remove_noisy_freq(data, sigma_threshold)
-#    preprocess.remove_periodic(data, remove_period)
+    preprocess.remove_periodic(data, remove_period)
     output_data[:,0,:,0] = data.T
     output_data[:,1:4,:,0] = input_data[:,1:4,:,0]
     return output_data
+
 
 def folding(filename):
 
@@ -64,7 +64,7 @@ def folding(filename):
     
     '''collecting data which satisfies the folding condition'''
     same_modulo_num = np.zeros((phase_bins,), dtype=np.int)
-    for ii in range(0,200):
+    for ii in range(0,10):
 #    for ii in range(len(this_file['BARY_TIME'])):
         print 'ii = ' + str(ii)
         sample_BAT = this_file['BARY_TIME'][ii] + np.arange(-ntime/2.0 + 0.5, ntime/2.0 + 0.5)*tbin
@@ -98,11 +98,11 @@ def folding(filename):
 
     '''collecting data which satisfies the folding condition'''
     same_modulo_num_topo = np.zeros((phase_bins,), dtype=np.int)
-    for ii in range(0,200):
+    for ii in range(0,10):
 #    for ii in range(len(this_file['TOPO_TIME'])):
         print 'ii = ' + str(ii)
-        sample_BAT_topo = this_file['TOPO_TIME'][ii] + np.arange(-ntime/2.0 + 0.5, ntime/2.0 + 0.5)*tbin
-        modulo_num_topo = np.int64(np.around((sample_BAT_topo % pulsar_period)/(pulsar_period/phase_bins)))
+        sample_TOPO = this_file['TOPO_TIME'][ii] + np.arange(-ntime/2.0 + 0.5, ntime/2.0 + 0.5)*tbin
+        modulo_num_topo = np.int64(np.around((sample_TOPO % pulsar_period)/(pulsar_period/phase_bins)))
         print 'modulo_num done'
         for jj in range(len(modulo_num_topo)):
             if modulo_num_topo[jj] == phase_bins:
