@@ -11,16 +11,16 @@ from matplotlib import cm
 import math
 
 
-interval = 10
+interval = 1
 dedisperse = False
-dm = 31.5
+dm = 151.082
 
 rebin = True
 rebin_time = 16
 rebin_freq = 16
 
 sigma_threshold = 5
-remove_period = 64
+remove_period = 128
 
 def main():
     args = sys.argv[1:]
@@ -38,6 +38,11 @@ def rebin_spec(input_data):
             output_data[ii,jj]=np.mean(input_data[ii*rebin_time:(ii+1)*rebin_time, jj*rebin_freq:(jj+1)*rebin_freq])
     return output_data
 
+def dedisperse_time(freq1, freq2):
+    DM_CONST = 4148.808
+    time = DM_CONST * dm * (freq1**-2 - freq2**-2)
+    return time
+
 def dedisperse_index(freq1, freq2, tbin):
     delta_t = tbin
     DM_CONST = 4148.808
@@ -45,25 +50,16 @@ def dedisperse_index(freq1, freq2, tbin):
     return index
 
 def dedisperse_spec(input_data, tbin):
-    '''note: input_data.shape should be (ntime, nfreq)'''
-    freq = np.arange(900., 700., -200./input_data.shape[1])
-    dedis_index_range = dedisperse_index(freq[:], np.amax(freq), tbin)
-    output_data = np.zeros((input_data.shape[0], input_data.shape[1]))
-    scan_range = output_data.shape[0] - np.max(dedis_index_range)
-    for jj in range(output_data.shape[1]):
-        for ii in range(dedis_index_range[jj], dedis_index_range[jj]+scan_range):
-            output_data[ii-dedis_index_range[jj],jj] = input_data[ii, jj]
-    return output_data
-
-def dedisperse_spec_prev(input_data, tbin):
-    '''note: input_data.shape should be (ntime, nfreq)'''
-    freq = np.arange(900., 700., -200./input_data.shape[1])
-    dedis_index_range = dedisperse_index(freq[:], np.amax(freq), tbin) 
-    output_data = np.zeros((input_data.shape[0], input_data.shape[1]))
-    scan_range = output_data.shape[0] - np.max(dedis_index_range)
-    for jj in range(output_data.shape[1]):
-        output_data[:,jj] = np.roll(input_data[:,jj], -dedis_index_range[jj], axis = 0)
-    return output_data
+    '''note: input_data.shape should be (ntime, nfreq), and dedisperse with shape of (nfreq, ntime)'''
+    freq_time = input_data.T
+    freq =  np.arange(900., 700., -200./freq_time.shape[0])
+    time_move = dedisperse_index(np.amin(freq), freq, tbin)
+    out_data = np.zeros((freq_time.shape[0], freq_time.shape[1]+np.max(time_move)))
+    for ii in range(freq_time.shape[0]):
+        for jj in range(freq_time.shape[1]):
+            out_data[ii, jj + time_move[ii]] = freq_time[ii, jj]
+    return out_data.T
+    '''note: the out_data.shape is (nfreq, ntime), and return as out_data.T with shape of (ntime, nfreq)'''
 
 def time_slope(input_data):
     print "start time_slope"
@@ -72,8 +68,6 @@ def time_slope(input_data):
     slope_mode /= math.sqrt(np.sum(slope_mode**2))
     slope_amplitude = np.sum(input_data * slope_mode[None,:], 0)
     input_data -= slope_amplitude * slope_mode[None,:]
-#    slope_amplitude = np.sum(input_data * slope_mode[:,None], 0)
-#    input_data -= slope_amplitude * slope_mode[:,None]
     return input_data
 
 def preprocessing(input_data):
@@ -98,7 +92,6 @@ def plot_spec(filename):
     tbin = this_file['TBIN'][0]
     nfreq = this_file['DATA'].shape[3]
 
-    first_data = this_file['DATA'][0][0]
     data_preprocessed = np.zeros((interval*ntime, 4, nfreq, 1))
 
     for ii in range(0,interval):
@@ -107,41 +100,39 @@ def plot_spec(filename):
         this_record_data = preprocessing(this_file['DATA'][ii])
         data_preprocessed[ii*ntime:(ii+1)*ntime,:] = this_record_data
 
+    '''data is for the plot with shape of (nfreq, ntime)'''
+
     if rebin == True and dedisperse == True:
-#        data_first = dedisperse_spec(this_record_data[:, 0, :, 0], tbin)
-#        data = rebin_spec(data_first)
         data_first = dedisperse_spec(data_preprocessed[:, 0, :, 0], tbin)
-        data = rebin_spec(data_first)
+        data = rebin_spec(data_first).T
     elif rebin == True and dedisperse == False:
         data_first = data_preprocessed[:,0,:,0]
-        data = rebin_spec(data_first)
+        data = rebin_spec(data_first).T
     elif rebin == False and dedisperse == True:
-        data = dedisperse_spec(this_record_data[:, 0, :, 0])
+        data_first = dedisperse_spec(data_preprocessed[:, 0, :, 0], tbin)
+        data = data_first.T
     else:
-        data = this_record_data[:, 0, :, 0]
+        data_first = data_preprocessed[:, 0, :, 0]
+        data = data_first.T
 
-
-    '''get mean over phase_bins'''
-    data2 = [0.]*len(data)
+    '''get averaged freq  amplitude to time '''
+    data2 = [0.]*data.shape[1]
 
     for ii in range(len(data2)):
-        data2[ii] = np.mean(data_first[ii, :])
+        data2[ii] = np.mean(data[:,ii])
     
     fig = plt.figure()
-#    fig.suptitle(subtitle, fontsize=20)
     ax1 = fig.add_subplot(211)
     ax1.set_ylabel('Freq(MHz)', fontsize=20)
     ax1.set_xlabel('time (sec)', fontsize=20)
     ax1.tick_params(axis='both', which='major', labelsize=20)
-    cax1 = ax1.imshow(data, extent=[0, data.shape[0]*rebin_time*tbin, 700., 900.],aspect='auto', cmap=cm.Greys)
+    cax1 = ax1.imshow(data, extent=[0, data_first.shape[0]*tbin, 700., 900.],aspect='auto', cmap=cm.Greys)
     cbar = plt.colorbar(cax1)
     ax2 = fig.add_subplot(212)
     ax2.set_ylabel('Mean Amp', fontsize=20)
     ax2.tick_params(axis='both', which='major', labelsize=20)
     cax2 = plt.plot(data2)   
-    plt.xticks([0, 0.25*len(data2), 0.5*len(data2), 0.75*len(data2), len(data2)], [str(0), str(round(0.25*data.shape[0]*rebin_time*tbin, 4)), str(round(0.5*data.shape[0]*rebin_time*tbin, 4)), str(round(0.75*data.shape[0]*rebin_time*tbin,4)), str(round(data.shape[0]*rebin_time*tbin,4))])
-#    plt.axis([0, data.shape[0]*rebin_time*tbin, np.amin(data2), np.amax(data2)])
-#    fig.tight_layout()
+    plt.xticks([0, 0.25*len(data2), 0.5*len(data2), 0.75*len(data2), len(data2)], [str(0), str(round(0.25*data_first.shape[0]*tbin, 4)), str(round(0.5*data_first.shape[0]*tbin, 4)), str(round(0.75*data_first.shape[0]*tbin,4)), str(round(data_first.shape[0]*tbin,4))])
     plt.show()
 
 if __name__ == '__main__':
