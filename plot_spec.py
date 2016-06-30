@@ -11,16 +11,16 @@ from matplotlib import cm
 import math
 
 
-interval = 8
+interval = 16
 dedisperse = False
-dm = 151.082
+dm = 31.5
 
 rebin = True
 rebin_time = 16
 rebin_freq = 16
 
 sigma_threshold = 5
-remove_period = 64
+remove_period = 512
 
 def main():
     args = sys.argv[1:]
@@ -66,14 +66,17 @@ def time_slope(input_data):
     slope_mode = np.arange(np.float(input_data.shape[1]))
     slope_mode -= np.mean(slope_mode)
     slope_mode /= math.sqrt(np.sum(slope_mode**2))
-    slope_amplitude = np.sum(input_data * slope_mode[None,:], 0)
-    input_data -= slope_amplitude * slope_mode[None,:]
+#    slope_amplitude = np.sum(input_data * slope_mode[None,:], 0)
+#    input_data -= slope_amplitude * slope_mode[None,:]
+    slope_amplitude = np.sum(input_data * slope_mode[None,:], 1)
+    input_data -= slope_amplitude[:,None] * slope_mode
     return input_data
 
 def preprocessing(input_data):
     '''note: preprocess need data.shape = (nfreq, ntime)'''
     output_data = np.zeros(input_data.shape)
     data = input_data[:,0,:,0].T
+    preprocess.remove_periodic(data, remove_period)
     m = np.mean(data[:],axis=1)
     m[m==0]=1
     data = data / m[:,None] - 1
@@ -81,7 +84,6 @@ def preprocessing(input_data):
     data = data-np.mean(data)
     data = time_slope(data)
     preprocess.remove_noisy_freq(data, sigma_threshold)
-    preprocess.remove_periodic(data, remove_period)
     output_data[:,0,:,0] = data.T
     output_data[:,1:4,:,0] = input_data[:,1:4,:,0]
     return output_data
