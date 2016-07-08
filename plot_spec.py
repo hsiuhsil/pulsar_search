@@ -10,17 +10,19 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 import math
 
+initial = 153
+interval = 7
 
-interval = 16
-dedisperse = False
-dm = 31.5
+
+dedisperse = True
+dm = 30.0
 
 rebin = True
 rebin_time = 16
 rebin_freq = 16
 
 sigma_threshold = 5
-remove_period = 512
+remove_period = 64
 
 def main():
     args = sys.argv[1:]
@@ -66,8 +68,6 @@ def time_slope(input_data):
     slope_mode = np.arange(np.float(input_data.shape[1]))
     slope_mode -= np.mean(slope_mode)
     slope_mode /= math.sqrt(np.sum(slope_mode**2))
-#    slope_amplitude = np.sum(input_data * slope_mode[None,:], 0)
-#    input_data -= slope_amplitude * slope_mode[None,:]
     slope_amplitude = np.sum(input_data * slope_mode[None,:], 1)
     input_data -= slope_amplitude[:,None] * slope_mode
     return input_data
@@ -75,7 +75,7 @@ def time_slope(input_data):
 def preprocessing(input_data):
     '''note: preprocess need data.shape = (nfreq, ntime)'''
     output_data = np.zeros(input_data.shape)
-    data = input_data[:,0,:,0].T
+    data = input_data[:,0,:,0].T.astype(np.float64).copy()
     preprocess.remove_periodic(data, remove_period)
     m = np.mean(data[:],axis=1)
     m[m==0]=1
@@ -96,10 +96,12 @@ def plot_spec(filename):
 
     data_preprocessed = np.zeros((interval*ntime, 4, nfreq, 1))
 
-    for ii in range(0,interval):
+    print this_file['DATA'].shape
+
+    for ii in range(0, interval):
 #    for ii in range(len(this_file['TOPO_TIME'])):
-        print 'ii = ' + str(ii)
-        this_record_data = preprocessing(this_file['DATA'][ii])
+        print 'ii = ' + str(initial+ii)
+        this_record_data = preprocessing(this_file['DATA'][ii+initial])
         data_preprocessed[ii*ntime:(ii+1)*ntime,:] = this_record_data
 
     '''data is for the plot with shape of (nfreq, ntime)'''

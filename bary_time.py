@@ -33,10 +33,11 @@ def find_topo_bary(filename):
         topo_time = repr(this_file['ABS_TIME'][ii]/86400)
         p = subprocess.Popen(["bary", "GBT", RA, DEC], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         bary_time = p.communicate(input=topo_time)[0].split()[1]
-        current_len = this_file['BARY_TIME'].shape[0]
-        this_file['TOPO_TIME'].resize(current_len + 1, 0)
+        current_len_topo = this_file['TOPO_TIME'].shape[0]
+        current_len_bary = this_file['BARY_TIME'].shape[0]
+        this_file['TOPO_TIME'].resize(current_len_topo + 1, 0)
         this_file['TOPO_TIME'][ii] = np.float64(topo_time)
-        this_file['BARY_TIME'].resize(current_len + 1, 0)
+        this_file['BARY_TIME'].resize(current_len_bary + 1, 0)
         this_file['BARY_TIME'][ii] = np.float64(bary_time)
   
 if __name__ == '__main__':
