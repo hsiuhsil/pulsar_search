@@ -27,20 +27,23 @@ def plot_bary_diff(filename):
 #    index = [[4,8], [140,143], [163,165], [493,495], [545,547], [578, 580]]
 #    max_phase = [1, 93, 79, 46, 96, 56]
 
-    index = [[4,8], [15, 19],[28, 32],[44, 49],[67, 83],[98,113],[114,117],[118,128],[146,152]]
-    max_phase = [69, 69, 63, 65, 90, 97, 91, 95, 5]
+# J2139:    index = [[4,8], [15, 19],[28, 32],[44, 49],[67, 83],[98,113],[114,117],[118,128],[146,152]]
+#    max_phase = [69, 69, 63, 65, 90, 97, 91, 95, 5]
 
+    index = [[85,87],[88,90],[108,136],[152,155],[156,157]]
+    max_phase = [66, 66, 66, 65, 32]
 
     bary_diff = np.zeros(len(index))
-    for ii in range(len(index)):
-        bary_diff[ii] = ((this_file['BARY_TIME'][index[ii][0]]+this_file['BARY_TIME'][index[ii][1]])/2. -this_file['BARY_TIME'][0])*86400/60/60
 
+    for ii in range(len(index)):
+        bary_diff[ii] = ((this_file['BARY_TIME'][index[ii][0]]+this_file['BARY_TIME'][index[ii][1]])/2. -this_file['BARY_TIME'][0])
 
     title = 'delta_t: '+str(delta_t)+' sec.'
-
+#    title = 'Pulsar: J0051+0423' 
+   
     plt.plot(bary_diff, max_phase, 'bo')
 #    plt.axis([diff[0],diff[-1], bary[0], bary[-1]], labelsize=20)
-    plt.xlabel('Bary diff (hours)', fontsize=20)
+    plt.xlabel('Bary diff (days)', fontsize=20)
     plt.ylabel('Max Phase Bins Number', fontsize=20)
     plt.title(title, fontsize=20)
     plt.show()

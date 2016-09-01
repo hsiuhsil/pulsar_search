@@ -10,12 +10,12 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 import math
 
-initial = 153
-interval = 7
-
+initial = 80
+final = 81
+interval = final - initial +1
 
 dedisperse = True
-dm = 30.0
+dm = 4.33252 
 
 rebin = True
 rebin_time = 16

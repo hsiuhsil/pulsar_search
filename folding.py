@@ -10,16 +10,30 @@ import math
 
 '''Define variables'''
 
+initial = 108
+final = 136
+
 do_preprocess = True
 sigma_threshold = 5
 remove_period = 64
 phase_bins = 100
 
-delta_t = -5.8068471774736951e-06 -2.5301321417973068e-07 -4.2596495836139012e-07 + 2.9914132482230684e-07 
-pulsar_period = 0.312470 + delta_t
+# J2139: delta_t = -5.8068471774736951e-06 -2.5301321417973068e-07 -4.2596495836139012e-07 + 2.9914132482230684e-07 
+# J2139: pulsar_period = 0.312470 + delta_t
 
-initial = 153
-final = 159
+    #J0051
+delta_t = -3.2083428581595565e-07 +1.4583350248377532e-08 -7.0619503654410745e-09 +5.1170668232711475e-10 
+pulsar_period = 0.35473179890 + delta_t
+
+# J1046: delta_t = 0.0
+# J1046: pulsar_period = 0.326271446035
+
+# J1038: delta_t = 0.0
+# J1038: pulsar_period = 0.02885155795131
+
+# J0030: delta_t = 0.0
+# J0030: pulsar_period = 0.0048654532073692
+
 
 def main():
     args = sys.argv[1:]
