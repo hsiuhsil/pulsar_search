@@ -10,8 +10,8 @@ import math
 
 '''Define variables'''
 
-initial = 108
-final = 136
+initial = 43
+final = 44
 
 do_preprocess = True
 sigma_threshold = 5
@@ -22,11 +22,12 @@ phase_bins = 100
 # J2139: pulsar_period = 0.312470 + delta_t
 
     #J0051
-delta_t = -3.2083428581595565e-07 +1.4583350248377532e-08 -7.0619503654410745e-09 +5.1170668232711475e-10 
-pulsar_period = 0.35473179890 + delta_t
+#delta_t = -3.2083428581595565e-07 +1.4583350248377532e-08 -7.0619503654410745e-09 +5.1170668232711475e-10 
+#pulsar_period = 0.35473179890 + delta_t
 
-# J1046: delta_t = 0.0
-# J1046: pulsar_period = 0.326271446035
+# J1046: 
+delta_t = 0.0
+pulsar_period = 0.326271446035
 
 # J1038: delta_t = 0.0
 # J1038: pulsar_period = 0.02885155795131
@@ -64,6 +65,7 @@ def preprocessing(input_data):
     preprocess.remove_noisy_freq(data, sigma_threshold)
     data = data-np.mean(data)
     data = time_slope(data)
+    preprocess.remove_bad_times(data, sigma_threshold)
     preprocess.remove_noisy_freq(data, sigma_threshold)
     output_data[:,0,:,0] = data.T
     output_data[:,1:4,:,0] = input_data[:,1:4,:,0]

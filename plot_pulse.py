@@ -9,7 +9,7 @@ from matplotlib import cm
 from folding import *
 
 dedisperse = True
-dm = 4.33252
+dm = 25.3
 
 rebin = True
 rebin_factor = 128
