@@ -37,7 +37,7 @@ def plot_bary_diff(filename):
     bary_diff = np.zeros(len(index))
 
     for ii in range(len(index)):
-        bary_diff[ii] = ((this_file['BARY_TIME'][index[ii][0]]+this_file['BARY_TIME'][index[ii][1]])/2. -this_file['BARY_TIME'][0])
+        bary_diff[ii] = ((this_file['BARY_TIME'][index[ii][0]]+this_file['BARY_TIME'][index[ii][1]])/2. -this_file['BARY_TIME'][0])*86400
 
     '''Try to fit'''
 
@@ -57,7 +57,7 @@ def plot_bary_diff(filename):
     plt.plot(bary_diff, max_phase, 'bo')
 #    plt.axis([diff[0],diff[-1], bary[0], bary[-1]], labelsize=20)
     plt.plot(bary_diff, y, 'r--')
-    plt.xlabel('Bary diff (days)', fontsize=20)
+    plt.xlabel('Bary diff (sec)', fontsize=20)
     plt.ylabel('Max Phase Bins Number', fontsize=20)
 #    plt.axis([0, 700, 0, 99])
     plt.title(title, fontsize=20)

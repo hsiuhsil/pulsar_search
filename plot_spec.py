@@ -10,8 +10,8 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 import math
 
-initial = 80
-final = 81
+initial = 160
+final = 162
 interval = final - initial +1
 
 dedisperse = True

@@ -26,13 +26,13 @@ def search_pulsar(hduls, filename):
 #              ['J1518+0204C', 229.63662, 2.07995],
 #              ['J1518+0204D', 229.64167, 2.08278],
 #              ['J1518+0204E', 229.64167, 2.08278],
-#              ['J2139+00', 324.92500, 0.60000],
+              ['J2139+00', 324.92500, 0.60000],
 #              ['J2222-0137', 335.52487, -1.62103],
-              ['J0248+6021', 42.07757, 60.35964],
-              ['B0450+55', 73.53229, 55.72818],
-              ['B1859+03', 285.38242, 3.51831],
-              ['B1929+10', 293.05812, 10.99234],
-              ['B2255+58', 344.49060, 59.15412],
+#              ['J0248+6021', 42.07757, 60.35964],
+#              ['B0450+55', 73.53229, 55.72818],
+#              ['B1859+03', 285.38242, 3.51831],
+#              ['B1929+10', 293.05812, 10.99234],
+#              ['B2255+58', 344.49060, 59.15412],
              ]
     """ pulsar[i][0] is pulsar's name, pulsar[i][1] is its ra, and  pulsar[i][2] is its dec."""
 
@@ -40,12 +40,12 @@ def search_pulsar(hduls, filename):
 
     '''create dataset for each pulsar location'''
     files = {} 
-    if os.path.isfile('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_search/B2255+58h5') == True:
+    if os.path.isfile('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_search/J2139+00_57178h5') == True:
         for i in xrange(len(pulsar)):
             files[pulsar[i][0]] = h5py.File(pulsar[i][0] + 'h5',"r+")
     else:
         for i in xrange(len(pulsar)):
-            this_file = h5py.File(pulsar[i][0] + 'h5',"w")
+            this_file = h5py.File(pulsar[i][0] + '_57178' + 'h5',"w")
             for dataset_name in keys:
                 if dataset_name == 'ABS_TIME':
                     first_data = hduls[1].data[0]['OFFS_SUB']

@@ -6,6 +6,7 @@ import h5py
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
+from scipy.optimize import curve_fit
 
 from folding import *
 
@@ -28,7 +29,7 @@ def plot_bary_diff(filename):
 #    max_phase = [1, 93, 79, 46, 96, 56]
 
     index = [[4,8], [15, 19],[28, 32],[44, 49],[67, 83],[98,113],[114,117],[118,128],[146,152]]
-    max_phase = [69, 69, 63, 65, 90, 97, 91, 95, 5]
+    max_phase = [69, 69, 63+100, 65+100, 90+200, 97+200, 91+300, 95+300, 5+400]
 
     bary_diff = np.zeros(len(index))
 
@@ -36,9 +37,23 @@ def plot_bary_diff(filename):
         bary_diff[ii] = ((this_file['BARY_TIME'][index[ii][0]]+this_file['BARY_TIME'][index[ii][1]])/2. -this_file['BARY_TIME'][0])*86400/60/60
 
     title = 'delta_t: '+str(delta_t)+' sec.'
+
+    '''Try to fit'''
+
+    def func(x, a, b, c):
+        return a*x**2 + b*x + c
+
+    popt, pcov = curve_fit(func, bary_diff, max_phase)
+    print popt
+    print pcov
+
+    x_axes = np.linspace(0, bary_diff[-1],50)
+    y = popt[0]*x_axes**2 + popt[1]*x_axes + popt[2]
+
     
     plt.plot(bary_diff, max_phase, 'bo')
 #    plt.axis([diff[0],diff[-1], bary[0], bary[-1]], labelsize=20)
+    plt.plot(x_axes, y, 'r--')
     plt.xlabel('Bary diff (hours)', fontsize=20)
     plt.ylabel('Max Phase Bins Number', fontsize=20)
     plt.title(title, fontsize=20)
