@@ -14,9 +14,11 @@ dm = 31.7262
 rebin = True
 rebin_factor = 128
 
+initial, final = np.int(np.float(sys.argv[1])), np.int(np.float(sys.argv[2]))
+assert initial <= final
 
 def main():
-    args = sys.argv[1:]
+    args = sys.argv[3:]
     for filename in args:
         try:
             print filename
@@ -86,27 +88,31 @@ def ploting(filename):
     fig = plt.figure()
     fig.suptitle(subtitle, fontsize=20)
     ax1 = fig.add_subplot(411)
-    ax1.set_ylabel('Freq(MHz)', fontsize=20)
-    ax1.tick_params(axis='both', which='major', labelsize=20)
+    ax1.set_ylabel('Freq(MHz)', fontsize=12)
+    ax1.tick_params(axis='both', which='major', labelsize=12)
     cax1 = ax1.imshow(data, extent=[0, phase_bins-1, 700., 900.],aspect='auto', cmap=cm.Greys)
     cbar = plt.colorbar(cax1)
     ax2 = fig.add_subplot(412)
-    ax2.set_ylabel('Mean Amp', fontsize=20)
-    ax2.set_xlabel('Phase Bins', fontsize=20)
-    ax2.tick_params(axis='both', which='major', labelsize=20)
+    ax2.set_ylabel('Mean Amp', fontsize=12)
+    ax2.set_xlabel('Phase Bins', fontsize=12)
+    ax2.tick_params(axis='both', which='major', labelsize=12)
     cax2 = plt.plot(data2)
     ax3 = fig.add_subplot(413)
-    ax3.set_ylabel('Freq(MHz)', fontsize=20)
-    ax3.tick_params(axis='both', which='major', labelsize=20)
+    ax3.set_ylabel('Freq(MHz)', fontsize=12)
+    ax3.tick_params(axis='both', which='major', labelsize=12)
     cax3 = ax3.imshow(data3, extent=[0, phase_bins-1, 700., 900.],aspect='auto', cmap=cm.Greys)
     cbar = plt.colorbar(cax3)
     ax4 = fig.add_subplot(414)
-    ax4.set_ylabel('Mean Amp', fontsize=20)
-    ax4.set_xlabel('Phase Bins', fontsize=20)
-    ax4.tick_params(axis='both', which='major', labelsize=20)
+    ax4.set_ylabel('Mean Amp', fontsize=12)
+    ax4.set_xlabel('Phase Bins', fontsize=12)
+    ax4.tick_params(axis='both', which='major', labelsize=12)
     cax4 = plt.plot(data4)
 #    fig.tight_layout()
-    plt.show()
+    name = 'folding_2139_'+str(initial)+'_to_'+str(final)+'.png'
+    plt.savefig(name, dpi = 300, bbox_inches='tight')
+
 
 if __name__ == '__main__':
+#    global initial, final
+#    initial, final = sys.argv[1], sys.argv[2]
     main()

@@ -10,8 +10,11 @@ import math
 
 '''Define variables'''
 
-initial = 0
-final = 29
+initial, final = np.int(np.float(sys.argv[1])), np.int(np.float(sys.argv[2]))
+assert initial <= final
+
+#initial = 0
+#final = 29
 
 do_preprocess = True
 sigma_threshold = 5
@@ -44,7 +47,7 @@ pulsar_period = 0.312470 + delta_t
 
 
 def main():
-    args = sys.argv[1:]
+    args = sys.argv[3:]
     for filename in args:
         try:
             print filename
