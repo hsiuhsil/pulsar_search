@@ -2,7 +2,8 @@ import os
 import sys
 import numpy as np
 
-p = np.loadtxt('./2139_list.txt', delimiter=',')
+#p = np.loadtxt('./test.txt', delimiter=',')
+p = np.loadtxt('./test.txt')
 filename = sys.argv[1]
 for i in xrange(len(p)):
     initial, final = int(p[i][0]), int(p[i][1])
