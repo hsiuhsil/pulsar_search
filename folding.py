@@ -50,7 +50,7 @@ def main():
     args = sys.argv[3:]
     for filename in args:
         try:
-            print filename
+#            print filename
             folding(filename)
         except (IOError, ValueError):
             print IOError

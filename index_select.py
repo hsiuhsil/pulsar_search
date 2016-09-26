@@ -10,8 +10,10 @@ mins = 5.0
 
 '''new[ii] would be index kk in this_file[kk]'''
 all = np.arange(0,1002)
-index_removed = np.arange(379,439)
+'''index 379 to 439 is repeated, and [9,10,...917] is for strong RFI'''
+index_removed = np.append(np.arange(379,439),np.array([9, 10, 540,764, 856, 867, 889, 917]))
 new = np.delete(all, index_removed)
+
 
 #all = np.arange(0,100)
 #index_removed = np.arange(20,50)

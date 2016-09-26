@@ -8,13 +8,13 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from scipy.optimize import curve_fit
 
-from folding import *
+#from folding import delta_t
 
 def main():
     args = sys.argv[1:]
     for filename in args:
         try:
-            print filename
+#            print filename
             plot_bary_diff(filename)
         except (IOError, ValueError):
             print IOError
@@ -28,22 +28,26 @@ def plot_bary_diff(filename):
 #    index = [[4,8], [140,143], [163,165], [493,495], [545,547], [578, 580]]
 #    max_phase = [1, 93, 79, 46, 96, 56]
 
-    index = [[4,8], [15, 19],[28, 32],[44, 49],[67, 83],[98,113],[114,117],[118,128],[146,152]]
-    max_phase = [69, 69, 63+100, 65+100, 90+200, 97+200, 91+300, 95+300, 5+400]
+#    index = [[4,8], [15, 19],[28, 32],[44, 49],[67, 83],[98,113],[114,117],[118,128],[146,152]]
+#    max_phase = [69, 69, 63+100, 65+100, 90+200, 97+200, 91+300, 95+300, 5+400]
 
-    bary_diff = np.zeros(len(index))
+    '''bin_number[0,1,2] = [initial, final, maximal phase bin number]'''
 
-    for ii in range(len(index)):
-        bary_diff[ii] = ((this_file['BARY_TIME'][index[ii][0]]+this_file['BARY_TIME'][index[ii][1]])/2. -this_file['BARY_TIME'][0])*86400/60/60
+    bin_number = np.loadtxt('./bin_number.txt')
 
-    title = 'delta_t: '+str(delta_t)+' sec.'
+    bary_diff = np.zeros(len(bin_number))
+
+    for ii in range(len(bin_number)):
+        bary_diff[ii] = ((this_file['BARY_TIME'][bin_number[ii][0]]+this_file['BARY_TIME'][bin_number[ii][1]])/2. -this_file['BARY_TIME'][0])*86400/60/60
+
+#   title = 'delta_t: '+str(delta_t)+' sec.'
 
     '''Try to fit'''
 
     def func(x, a, b, c):
         return a*x**2 + b*x + c
 
-    popt, pcov = curve_fit(func, bary_diff, max_phase)
+    popt, pcov = curve_fit(func, bary_diff, bin_number[:,2])
     print popt
     print pcov
 
@@ -51,12 +55,12 @@ def plot_bary_diff(filename):
     y = popt[0]*x_axes**2 + popt[1]*x_axes + popt[2]
 
     
-    plt.plot(bary_diff, max_phase, 'bo')
+    plt.plot(bary_diff, bin_number[:,2].tolist(), 'bo')
 #    plt.axis([diff[0],diff[-1], bary[0], bary[-1]], labelsize=20)
     plt.plot(x_axes, y, 'r--')
     plt.xlabel('Bary diff (hours)', fontsize=20)
     plt.ylabel('Max Phase Bins Number', fontsize=20)
-    plt.title(title, fontsize=20)
+#    plt.title(title, fontsize=20)
     plt.show()
 
 if __name__ == '__main__':

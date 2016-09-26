@@ -21,7 +21,7 @@ def main():
     args = sys.argv[3:]
     for filename in args:
         try:
-            print filename
+#            print filename
             ploting(filename)
         except (IOError, ValueError):
             print IOError
@@ -77,6 +77,8 @@ def ploting(filename):
     for ii in range(len(data2)):
         data2[ii] = np.mean(data[:,ii])
     phase_bin_max_ind = np.argmax(data2)
+    print initial, final, phase_bin_max_ind
+
 
     for ii in range(len(data4)):
         data4[ii] = np.mean(data3[:,ii])
@@ -110,6 +112,7 @@ def ploting(filename):
 #    fig.tight_layout()
     name = 'folding_2139_'+str(initial)+'_to_'+str(final)+'.png'
     plt.savefig(name, dpi = 300, bbox_inches='tight')
+
 
 
 if __name__ == '__main__':
