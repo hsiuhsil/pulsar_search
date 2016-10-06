@@ -21,29 +21,35 @@ sigma_threshold = 5
 remove_period = 64
 phase_bins = 100
 
-#J2139 from folding
+#'''J2139 wz from folding'''
 delta_t = -5.8068471774736951e-06 -2.5301321417973068e-07 -4.2596495836139012e-07 + 2.9914132482230684e-07 
 pulsar_period = 0.312470 + delta_t
+#p_dot = 4.8408891115682e-11
+#p0_ind = np.int(0)
 
-#J2139 from tempo2
+#'''J2139 57178 from folding'''
+#delta_t = 6.2703317271681677e-06 - 5.7005305828936162e-07
+#pulsar_period = 0.312470 -5.8068471774736951e-06 -2.5301321417973068e-07 -4.2596495836139012e-07 + 2.9914132482230684e-07 + delta_t
+
+#'''J2139 57178 from tempo2'''
 #delta_t = 0.0
-#pulsar_period = 0.3124680322895416
+#pulsar_period = 0.3124680322895416 + delta_t
 
-#J0051
+#'''J0051'''
 #delta_t = -3.2083428581595565e-07 +1.4583350248377532e-08 -7.0619503654410745e-09 +5.1170668232711475e-10 
 #pulsar_period = 0.35473179890 + delta_t
 
 # J1046: 
 #delta_t = 0.0
-#pulsar_period = 0.326271446035
+#pulsar_period = 0.326271446035 + delta_t
 
 # J1038: 
 #delta_t = 0.0
-#pulsar_period = 0.02885155795131
+#pulsar_period = 0.02885155795131 + delta_t
 
 # J0030: 
 #delta_t = 0.0
-#pulsar_period = 0.0048654532073692
+#pulsar_period = 0.0048654532073692 + delta_t
 
 
 def main():
@@ -96,8 +102,10 @@ def folding(filename):
     for ii in range(initial, final+1):
 #    for ii in range(len(this_file['BARY_TIME'])):
         print 'ii = ' + str(ii)
+#        pulsar_period_ii = pulsar_period_0 + p_dot*((this_file['BARY_TIME'][ii]-this_file['BARY_TIME'][p0_ind])*86400)    
         sample_BAT = this_file['BARY_TIME'][ii]*86400 + np.arange(-ntime/2.0 + 0.5, ntime/2.0 + 0.5)*tbin
-        modulo_num = np.int64(np.around((sample_BAT % pulsar_period)/(pulsar_period/phase_bins)))
+#        modulo_num = np.int64(np.around((sample_BAT % pulsar_period_ii)/(pulsar_period_ii/phase_bins)))
+        modulo_num = np.int64(np.around((sample_BAT % pulsar_period)/(pulsar_period / phase_bins)))
         print 'modulo_num done'
         for jj in range(len(modulo_num)):
             if modulo_num[jj] == phase_bins:
@@ -130,7 +138,9 @@ def folding(filename):
     for ii in range(initial, final+1):
 #    for ii in range(len(this_file['TOPO_TIME'])):
         print 'ii = ' + str(ii)
+#        pulsar_period_ii = pulsar_period_0 + p_dot*((this_file['TOPO_TIME'][ii]-this_file['TOPO_TIME'][p0_ind])*86400)
         sample_TOPO = this_file['TOPO_TIME'][ii]*86400 + np.arange(-ntime/2.0 + 0.5, ntime/2.0 + 0.5)*tbin
+#        modulo_num_topo = np.int64(np.around((sample_TOPO % pulsar_period_ii)/(pulsar_period_ii/phase_bins)))
         modulo_num_topo = np.int64(np.around((sample_TOPO % pulsar_period)/(pulsar_period/phase_bins)))
         print 'modulo_num done'
         for jj in range(len(modulo_num_topo)):

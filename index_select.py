@@ -8,18 +8,6 @@ from numpy import array
 
 mins = 5.0
 
-'''new[ii] would be index kk in this_file[kk]'''
-all = np.arange(0,1002)
-'''index 379 to 439 is repeated, and [9,10,...917] is for strong RFI'''
-index_removed = np.append(np.arange(379,439),np.array([9, 10, 540,764, 856, 867, 889, 917]))
-new = np.delete(all, index_removed)
-
-
-#all = np.arange(0,100)
-#index_removed = np.arange(20,50)
-#new = np.delete(all, index_removed)
-
-
 def main():
     args = sys.argv[1:]
     for filename in args:
@@ -31,6 +19,20 @@ def main():
 
 def index_select(filename):
     this_file = h5py.File(filename, "r")
+
+    '''new[ii] would be index kk in this_file[kk]'''
+    all = np.arange(0,len(this_file['BARY_TIME']))
+    #'''for J2139 wigglez case'''
+    #'''index 379 to 439 is repeated, and [9,10,...917] is for strong RFI'''
+    #index_removed = np.append(np.arange(379,439),np.array([9, 10, 540,764, 856, 867, 889, 917]))
+    #new = np.delete(all, index_removed)
+    new = all
+
+    #all = np.arange(0,100)
+    #index_removed = np.arange(20,50)
+    #new = np.delete(all, index_removed)
+
+
     previous_initial = np.zeros((len(new),), dtype=np.int)
     previous_final = np.zeros((len(new),), dtype=np.int)
     for ii in range(len(new)):
@@ -51,7 +53,7 @@ def index_select(filename):
             list.append([previous_initial[ii+1],previous_final[ii+1]])
     scan = np.array(list) 
 
-    np.savetxt('test.txt', scan, fmt='%4d')    
+    np.savetxt('index_2139.txt', scan, fmt='%4d')    
 
 if __name__ == '__main__':
     main()
