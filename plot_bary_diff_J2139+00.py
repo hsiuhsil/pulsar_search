@@ -54,17 +54,16 @@ def plot_bary_diff(filename):
 
 
     '''Find quadratic parameters by leastsq'''
-    funcQuad=lambda tpl,time_i : (((data_i - (tpl[0]*time_i**2 + tpl[1]*time_i + tpl[2]) + n_phase_bin/2) % n_phase_bin - n_phase_bin/2)**2)
+    funcQuad=lambda tpl,time_i,data_i : (((data_i - (tpl[0]*time_i**2 + tpl[1]*time_i + tpl[2]) + n_phase_bin/2) % n_phase_bin - n_phase_bin/2)**2)
     func=funcQuad
-    ErrorFunc=lambda tpl,time_i,data_i : func(tpl,time_i) - data_i
-    tplInitial=(50,2.0,10)
-    tplFinal,success=leastsq(ErrorFunc,tplInitial[:],args=(time_i,data_i))
+    ErrorFunc=lambda tpl,time_i,data_i : func(tpl,time_i,data_i)
+    tplInitial=(0.05,2.0,10)
+    tplFinal,success=leastsq(funcQuad,tplInitial[:],args=(time_i,data_i))
     print "quadratic fit: " ,tplFinal
     
 
-    x_axes = np.linspace(0, bary_diff[-1],50)
-    y = tplFinal[0]*x_axes**2 + tplFinal[1]*x_axes + tplFinal[2]
-
+    x_axes = np.linspace(0, bary_diff[-1],300)
+    y = (tplFinal[0]*x_axes**2 + tplFinal[1]*x_axes + tplFinal[2]) % n_phase_bin
     
 
     plt.plot(bary_diff[:], bin_number[:,2].tolist(), 'bo')
