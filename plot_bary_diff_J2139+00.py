@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from scipy.optimize import curve_fit
 from scipy.optimize import minimize
+from scipy.optimize import leastsq
 
 def main():
     args = sys.argv[1:]
@@ -30,33 +31,44 @@ def plot_bary_diff(filename):
     bary_diff = np.zeros(len(bin_number))
 
     for ii in range(len(bin_number)):
-        bary_diff[ii] = ((this_file['BARY_TIME'][bin_number[ii][0]]+this_file['BARY_TIME'][bin_number[ii][1]])/2. -this_file['BARY_TIME'][0])*86400
+        bary_diff[ii] = ((this_file['BARY_TIME'][bin_number[ii][0]]+this_file['BARY_TIME'][bin_number[ii][1]])/2. -this_file['BARY_TIME'][0])*24
 
 #   title = 'delta_t: '+str(delta_t)+' sec.'
 
     '''Try to fit'''
 
-    def func(x, a, b, c):
+    def qua_func(x, a, b, c):
         return a*x**2 + b*x + c
 
-    popt, pcov = curve_fit(func, bary_diff, bin_number[:,2])
+    popt, pcov = curve_fit(qua_func, bary_diff, bin_number[:,2])
     print 'popt: ' + str(popt)
     print 'pcov: ' + str(pcov)
 
+#    '''Find quadratic parameters by minimizing chi-squared'''
     n_phase_bin = 100
     data_i = bin_number[:,2]
-    chi_squ = lambda x:  np.sum(((data_i - (x[0]*bary_diff[:]**2 + x[1]*bary_diff[:] + x[2]) + n_phase_bin/2) % n_phase_bin - n_phase_bin/2)**2)   
-    res = minimize(chi_squ, popt, tol=1e0)
-    print "best [a, b, c]: "+str(res.x)
+    time_i = bary_diff[:]
+#    chi_squ = lambda x:  np.sum(((data_i - (x[0]*bary_diff[:]**2 + x[1]*bary_diff[:] + x[2]) + n_phase_bin/2) % n_phase_bin - n_phase_bin/2)**2)   
+#    res = minimize(chi_squ, ([100, popt[1], popt[2]]), tol=1e3)
+#    print "best [a, b, c]: "+str(res.x)
+
+
+    '''Find quadratic parameters by leastsq'''
+    funcQuad=lambda tpl,time_i : (((data_i - (tpl[0]*time_i**2 + tpl[1]*time_i + tpl[2]) + n_phase_bin/2) % n_phase_bin - n_phase_bin/2)**2)
+    func=funcQuad
+    ErrorFunc=lambda tpl,time_i,data_i : func(tpl,time_i) - data_i
+    tplInitial=(50,2.0,10)
+    tplFinal,success=leastsq(ErrorFunc,tplInitial[:],args=(time_i,data_i))
+    print "quadratic fit: " ,tplFinal
+    
 
     x_axes = np.linspace(0, bary_diff[-1],50)
-    y = popt[0]*x_axes**2 + popt[1]*x_axes + popt[2]
+    y = tplFinal[0]*x_axes**2 + tplFinal[1]*x_axes + tplFinal[2]
 
     
-#   plt.plot(bary_diff, bin_number[:,2].tolist(), 'bo')
+
     plt.plot(bary_diff[:], bin_number[:,2].tolist(), 'bo')
-#    plt.axis([diff[0],diff[-1], bary[0], bary[-1]], labelsize=20)
-#   plt.plot(x_axes, y, 'r--')
+    plt.plot(x_axes, y, 'r--')
     plt.xlabel('Bary diff (hours)', fontsize=20)
     plt.ylabel('Max Phase Bins Number', fontsize=20)
 #    plt.title(title, fontsize=20)
