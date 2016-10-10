@@ -4,6 +4,8 @@ import os.path
 
 import h5py
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from scipy.optimize import curve_fit
@@ -15,7 +17,7 @@ def main():
     for filename in args:
         try:
             plot_bary_diff(filename)
-        except (IOError, ValueError):
+        except None:
             print IOError
 
 def plot_bary_diff(filename):
@@ -26,7 +28,7 @@ def plot_bary_diff(filename):
 
     '''bin_number[0,1,2] = [initial, final, maximal phase bin number]'''
 
-    bin_number = np.loadtxt('./bin_number_2139_wz_pdot.txt')
+    bin_number = np.loadtxt('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/bin_number_2139_wz_pdot.txt')
 
     bary_diff = np.zeros(len(bin_number))
 
@@ -40,9 +42,9 @@ def plot_bary_diff(filename):
     def qua_func(x, a, b, c):
         return a*x**2 + b*x + c
 
-    popt, pcov = curve_fit(qua_func, bary_diff, bin_number[:,2])
-    print 'popt: ' + str(popt)
-    print 'pcov: ' + str(pcov)
+    #popt, pcov = curve_fit(qua_func, bary_diff, bin_number[:,2])
+    #print 'popt: ' + str(popt)
+    #print 'pcov: ' + str(pcov)
 
 #    '''Find quadratic parameters by minimizing chi-squared'''
     n_phase_bin = 100
@@ -54,24 +56,33 @@ def plot_bary_diff(filename):
 
 
     '''Find quadratic parameters by leastsq'''
-    funcQuad=lambda tpl,time_i,data_i : (((data_i - (tpl[0]*time_i**2 + tpl[1]*time_i + tpl[2]) + n_phase_bin/2) % n_phase_bin - n_phase_bin/2)**2)
+    funcQuad=lambda tpl,time_i,data_i : (((data_i - (0*time_i**3 + tpl[0]*time_i**2 + tpl[1]*time_i + tpl[2]) + n_phase_bin/2) % n_phase_bin - n_phase_bin/2))
     func=funcQuad
     ErrorFunc=lambda tpl,time_i,data_i : func(tpl,time_i,data_i)
-    tplInitial=(0.05,2.0,10)
+    tplInitial=(0.03,-0.05,70)
     tplFinal,success=leastsq(funcQuad,tplInitial[:],args=(time_i,data_i))
     print "quadratic fit: " ,tplFinal
+    print "sucess?:", success
+    print np.sum(funcQuad(tplFinal, time_i, data_i)**2)
+
     
 
     x_axes = np.linspace(0, bary_diff[-1],300)
     y = (tplFinal[0]*x_axes**2 + tplFinal[1]*x_axes + tplFinal[2]) % n_phase_bin
     
-
-    plt.plot(bary_diff[:], bin_number[:,2].tolist(), 'bo')
+    plt.subplot(2,1,1)
+    plt.plot(time_i, data_i, 'bo')
     plt.plot(x_axes, y, 'r--')
     plt.xlabel('Bary diff (hours)', fontsize=20)
     plt.ylabel('Max Phase Bins Number', fontsize=20)
 #    plt.title(title, fontsize=20)
-    plt.show()
+
+    plt.subplot(2,1,2)
+    plt.plot(time_i, funcQuad(tplFinal, time_i, data_i), 'bo')
+    plt.xlabel('Bary diff (hours)', fontsize=20)
+    plt.ylabel('Phase bin residuals', fontsize=20)
+    #plt.show()
+    plt.savefig('phase_fit.png')
 
 if __name__ == '__main__':
     main()
