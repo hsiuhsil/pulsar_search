@@ -76,11 +76,11 @@ def plot_bary_diff(filename):
 
     data_im = np.exp(1j * data_i / n_phase_bin * 2 * np.pi)
     model_im = np.exp(1j * (tplFinal[0]*time_i**2 + tplFinal[1]*time_i + tplFinal[2]) / n_phase_bin * 2 * np.pi)
-    funcQuad=lambda tpl_im,time_i,data_i : (np.sum(np.absolute(np.exp(1j * data_i / n_phase_bin * 2 * np.pi) -np.exp(1j * (tpl_im[0]*time_i**2 + tpl_im[1]*time_i + tpl_im[2]) / n_phase_bin * 2 * np.pi)))**2)
-    func=funcQuad
-    ErrorFunc=lambda tpl_im,time_i,data_i : func(tpl_im,time_i,data_i)
-    tpl_imInitial=(0.0226,10.52, 12.8)
-    tpl_imFinal,success=leastsq(funcQuad,tpl_imInitial[:],args=(time_i,data_i))
+    funcQuad_im=lambda tpl_im,time_i,data_i : np.absolute(np.exp(1j * data_i / n_phase_bin * 2 * np.pi) -np.exp(1j * (tpl_im[0]*time_i**2 + tpl_im[1]*time_i + tpl_im[2]) / n_phase_bin * 2 * np.pi))
+    func_im=funcQuad_im
+    ErrorFunc_im=lambda tpl_im,time_i,data_i : func_im(tpl_im,time_i,data_i)
+    tpl_imInitial=(0.03, 10, 12)
+    tpl_imFinal,success=leastsq(funcQuad_im,tpl_imInitial[:],args=(time_i,data_i))
     print "quadratic fit: " ,tpl_imFinal
     print "sucess?:", success
     print np.sum(funcQuad(tpl_imFinal, time_i, data_i)**2)
@@ -107,13 +107,13 @@ def plot_bary_diff(filename):
     plt.ylabel('Phase bin residuals', fontsize=14)
 
     plt.subplot(4,1,3)
-    plt.plot(time_i, data_im, 'bo')
+    plt.plot(time_i, data_i, 'bo')
     plt.plot(x_axes, y_im, 'r--')
     plt.xlabel('Bary diff (hours)', fontsize=14)
     plt.ylabel('Max Phase Bins Number', fontsize=14)
 
     plt.subplot(4,1,4)
-    plt.plot(time_i, funcQuad(tpl_imFinal, time_i, data_im), 'bo')
+    plt.plot(time_i, funcQuad_im(tpl_imFinal, time_i, data_im), 'bo')
     plt.xlabel('Bary diff (hours)', fontsize=14)
     plt.ylabel('Phase bin residuals', fontsize=14)
 
