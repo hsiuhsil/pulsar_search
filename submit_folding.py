@@ -10,5 +10,5 @@ for ii in xrange(len(p)):
     initial, final = int(p[ii][0]), int(p[ii][1])
     os.system('cp ' + filename + ' temph5')
     os.system('python folding.py ' + str(initial) + ' ' + str(final) + ' temph5')
-    os.system('python plot_pulse.py ' + str(initial) +' ' + str(final) + ' temph5 >> bin_number_2139_57178_20.txt')
+    os.system('python plot_pulse.py ' + str(initial) +' ' + str(final) + ' temph5 >> bin_number_2139_57178.txt')
     os.system('rm temph5')

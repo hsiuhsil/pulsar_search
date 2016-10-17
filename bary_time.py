@@ -17,6 +17,44 @@ def main():
             print IOError
             
 
+def deg_to_HMS( RA ):
+    if(RA<0):
+        sign = -1
+        ra   = -RA
+    else:
+        sign = 1
+        ra   = RA
+    h = int( ra/15. )
+    ra -= h*15.
+    m = int( ra*4.)
+    ra -= m/4.
+    s = ra*240.
+    if(sign == -1):
+        out = '-%02d:%02d:%06.3f'%(h,m,s)
+    else:
+        out = '+%02d:%02d:%06.3f'%(h,m,s)
+    return out
+
+def deg_to_DMS( Dec ):
+    if(Dec<0):
+        sign = -1
+        dec  = -Dec
+    else:
+        sign = 1
+        dec  = Dec
+    d = int( dec )
+    dec -= d
+    dec *= 100.
+    m = int( dec*3./5. )
+    dec -= m*5./3.
+    s = dec*180./5.
+    if(sign == -1):
+        out = '-%02d:%02d:%06.3f'%(d,m,s)
+    else:
+        out = '+%02d:%02d:%06.3f'%(d,m,s)
+    return out
+
+
 def find_topo_bary(filename):
 
     this_file = h5py.File(filename, "r+")
@@ -30,8 +68,8 @@ def find_topo_bary(filename):
 #        DEC = str(this_file['DEC_SUB'][ii])
 #        RA = str(324.92500)
 #        DEC = str(0.60000)
-        RA = str(324.92817)
-        DEC = str(0.60222)
+        RA = deg_to_HMS(324.92817)
+        DEC = deg_to_DMS(0.60222)
         topo_time = repr(this_file['ABS_TIME'][ii]/86400)
         p = subprocess.Popen(["bary", "GBT", RA, DEC], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         bary_time = p.communicate(input=topo_time)[0].split()[1]
