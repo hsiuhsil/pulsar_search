@@ -47,7 +47,7 @@ def plot_bary_diff(filename):
         return a*x**2 + b*x + c
 
     n_phase_bin = 100
-    sl = np.logical_and(bary_diff > 0, bary_diff < 35000)
+    sl = np.logical_and(bary_diff > 0, bary_diff < 1800)
     data_i = bin_number[sl,2]
     time_i = bary_diff[sl]
     mjd_i = mjd_ave[sl]
@@ -72,7 +72,7 @@ def plot_bary_diff(filename):
     equinox_mjd = t.mjd
     theta_i = np.zeros(len(mjd_i))
     for ii in range(len(theta_i)):
-        theta_i[ii] = (mjd_i[ii] - equinox_mjd[np.argmin(np.absolute(mjd_i[ii] - equinox_mjd))]) /  365.259636*2*np.pi/360.
+        theta_i[ii] = (mjd_i[ii] - equinox_mjd[np.argmin(np.absolute(mjd_i[ii] - equinox_mjd))]) /  365.259636*2*np.pi
         '''RA, theta_i and delta_RA(tpl[3]) are in degree, AU in m, c in m/s'''
     RA = 324.92817    
     AU = 149597870700.0 
@@ -80,7 +80,7 @@ def plot_bary_diff(filename):
     funcQuad=lambda tpl,time_i,data_i, theta_i : (((data_i - ( tpl[0]*time_i**2 + tpl[1]*time_i + tpl[2] + 1*AU*tpl[3]/c*np.sin(RA*np.pi/180 - theta_i)) + n_phase_bin/2) % n_phase_bin - n_phase_bin/2))
     func=funcQuad
     ErrorFunc=lambda tpl,time_i,data_i, theta_i : func(tpl,time_i,data_i, theta_i)
-    tplInitial = ( 1.89216546e-05,2.11820717e+01,-1.49434149e+03,1.26321921e+00)
+    tplInitial = (-3.00700874e-05, 2.11763315e+01, -1.21681483e+03,4.80752583e-01)
     tplFinal,success=leastsq(funcQuad,tplInitial[:],args=(time_i,data_i, theta_i))
     print "quadratic fit: " ,tplFinal
     print "sucess?:", success
