@@ -110,7 +110,7 @@ def ploting(filename):
     ax4.tick_params(axis='both', which='major', labelsize=12)
     cax4 = plt.plot(data4)
 #    fig.tight_layout()
-    name = 'folding_2139_57178_'+str(initial)+'_to_'+str(final)+'.png'
+    name = 'folding_2139_wz_'+str(initial)+'_to_'+str(final)+'.png'
     plt.savefig(name, dpi = 300, bbox_inches='tight')
 
 

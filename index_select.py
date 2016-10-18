@@ -53,7 +53,7 @@ def index_select(filename):
             list.append([previous_initial[ii+1],previous_final[ii+1]])
     scan = np.array(list) 
 
-    np.savetxt('index_2139.txt', scan, fmt='%4d')    
+    np.savetxt('index_0051.txt', scan, fmt='%4d')    
 
 if __name__ == '__main__':
     main()

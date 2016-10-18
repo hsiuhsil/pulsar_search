@@ -66,10 +66,24 @@ def find_topo_bary(filename):
         print ii
 #        RA = str(this_file['RA_SUB'][ii])
 #        DEC = str(this_file['DEC_SUB'][ii])
-#        RA = str(324.92500)
-#        DEC = str(0.60000)
-        RA = deg_to_HMS(324.92817)
-        DEC = deg_to_DMS(0.60222)
+        '''J2139+00, tempo'''
+#        RA = deg_to_HMS(324.92817)
+#        DEC = deg_to_DMS(0.60222)
+        '''J2139+00, atnf'''
+#        RA = str("+21:39:46")
+#        DEC = str("+00:36:00")
+        '''J0030+0451'''
+#        RA = str('00:30:27.42823')
+#        DEC = str('+04:51:39.7112')
+        '''J0051+0423'''   
+#        RA = str('00:51:30.1')
+#        DEC = str('+04:22:49')
+        '''J1038+0032'''
+#        RA = str('10:38:26.933')
+#        DEC = str('+00:32:43.6') 
+        '''J1046+0304'''
+#        RA = str('10:46:43.23')
+#        DEC = str('+03:04:06.9')
         topo_time = repr(this_file['ABS_TIME'][ii]/86400)
         p = subprocess.Popen(["bary", "GBT", RA, DEC], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         bary_time = p.communicate(input=topo_time)[0].split()[1]
