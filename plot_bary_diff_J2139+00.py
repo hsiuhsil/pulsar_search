@@ -47,7 +47,8 @@ def plot_bary_diff(filename):
         return a*x**2 + b*x + c
 
     n_phase_bin = 100
-    sl = np.logical_and(bary_diff > 0, bary_diff < 1800)
+    period = 0.31246381331597484
+    sl = np.logical_and(bary_diff > 0, bary_diff < 1100)
     data_i = bin_number[sl,2]
     time_i = bary_diff[sl]
     mjd_i = mjd_ave[sl]
@@ -77,10 +78,10 @@ def plot_bary_diff(filename):
     RA = 324.92817    
     AU = 149597870700.0 
     c = 299792458.0
-    funcQuad=lambda tpl,time_i,data_i, theta_i : (((data_i - ( tpl[0]*time_i**2 + tpl[1]*time_i + tpl[2] + 1*AU*tpl[3]/c*np.sin(RA*np.pi/180 - theta_i)) + n_phase_bin/2) % n_phase_bin - n_phase_bin/2))
+    funcQuad=lambda tpl,time_i,data_i, theta_i : (((data_i - ( tpl[0]*time_i**2 + tpl[1]*time_i + tpl[2] + (1*AU*tpl[3]/c*np.sin(RA*np.pi/180 - theta_i))*(n_phase_bin/period)) + n_phase_bin/2) % n_phase_bin - n_phase_bin/2))
     func=funcQuad
     ErrorFunc=lambda tpl,time_i,data_i, theta_i : func(tpl,time_i,data_i, theta_i)
-    tplInitial = (-3.00700874e-05, 2.11763315e+01, -1.21681483e+03,4.80752583e-01)
+    tplInitial = (-7.97545957e-03,   2.19696902e+01,   2.45437380e+04,   1.96119916e-01)
     tplFinal,success=leastsq(funcQuad,tplInitial[:],args=(time_i,data_i, theta_i))
     print "quadratic fit: " ,tplFinal
     print "sucess?:", success
