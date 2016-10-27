@@ -77,7 +77,9 @@ def ploting(filename):
     for ii in range(len(data2)):
         data2[ii] = np.mean(data[:,ii])
     phase_bin_max_ind = np.argmax(data2)
-    print initial, final, phase_bin_max_ind
+    std = np.std(data2)
+    std_peak = data2[phase_bin_max_ind]/std
+    print initial, final, phase_bin_max_ind, std_peak
 
 
     for ii in range(len(data4)):

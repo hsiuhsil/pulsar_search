@@ -96,7 +96,7 @@ def plot_bary_diff(filename):
     theta_fit = np.zeros(num_points)
     mjd_range = np.linspace(np.amin(mjd_i), np.amax(mjd_i), num_points)
     for ii in range(len(theta_fit)):
-        theta_fit[ii] = (mjd_range[ii] - equinox_mjd[np.argmin(np.absolute(mjd_range[ii] - equinox_mjd))]) /  365.259636*2*np.pi/360.
+        theta_fit[ii] = (mjd_range[ii] - equinox_mjd[np.argmin(np.absolute(mjd_range[ii] - equinox_mjd))]) /  365.259636*2*np.pi
 
     x_axes = np.linspace(np.amin(time_i), np.amax(time_i), num_points)
     y = (tplFinal[0]*x_axes**2 + tplFinal[1]*x_axes + tplFinal[2] + 1*AU*tplFinal[3]/c*np.sin(RA*np.pi/180 - theta_fit)) % n_phase_bin
