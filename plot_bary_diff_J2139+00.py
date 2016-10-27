@@ -29,8 +29,11 @@ def plot_bary_diff(filename):
 
     '''bin_number[0,1,2] = [initial, final, maximal phase bin number]'''
 
-    '''wigglez data'''
-    bin_number = np.loadtxt('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/bin_number_2139_wz.txt')
+#    '''wigglez data'''
+#    bin_number = np.loadtxt('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/bin_number_2139_wz.txt')
+    '''wa data with delta_ra'''
+    bin_number = np.loadtxt('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_RA_324.86337029308453/bin_number_2139_wz_dra.txt')
+
     '''one hour pointing data'''
 #    bin_number = np.loadtxt('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/bin_number_2139_57178_20.txt')
 
@@ -48,7 +51,7 @@ def plot_bary_diff(filename):
 
     n_phase_bin = 100
     period = 0.31246381331597484
-    sl = np.logical_and(bary_diff > 0, bary_diff < 34100)
+    sl = np.logical_and(bary_diff > 0, bary_diff < 1100)
     data_i = bin_number[sl,2]
     time_i = bary_diff[sl]
     mjd_i = mjd_ave[sl]
@@ -75,20 +78,21 @@ def plot_bary_diff(filename):
     for ii in range(len(theta_i)):
         theta_i[ii] = (mjd_i[ii] - equinox_mjd[np.argmin(np.absolute(mjd_i[ii] - equinox_mjd))]) /  365.259636*2*np.pi
         '''RA, theta_i and delta_RA(tpl[3]) are in degree, AU in m, c in m/s'''
-    RA = 324.92817    
+#    RA = 324.92817 '''(without dealt_ra)'''    
+    RA = 324.86337029308453
     AU = 149597870700.0 
     c = 299792458.0
 #    funcQuad=lambda tpl,time_i,data_i, theta_i : (((data_i - ( (tpl[0]*time_i**2 + tpl[1]*time_i + tpl[2])*(n_phase_bin/period/3600) + (1*AU*tpl[3]/c*np.sin(RA*np.pi/180 - theta_i))*(period/n_phase_bin)) + n_phase_bin/2) % n_phase_bin - n_phase_bin/2))
-    funcQuad=lambda tpl,time_i,data_i, theta_i : (((data_i - ( (tpl[0]*time_i**2 + tpl[1]*time_i + tpl[2]) + (1*AU*tpl[3]/c*np.sin(RA*np.pi/180 - theta_i))*(n_phase_bin/period)) + n_phase_bin/2) % n_phase_bin - n_phase_bin/2))
+    funcQuad=lambda tpl,time_i,data_i, theta_i : (((data_i - ( (tpl[0]*time_i**2 + tpl[1]*time_i + tpl[2]) + (-1*AU*tpl[3]/c*np.sin(RA*np.pi/180 + theta_i))*(n_phase_bin/period)) + n_phase_bin/2) % n_phase_bin - n_phase_bin/2))
     func=funcQuad
     rrorFunc=lambda tpl,time_i,data_i, theta_i : func(tpl,time_i,data_i, theta_i)
-    tplInitial = (-3.00688509e-05,   2.11763316e+01,  -1.21682089e+03,   1.50214011e-03)
+    tplInitial = (6.47369211e-04,   1.69470826e+01,  -3.25790318e+03,  -3.85431541e-02)
     tplFinal,success=leastsq(funcQuad,tplInitial[:],args=(time_i,data_i, theta_i))
     print "quadratic fit: " ,tplFinal
     print "sucess?:", success
     print np.sum(funcQuad(tplFinal, time_i, data_i, theta_i)**2)
 
-    num_points = 5000
+    num_points = 50
     theta_fit = np.zeros(num_points)
     mjd_range = np.linspace(np.amin(mjd_i), np.amax(mjd_i), num_points)
     for ii in range(len(theta_fit)):
@@ -98,13 +102,13 @@ def plot_bary_diff(filename):
     y = (tplFinal[0]*x_axes**2 + tplFinal[1]*x_axes + tplFinal[2] + 1*AU*tplFinal[3]/c*np.sin(RA*np.pi/180 - theta_fit)) % n_phase_bin
     
     plt.subplot(2,1,1)
-    plt.plot(time_i[190:], data_i[190:], 'bo')
+    plt.plot(time_i, data_i, 'bo')
     plt.plot(x_axes, y, 'r--')
     plt.xlabel('Bary diff (hours)', fontsize=14)
     plt.ylabel('Max Phase Bins Number', fontsize=14)
 
     plt.subplot(2,1,2)
-    plt.plot(time_i[190:], funcQuad(tplFinal, time_i[190:], data_i[190:], theta_i[190:]), 'bo')
+    plt.plot(time_i, funcQuad(tplFinal, time_i, data_i, theta_i), 'bo')
     plt.xlabel('Bary diff (hours)', fontsize=14)
     plt.ylabel('Phase bin residuals', fontsize=14)
 

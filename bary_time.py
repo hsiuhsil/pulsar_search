@@ -15,7 +15,42 @@ def main():
             find_topo_bary(filename)
         except (IOError, ValueError):
             print IOError
-            
+
+def convHMS(ra):
+   try :
+      sep1 = ra.find(':')
+      hh=int(ra[0:sep1])
+      sep2 = ra[sep1+1:].find(':')
+      mm=int(ra[sep1+1:sep1+sep2+1])
+      ss=float(ra[sep1+sep2+2:])
+   except:
+      raise
+   else:
+      pass  
+   return(hh*15.+mm/4.+ss/240.)
+
+def convDMS(dec):
+   Csign=dec[0]
+   if Csign=='-':
+      sign=-1.
+      off = 1
+   elif Csign=='+':
+      sign= 1.
+      off = 1
+   else:
+      sign= 1.
+      off = 0
+   try :
+      sep1 = dec.find(':')
+      deg=int(dec[off:sep1])
+      sep2 = dec[sep1+1:].find(':')
+      arcmin=int(dec[sep1+1:sep1+sep2+1])
+      arcsec=float(dec[sep1+sep2+2:])
+   except:
+      raise
+   else:
+      pass
+   return(sign*(deg+(arcmin*5./3.+arcsec*5./180.)/100.))            
 
 def deg_to_HMS( RA ):
     if(RA<0):
@@ -66,6 +101,9 @@ def find_topo_bary(filename):
         print ii
 #        RA = str(this_file['RA_SUB'][ii])
 #        DEC = str(this_file['DEC_SUB'][ii])
+        '''J2139+00, tempo + delta_ra'''
+#        RA = deg_to_HMS(324.86337029308453)
+#        DEC = deg_to_DMS(0.60222)
         '''J2139+00, tempo'''
 #        RA = deg_to_HMS(324.92817)
 #        DEC = deg_to_DMS(0.60222)

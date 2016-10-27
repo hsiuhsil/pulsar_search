@@ -4,64 +4,95 @@ import os.path
 
 import h5py
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from scipy.optimize import curve_fit
-
-from folding import *
+from scipy.optimize import minimize
+from scipy.optimize import leastsq
+from astropy.time import Time
 
 def main():
     args = sys.argv[1:]
     for filename in args:
         try:
-            print filename
             plot_bary_diff(filename)
-        except (IOError, ValueError):
+        except None:
             print IOError
 
 def plot_bary_diff(filename):
     this_file = h5py.File(filename, "r")
+ 
+    '''bin_number[0,1,2] = [initial, final, maximal phase bin number]'''
+    bin_number = np.loadtxt('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J0051+0423/bin_number_0051.txt')
 
-#    index = [[1,3], [4,6], [7,8], [11,12], [15,17], [18,19], [20,22], [23,27], [28,30], [33,38], [39,42], [44,49], [50,55], [61,62], [63,64], [65,66], [67,72], [73,76]]
-#    max_phase = [89, 90, 90, 89, 89, 89, 60, 59, 59, 56, 59, 56, 59, 55, 57, 56, 47, 47] 
+    bary_diff = np.zeros(len(bin_number))
+    mjd_ave = np.zeros(len(bin_number))
 
-#    index = [[4,8], [140,143], [163,165], [493,495], [545,547], [578, 580]]
-#    max_phase = [1, 93, 79, 46, 96, 56]
+    for ii in range(len(bin_number)):
+        bary_diff[ii] = ((this_file['BARY_TIME'][bin_number[ii][0]]+this_file['BARY_TIME'][bin_number[ii][1]])/2. -this_file['BARY_TIME'][0])*24
+        mjd_ave[ii] = ((this_file['TOPO_TIME'][bin_number[ii][0]]+this_file['TOPO_TIME'][bin_number[ii][1]])/2.)
 
-# J2139:    index = [[4,8], [15, 19],[28, 32],[44, 49],[67, 83],[98,113],[114,117],[118,128],[146,152]]
-#    max_phase = [69, 69, 63, 65, 90, 97, 91, 95, 5]
-
-    index = [[85,87],[88,90],[108,136],[152,155],[156,157]]
-    max_phase = [66, 66, 66, 65, -68]
-
-    bary_diff = np.zeros(len(index))
-
-    for ii in range(len(index)):
-        bary_diff[ii] = ((this_file['BARY_TIME'][index[ii][0]]+this_file['BARY_TIME'][index[ii][1]])/2. -this_file['BARY_TIME'][0])*86400
-
-    '''Try to fit'''
-
-    def func(x, a, b, c):
+    '''Try to fit a parabolic curve'''
+    def qua_func(x, a, b, c):
         return a*x**2 + b*x + c
 
-    popt, pcov = curve_fit(func, bary_diff, max_phase)
-    print popt
-    print pcov
+    n_phase_bin = 100
+    period = 0.35473179890
+    sl = np.logical_and(bary_diff > 0, bary_diff < 22000)
+    data_i = bin_number[sl,2]
+    time_i = bary_diff[sl]
+    mjd_i = mjd_ave[sl]
+    t0 = time_i[0]
+    time_i += 0
 
-    y = popt[0]*bary_diff**2 + popt[1]*bary_diff + popt[2]
+    '''Fit for delta_RA'''
+    equinox_date = ['2010-03-20T17:32:00','2011-03-20T23:21:00','2012-03-20T05:14:00','2013-03-20T11:02:00','2014-03-20T16:57:00','2015-03-20T22:45:00','2016-03-20T04:30:00','2017-03-20T10:28:00']
+    t = Time(equinox_date, format='isot', scale='utc')
+    equinox_mjd = t.mjd
+    theta_i = np.zeros(len(mjd_i))
+    for ii in range(len(theta_i)):
+        theta_i[ii] = (mjd_i[ii] - equinox_mjd[np.argmin(np.absolute(mjd_i[ii] - equinox_mjd))]) /  365.259636*2*np.pi
+
+    '''RA, theta_i and delta_RA(tpl[3]) are in degree, AU in m, c in m/s'''
+    RA = 12.875416666666666
+    AU = 149597870700.0 
+    c = 299792458.0
+
+    funcQuad=lambda tpl,time_i,data_i, theta_i : (((data_i - ( (tpl[0]*time_i**2 + tpl[1]*time_i + tpl[2]) + (-1*AU*tpl[3]/c*np.sin(RA*np.pi/180 + theta_i))*(n_phase_bin/period)) + n_phase_bin/2) % n_phase_bin - n_phase_bin/2))
+    func=funcQuad
+    rrorFunc=lambda tpl,time_i,data_i, theta_i : func(tpl,time_i,data_i, theta_i)
+    tplInitial = (1.45481356e-06,   1.75230244e-03,   1.17184459e+02,   8.29202169e-05)
+    tplFinal,success=leastsq(funcQuad,tplInitial[:],args=(time_i,data_i, theta_i))
+    print "quadratic fit: " ,tplFinal
+    print "sucess?:", success
+    print np.sum(funcQuad(tplFinal, time_i, data_i, theta_i)**2)
+
+    num_points = 2500
+    theta_fit = np.zeros(num_points)
+    mjd_range = np.linspace(np.amin(mjd_i), np.amax(mjd_i), num_points)
+    for ii in range(len(theta_fit)):
+        theta_fit[ii] = (mjd_range[ii] - equinox_mjd[np.argmin(np.absolute(mjd_range[ii] - equinox_mjd))]) /  365.259636*2*np.pi
+
+    x_axes = np.linspace(np.amin(time_i), np.amax(time_i), num_points)
+    y = ( (tplFinal[0]*x_axes**2 + tplFinal[1]*x_axes + tplFinal[2]) + (-1*AU*tplFinal[3]/c*np.sin(RA*np.pi/180 + theta_fit))*(n_phase_bin/period)) % n_phase_bin
+
+    plt.subplot(2,1,1)
+    plt.plot(time_i, data_i, 'bo')
+    plt.plot(x_axes, y, 'r--')
+    plt.xlabel('Bary diff (hours)', fontsize=14)
+    plt.ylabel('Max Phase Bins Number', fontsize=14)
+
+    plt.subplot(2,1,2)
+    plt.plot(time_i, funcQuad(tplFinal, time_i, data_i, theta_i), 'bo')
+    plt.xlabel('Bary diff (hours)', fontsize=14)
+    plt.ylabel('Phase bin residuals', fontsize=14)
+
+#    plt.show()
+    plt.savefig('phase_fit_J0051.png')
 
 
-    title = 'delta_t: '+str(delta_t)+' sec.'
-#    title = 'Pulsar: J0051+0423' 
-   
-    plt.plot(bary_diff, max_phase, 'bo')
-#    plt.axis([diff[0],diff[-1], bary[0], bary[-1]], labelsize=20)
-    plt.plot(bary_diff, y, 'r--')
-    plt.xlabel('Bary diff (sec)', fontsize=20)
-    plt.ylabel('Max Phase Bins Number', fontsize=20)
-#    plt.axis([0, 700, 0, 99])
-    plt.title(title, fontsize=20)
-    plt.show()
 
 if __name__ == '__main__':
     main()
