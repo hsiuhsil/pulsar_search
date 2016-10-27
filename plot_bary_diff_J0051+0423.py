@@ -40,7 +40,7 @@ def plot_bary_diff(filename):
 
     n_phase_bin = 100
     period = 0.35473179890
-    sl = np.logical_and(bary_diff > 0, bary_diff < 22000)
+    sl = np.logical_and(bary_diff > 0, bary_diff < 30000)
     data_i = bin_number[sl,2]
     time_i = bary_diff[sl]
     mjd_i = mjd_ave[sl]
@@ -62,12 +62,40 @@ def plot_bary_diff(filename):
 
     funcQuad=lambda tpl,time_i,data_i, theta_i : (((data_i - ( (tpl[0]*time_i**2 + tpl[1]*time_i + tpl[2]) + (-1*AU*tpl[3]/c*np.sin(RA*np.pi/180 + theta_i))*(n_phase_bin/period)) + n_phase_bin/2) % n_phase_bin - n_phase_bin/2))
     func=funcQuad
-    rrorFunc=lambda tpl,time_i,data_i, theta_i : func(tpl,time_i,data_i, theta_i)
-    tplInitial = (1.45481356e-06,   1.75230244e-03,   1.17184459e+02,   8.29202169e-05)
+    errorFunc=lambda tpl,time_i,data_i, theta_i : func(tpl,time_i,data_i, theta_i)
+#    tplInitial = (1e-06,  1e-04,   1e+02,   1e-04)
+    tplInitial = (3.90037892e-08,   1.26465336e-02,   1.10157168e+02,  -6.33537037e-07)
     tplFinal,success=leastsq(funcQuad,tplInitial[:],args=(time_i,data_i, theta_i))
     print "quadratic fit: " ,tplFinal
     print "sucess?:", success
     print np.sum(funcQuad(tplFinal, time_i, data_i, theta_i)**2)
+
+    '''Finding errors of parameters'''
+    funcQuad=lambda tpl,time_i,data_i, theta_i : (((data_i - ( (tpl[0]*time_i**2 + tpl[1]*time_i + tpl[2]) + (-1*AU*tpl[3]/c*np.sin(RA*np.pi/180 + theta_i))*(n_phase_bin/period)) + n_phase_bin/2) % n_phase_bin - n_phase_bin/2))
+    func=funcQuad
+    errorFunc=lambda tpl,time_i,data_i, theta_i : func(tpl,time_i,data_i, theta_i)
+#    tplInitial = (1e-06,  1e-04,   1e+02,   1e-04)
+    tplInitial = (3.90037892e-08,   1.26465336e-02,   1.10157168e+02,  -6.33537037e-07)
+    pfit, pcov, infodict, errmsg, success = leastsq(errorFunc, tplInitial, args=(time_i,data_i, theta_i), full_output=1, epsfcn=0.0001)
+
+    if (len(data_i) > len(tplInitial)) and pcov is not None:
+        s_sq = (errorFunc(pfit, time_i, data_i, theta_i)**2).sum()/(len(data_i)-len(tplInitial))
+        pcov = pcov * s_sq
+    else:
+        pcov = np.inf
+
+    error = [] 
+    for i in range(len(pfit)):
+        try:
+          error.append(np.absolute(pcov[i][i])**0.5)
+        except:
+          error.append( 0.00 )
+    pfit_leastsq = pfit
+    perr_leastsq = np.array(error) 
+    print("\nFit paramters and parameter errors from lestsq method :")
+    print("pfit = ", pfit_leastsq)
+    print("perr = ", perr_leastsq)
+
 
     num_points = 2500
     theta_fit = np.zeros(num_points)
