@@ -41,13 +41,13 @@ def search_pulsar(hduls, filename):
 
     '''generate sets of RA_series and DEC_series from raw data'''
     RA_series = np.ndarray(shape=(len(hduls[1].data),3),dtype=float)
-    RA_series[:,0] = np.append([0.0],hduls[1].data[:-1]['RA_SUB'])
+    RA_series[:,0] = np.append(np.nan, hduls[1].data[:-1]['RA_SUB'])
     RA_series[:,1] = hduls[1].data[:]['RA_SUB']
-    RA_series[:,2] = np.append(hduls[1].data[1:]['RA_SUB'],[0.0])
+    RA_series[:,2] = np.append(hduls[1].data[1:]['RA_SUB'], np.nan)
     DEC_series = np.ndarray(shape=(len(hduls[1].data),3),dtype=float)
-    DEC_series[:,0] = np.append([0.0],hduls[1].data[:-1]['DEC_SUB'])
+    DEC_series[:,0] = np.append(np.nan, hduls[1].data[:-1]['DEC_SUB'])
     DEC_series[:,1] = hduls[1].data[:]['DEC_SUB']
-    DEC_series[:,2] = np.append(hduls[1].data[1:]['DEC_SUB'],[0.0])
+    DEC_series[:,2] = np.append(hduls[1].data[1:]['DEC_SUB'], np.nan)
 
     '''create dataset for each pulsar location'''
     files = {} 

@@ -15,6 +15,9 @@ assert initial <= final
 
 #initial = 0
 #final = 29
+beam_model = True
+RA_source = 161.68013
+DEC_source = 3.06858
 
 do_preprocess = True
 sigma_threshold = 5
@@ -22,8 +25,8 @@ remove_period = 64
 phase_bins = 100
 
 #'''J2139 wz from folding'''
-delta_t = -5.8068471774736951e-06 -2.5301321417973068e-07 -4.2596495836139012e-07 + 2.9914132482230684e-07 
-pulsar_period = 0.312470 + delta_t
+#delta_t = -5.8068471774736951e-06 -2.5301321417973068e-07 -4.2596495836139012e-07 + 2.9914132482230684e-07 
+#pulsar_period = 0.312470 + delta_t
 #p_dot = 4.8408891115682e-11
 #p0_ind = np.int(0)
 
@@ -40,8 +43,8 @@ pulsar_period = 0.312470 + delta_t
 #pulsar_period = 0.35473179890 + delta_t
 
 # J1046: 
-#delta_t = 0.0
-#pulsar_period = 0.326271446035 + delta_t
+delta_t = 2e-08
+pulsar_period = 0.326271446035 + delta_t
 
 # J1038: 
 #delta_t = 0.0
@@ -60,6 +63,35 @@ def main():
             folding(filename)
         except (IOError, ValueError):
             print IOError
+
+def beam_weighting(input_data, ntime, nfreq, kk, total_kk, RA_sets, DEC_sets):
+    '''note: beam weighting needs data.shape in (ntime, nfreq)'''
+    output_data = np.zeros(input_data.shape)
+    data = input_data[:,0,:,0].astype(np.float64).copy()
+    freq = np.arange(900., 700., -200./nfreq)
+    sigma_nu = 0.307 + (0.245-0.307)/(900-700)*(freq-700)
+    tt = np.arange(-ntime/2.0 + 0.5, ntime/2.0 + 0.5)
+    if kk ==0:
+        RA_time = RA_sets[1] + (RA_sets[1]-RA_sets[2])/ntime*tt
+        DEC_time = DEC_sets[1] + (DEC_sets[1]-DEC_sets[2])/ntime*tt
+    elif kk == total_kk -1:
+        RA_time = RA_sets[1] + (RA_sets[1]-RA_sets[0])/ntime*tt
+        DEC_time = DEC_sets[1] + (DEC_sets[1]-DEC_sets[0])/ntime*tt
+    else:
+        RA_time_1 = RA_sets[1] + (RA_sets[1]-RA_sets[0])/ntime*tt[:ntime/2]
+        RA_time_2 = RA_sets[1] + (RA_sets[1]-RA_sets[2])/ntime*tt[ntime/2:]
+        RA_time = np.append(RA_time_1, RA_time_2)
+        DEC_time_1 = DEC_sets[1] + (DEC_sets[1]-DEC_sets[0])/ntime*tt[:ntime/2]
+        DEC_time_2 = DEC_sets[1] + (DEC_sets[1]-DEC_sets[2])/ntime*tt[ntime/2:]
+        DEC_time = np.append(DEC_time_1, DEC_time_2)
+    beam = np.zeros(data.shape, dtype=np.float64)
+    for ii in range(len(beam)):
+        beam_ii = np.exp(-((RA_source - RA_time[ii])**2 + (DEC_source - DEC_time[ii])**2) / 2 / sigma_nu**2)
+        beam[ii] = beam_ii/np.sum(beam_ii)
+    data = data*beam
+    output_data[:,0,:,0] = data
+    output_data[:,1:4,:,0] = input_data[:,1:4,:,0]
+    return output_data
 
 def time_slope(input_data):
     print "start time_slope"
@@ -91,6 +123,7 @@ def preprocessing(input_data):
 def folding(filename):
 
     this_file = h5py.File(filename, "r+")   
+    nfreq = this_file['DATA'].shape[3]
     ntime = this_file['DATA'].shape[1]
     tbin = this_file['TBIN'][0]
 
@@ -100,11 +133,8 @@ def folding(filename):
     '''collecting data which satisfies the folding condition'''
     same_modulo_num = np.zeros((phase_bins,), dtype=np.int)
     for ii in range(initial, final+1):
-#    for ii in range(len(this_file['BARY_TIME'])):
-        print 'ii = ' + str(ii)
-#        pulsar_period_ii = pulsar_period_0 + p_dot*((this_file['BARY_TIME'][ii]-this_file['BARY_TIME'][p0_ind])*86400)    
+        print 'ii = ' + str(ii)  
         sample_BAT = this_file['BARY_TIME'][ii]*86400 + np.arange(-ntime/2.0 + 0.5, ntime/2.0 + 0.5)*tbin
-#        modulo_num = np.int64(np.around((sample_BAT % pulsar_period_ii)/(pulsar_period_ii/phase_bins)))
         modulo_num = np.int64(np.around((sample_BAT % pulsar_period)/(pulsar_period / phase_bins)))
         print 'modulo_num done'
         for jj in range(len(modulo_num)):
@@ -112,12 +142,16 @@ def folding(filename):
                 modulo_num[jj] = 0
         for kk in range(len(same_modulo_num)):
             same_modulo_num[kk] += np.count_nonzero(modulo_num == kk)      
-
-        if do_preprocess == True:
-           this_record_data = preprocessing(this_file['DATA'][ii])
-           print 'preprocess done'
+        if beam_model == True:
+            this_file_data = beam_weighting(this_file['DATA'][ii], ntime, nfreq, ii, len(this_file['DATA']), this_file['RA_sets'][ii], this_file['DEC_sets'][ii])
+            print 'beam model done'
         else:
-           this_record_data = this_file['DATA'][ii]
+            this_file_data = this_file['DATA'][ii]
+        if do_preprocess == True:
+            this_record_data = preprocessing(this_file_data)
+            print 'preprocess done'
+        else:
+            this_record_data = this_file_data
 
         for ll in range(len(modulo_num)):
             data_folding[modulo_num[ll],...] += this_record_data[ll]
