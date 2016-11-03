@@ -72,11 +72,17 @@ def beam_weighting(input_data, ntime, nfreq, kk, total_kk, RA_sets, DEC_sets):
     sigma_nu = 0.307 + (0.245-0.307)/(900-700)*(freq-700)
     tt = np.arange(-ntime/2.0 + 0.5, ntime/2.0 + 0.5)
     if kk ==0:
-        RA_time = RA_sets[1] + (RA_sets[1]-RA_sets[2])/ntime*tt
-        DEC_time = DEC_sets[1] + (DEC_sets[1]-DEC_sets[2])/ntime*tt
+        if np.isnan(RA_sets[0]) == True and np.isnan(DEC_sets[0]) == True:
+            RA_time = RA_sets[1] + (RA_sets[1]-RA_sets[2])/ntime*tt
+            DEC_time = DEC_sets[1] + (DEC_sets[1]-DEC_sets[2])/ntime*tt
+        else:
+            print 'ERROR: RA_sets[0] or DEC_sets[0] is not np.NAN'
     elif kk == total_kk -1:
-        RA_time = RA_sets[1] + (RA_sets[1]-RA_sets[0])/ntime*tt
-        DEC_time = DEC_sets[1] + (DEC_sets[1]-DEC_sets[0])/ntime*tt
+        if np.isnan(RA_sets[2]) == True and np.isnan(DEC_sets[2]) == True:
+            RA_time = RA_sets[1] + (RA_sets[1]-RA_sets[0])/ntime*tt
+            DEC_time = DEC_sets[1] + (DEC_sets[1]-DEC_sets[0])/ntime*tt
+        else:
+            print 'ERROR: RA_sets[2] or DEC_sets[2] is not np.NAN'
     else:
         RA_time_1 = RA_sets[1] + (RA_sets[1]-RA_sets[0])/ntime*tt[:ntime/2]
         RA_time_2 = RA_sets[1] + (RA_sets[1]-RA_sets[2])/ntime*tt[ntime/2:]
@@ -86,12 +92,11 @@ def beam_weighting(input_data, ntime, nfreq, kk, total_kk, RA_sets, DEC_sets):
         DEC_time = np.append(DEC_time_1, DEC_time_2)
     beam = np.zeros(data.shape, dtype=np.float64)
     for ii in range(len(beam)):
-        beam_ii = np.exp(-((RA_source - RA_time[ii])**2 + (DEC_source - DEC_time[ii])**2) / 2 / sigma_nu**2)
-        beam[ii] = beam_ii/np.sum(beam_ii)
+        beam[ii] = np.exp(-((RA_source - RA_time[ii])**2 + (DEC_source - DEC_time[ii])**2) / 2 / sigma_nu**2)
     data = data*beam
     output_data[:,0,:,0] = data
     output_data[:,1:4,:,0] = input_data[:,1:4,:,0]
-    return output_data
+    return beam, output_data
 
 def time_slope(input_data):
     print "start time_slope"
@@ -182,12 +187,16 @@ def folding(filename):
                 modulo_num_topo[jj] = 0
         for kk in range(len(same_modulo_num_topo)):
             same_modulo_num_topo[kk] += np.count_nonzero(modulo_num_topo == kk)
-
-        if do_preprocess == True:
-           this_record_data_topo = preprocessing(this_file['DATA'][ii])
-           print 'preprocess done'
+        if beam_model == True:
+            this_file_data = beam_weighting(this_file['DATA'][ii], ntime, nfreq, ii, len(this_file['DATA']), this_file['RA_sets'][ii], this_file['DEC_sets'][ii])
+            print 'beam model done'
         else:
-           this_record_data_topo = this_file['DATA'][ii]
+            this_file_data = this_file['DATA'][ii]
+        if do_preprocess == True:
+            this_record_data = preprocessing(this_file_data)
+            print 'preprocess done'
+        else:
+            this_record_data = this_file_data
 
         for ll in range(len(modulo_num_topo)):
             data_folding_topo[modulo_num_topo[ll],...] += this_record_data_topo[ll]
