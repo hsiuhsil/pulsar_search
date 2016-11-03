@@ -39,6 +39,16 @@ def search_pulsar(hduls, filename):
 
     keys = hduls[1].columns.names + ['ABS_TIME'] + ['TBIN'] + ['RA_sets'] + ['DEC_sets']    
 
+    '''generate sets of RA_series and DEC_series from raw data'''
+    RA_series = np.ndarray(shape=(len(hduls[1].data),3),dtype=float)
+    RA_series[:,0] = np.append([0.0],hduls[1].data[:-1]['RA_SUB'])
+    RA_series[:,1] = hduls[1].data[:]['RA_SUB']
+    RA_series[:,2] = np.append(hduls[1].data[1:]['RA_SUB'],[0.0])
+    DEC_series = np.ndarray(shape=(len(hduls[1].data),3),dtype=float)
+    DEC_series[:,0] = np.append([0.0],hduls[1].data[:-1]['DEC_SUB'])
+    DEC_series[:,1] = hduls[1].data[:]['DEC_SUB']
+    DEC_series[:,2] = np.append(hduls[1].data[1:]['DEC_SUB'],[0.0])
+
     '''create dataset for each pulsar location'''
     files = {} 
     if os.path.isfile('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_search/J1046+0304_bmh5') == True:
@@ -86,19 +96,9 @@ def search_pulsar(hduls, filename):
                     elif dataset_name == 'TBIN':
                         files[pulsar[i][0]]['TBIN'][current_len-1,...] = hduls[1].header['TBIN']
                     elif dataset_name == 'RA_sets':
-                        if k == 0:
-                            files[pulsar[i][0]]['RA_sets'][current_len-1,...][...] = [0.0, hduls[1].data[k]['RA_SUB'], hduls[1].data[k+1]['RA_SUB']]
-                        elif k == len(hduls[1].data)-1:
-                            files[pulsar[i][0]]['RA_sets'][current_len-1,...][...] = [hduls[1].data[k-1]['RA_SUB'], hduls[1].data[k]['RA_SUB'], 0.0]
-                        else:
-                            files[pulsar[i][0]]['RA_sets'][current_len-1,...][...] = [hduls[1].data[k-1]['RA_SUB'],hduls[1].data[k]['RA_SUB'],hduls[1].data[k+1]['RA_SUB']]
+                        files[pulsar[i][0]]['RA_sets'][current_len-1,...] = RA_series[k]
                     elif dataset_name == 'DEC_sets':
-                        if k == 0:
-                            files[pulsar[i][0]]['DEC_sets'][current_len-1,...][...] = [0.0, hduls[1].data[k]['DEC_SUB'], hduls[1].data[k+1]['DEC_SUB']]
-                        elif k == len(hduls[1].data)-1:
-                            files[pulsar[i][0]]['DEC_sets'][current_len-1,...][...] = [hduls[1].data[k-1]['DEC_SUB'], hduls[1].data[k]['DEC_SUB'], 0.0]
-                        else:
-                            files[pulsar[i][0]]['DEC_sets'][current_len-1,...][...] = [hduls[1].data[k-1]['DEC_SUB'],hduls[1].data[k]['DEC_SUB'],hduls[1].data[k+1]['DEC_SUB']]
+                        files[pulsar[i][0]]['DEC_sets'][current_len-1,...] = DEC_series[k]
                     else:
                         files[pulsar[i][0]][dataset_name][current_len-1,...] = hduls[1].data[k][dataset_name]
 
