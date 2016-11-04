@@ -134,8 +134,7 @@ def folding(filename):
 
     first_data = this_file['DATA'][0][0]
     data_folding = np.zeros((phase_bins,) + first_data.shape)
-    beam_ave = np.zeros(ntime, dtype=np.float64)
-    beam_ave_phase = np.zeros(phase_bins, dtype=np.float64)
+    folding_weights = np.zeros(ntime, dtype=np.float64)
     
     '''collecting data which satisfies the folding condition'''
     same_modulo_num = np.zeros((phase_bins,), dtype=np.int)
@@ -162,18 +161,11 @@ def folding(filename):
 
         for ll in range(len(modulo_num)):
             data_folding[modulo_num[ll],...] += this_record_data[ll]
-        print 'data_folding done'
-        for ii in range(len(beam_ave)):
-            beam_ave[ii] += np.average(beam[ii])
-        print 'beam_ave done'        
-
-    for ii in range(len(beam_ave)):
-        beam_ave_phase[modulo_num[ii]] += beam_ave[ii]/np.sum(beam_ave)
-    print 'beam_ave_phase done'
+            folding_weights[modulo_num[ll]] += beam[ll]      
 
     for mm in range(len(same_modulo_num)):
         if same_modulo_num[mm] != 0:
-            data_folding[mm,...] = data_folding[mm,...]*beam_ave_phase[mm]
+            data_folding[mm,...] = data_folding[mm,...]/folding_weights[mm]
 #            data_folding[mm,...] = data_folding[mm,...]/same_modulo_num[mm]
 
     this_file.create_dataset('DATA_FOLDING', data_folding.shape, maxshape = data_folding.shape, dtype=data_folding.dtype, chunks=True)
@@ -182,8 +174,7 @@ def folding(filename):
 
     '''Data folding for topocentric time'''
     data_folding_topo = np.zeros((phase_bins,) + first_data.shape)
-    beam_ave_topo = np.zeros(ntime, dtype=np.float64)
-    beam_ave_topo_phase = np.zeros(phase_bins, dtype=np.float64)
+    folding_weights_topo = np.zeros(ntime, dtype=np.float64)
 
     '''collecting data which satisfies the folding condition'''
     same_modulo_num_topo = np.zeros((phase_bins,), dtype=np.int)
@@ -210,18 +201,11 @@ def folding(filename):
 
         for ll in range(len(modulo_num_topo)):
             data_folding_topo[modulo_num_topo[ll],...] += this_record_data_topo[ll]
-        print 'data_folding done'
-        for ii in range(len(beam_ave_topo)):
-            beam_ave_topo[ii] += np.average(beam_topo[ii])
-        print 'beam_ave done'
-
-    for ii in range(len(beam_ave_topo)):
-        beam_ave_topo_phase[modulo_num_topo[ii]] += beam_ave_topo[ii]/np.sum(beam_ave_topo)
-    print 'beam_ave_phase done'
+            folding_weights_topo[modulo_num_topo[ll]] += beam_topo[ll]
 
     for mm in range(len(same_modulo_num_topo)):
         if same_modulo_num_topo[mm] != 0:
-            data_folding_topo[mm,...] = data_folding_topo[mm,...]*beam_ave_topo_phase[mm]
+            data_folding_topo[mm,...] = data_folding_topo[mm,...]/folding_weights_topo[mm]
 
     this_file.create_dataset('DATA_FOLDING_TOPO', data_folding_topo.shape, maxshape = data_folding_topo.shape, dtype=data_folding_topo.dtype, chunks=True)
     this_file['DATA_FOLDING_TOPO'][...]=data_folding_topo[...]
