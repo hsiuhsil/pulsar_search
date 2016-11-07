@@ -161,7 +161,7 @@ def folding(filename):
 
         for ll in range(len(modulo_num)):
             data_folding[modulo_num[ll],...] += this_record_data[ll]
-            folding_weights[modulo_num[ll]] += beam[ll]      
+            folding_weights[modulo_num[ll]] += np.average(beam[ll])      
 
     for mm in range(len(same_modulo_num)):
         if same_modulo_num[mm] != 0:
@@ -201,7 +201,7 @@ def folding(filename):
 
         for ll in range(len(modulo_num_topo)):
             data_folding_topo[modulo_num_topo[ll],...] += this_record_data_topo[ll]
-            folding_weights_topo[modulo_num_topo[ll]] += beam_topo[ll]
+            folding_weights_topo[modulo_num_topo[ll]] += np.average(beam_topo[ll])
 
     for mm in range(len(same_modulo_num_topo)):
         if same_modulo_num_topo[mm] != 0:
