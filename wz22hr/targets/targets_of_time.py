@@ -24,6 +24,22 @@ def main():
         except (IOError, ValueError):
             print 'Skipped:'+ filename
 
+def search_targets_index(hduls, ra_scopes, dec_scopes):
+
+    targets_index = []    
+    for k in xrange(len(hduls[1].data)):
+        delta_ra = hduls[1].data[k]['RA_SUB'] - ra_scopes
+        delta_dec = hduls[1].data[k]['DEC_SUB'] - dec_scopes
+        distance = np.zeros(len(ra_scopes)*len(dec_scopes))
+        for ii in xrange(len(ra_scopes)):
+            distance[ii*len(dec_scopes):(ii+1)*len(dec_scopes)] = np.sqrt(delta_ra[ii]**2 + delta_dec**2)
+        if len(np.where(distance <=0.15)[0]) == 0:
+            targets_index.append([np.nan])
+        elif len(np.where(distance <=0.15)[0]) != 0:    
+            targets_index.append(np.where(distance <=0.15)[0])
+    return targets_index
+
+
 def search_targets(hduls, filename, targets, ra_scopes, dec_scopes):
 
     keys = hduls[1].columns.names + ['ABS_TIME'] + ['TBIN'] + ['RA_sets'] + ['DEC_sets']
@@ -68,30 +84,26 @@ def search_targets(hduls, filename, targets, ra_scopes, dec_scopes):
 
     '''search targets location, and copy the data to h5df file if condition matched'''
 
+    targets_index = search_targets_index(hduls, ra_scopes, dec_scopes)
+    print 'get targets_index'
+
     for k in xrange(len(hduls[1].data)):
-        delta_ra = hduls[1].data[k]['RA_SUB'] - ra_scopes
-        delta_dec = hduls[1].data[k]['DEC_SUB'] - dec_scopes
-        distance = np.zeros(len(ra_scopes)*len(dec_scopes))   
-        for ii in xrange(len(ra_scopes)):
-            distance[ii*len(dec_scopes):(ii+1)*len(dec_scopes)] = np.sqrt(delta_ra[ii]**2 + delta_dec**2)
-        targets_index = np.where(distance <=0.15)[0]
         print k
-        print targets_index
-        for jj in xrange(len(targets_index)):
+        for jj in xrange(len(targets_index[k])):
             for dataset_name in keys:
-                current_len = files[targets[targets_index[jj]][0]][dataset_name].shape[0]
-                files[targets[targets_index[jj]][0]][dataset_name].resize(current_len + 1, 0)
+                current_len = files[targets[targets_index[k][jj]][0]][dataset_name].shape[0]
+                files[targets[targets_index[k][jj]][0]][dataset_name].resize(current_len + 1, 0)
                 if dataset_name == 'ABS_TIME':
                     abs_time = hduls[0].header['STT_IMJD']*86400 + hduls[0].header['STT_SMJD'] + hduls[0].header['STT_OFFS'] + hduls[1].data[k]['OFFS_SUB']
-                    files[targets[targets_index[jj]][0]]['ABS_TIME'][current_len-1,...] = abs_time
+                    files[targets[targets_index[k][jj]][0]]['ABS_TIME'][current_len-1,...] = abs_time
                 elif dataset_name == 'TBIN':
-                    files[targets[targets_index[jj]][0]]['TBIN'][current_len-1,...] = hduls[1].header['TBIN']
+                    files[targets[targets_index[k][jj]][0]]['TBIN'][current_len-1,...] = hduls[1].header['TBIN']
                 elif dataset_name == 'RA_sets':
-                    files[targets[targets_index[jj]][0]]['RA_sets'][current_len-1,...] = RA_series[k]
+                    files[targets[targets_index[k][jj]][0]]['RA_sets'][current_len-1,...] = RA_series[k]
                 elif dataset_name == 'DEC_sets':
-                    files[targets[targets_index[jj]][0]]['DEC_sets'][current_len-1,...] = DEC_series[k]
+                    files[targets[targets_index[k][jj]][0]]['DEC_sets'][current_len-1,...] = DEC_series[k]
                 else:
-                    files[targets[targets_index[jj]][0]][dataset_name][current_len-1,...] = hduls[1].data[k][dataset_name]
+                    files[targets[targets_index[k][jj]][0]][dataset_name][current_len-1,...] = hduls[1].data[k][dataset_name]
 
 if __name__ == '__main__':
     main()
