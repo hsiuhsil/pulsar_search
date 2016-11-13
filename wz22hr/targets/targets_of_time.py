@@ -4,6 +4,7 @@ import os.path
 import h5py
 import pyfits
 import numpy as np
+import time
 
 def main():
     args = sys.argv[1:]
@@ -19,6 +20,7 @@ def main():
 
     for filename in args:
         try:
+            print filename
             hduls = pyfits.open(filename)
             search_targets(hduls, filename, targets, ra_scopes, dec_scopes)
         except (IOError, ValueError):
@@ -87,8 +89,10 @@ def search_targets(hduls, filename, targets, ra_scopes, dec_scopes):
     targets_index = search_targets_index(hduls, ra_scopes, dec_scopes)
     print 'get targets_index'
 
+    t0_time_file= time.time()
     for k in xrange(len(hduls[1].data)):
-        print k
+        print 'k= '+str(k)+', number of nearby targets: '+str(len(targets_index[k]))
+        t0_time_k = time.time()
         for jj in xrange(len(targets_index[k])):
             for dataset_name in keys:
                 current_len = files[targets[targets_index[k][jj]][0]][dataset_name].shape[0]
@@ -104,6 +108,8 @@ def search_targets(hduls, filename, targets, ra_scopes, dec_scopes):
                     files[targets[targets_index[k][jj]][0]]['DEC_sets'][current_len-1,...] = DEC_series[k]
                 else:
                     files[targets[targets_index[k][jj]][0]][dataset_name][current_len-1,...] = hduls[1].data[k][dataset_name]
+        print 'time of this k: '+str(time.time() - t0_time_k)+' sec'
+    print 'len. of this file:'+str(len(hduls[1].data))+', time of this file: '+str((time.time() - t0_time_file)/60.)+' min'
 
 if __name__ == '__main__':
     main()
