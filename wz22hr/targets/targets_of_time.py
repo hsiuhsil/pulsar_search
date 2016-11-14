@@ -10,7 +10,7 @@ def main():
     args = sys.argv[1:]
  
     space = 0.15
-    ra_scopes = np.arange(320, 330., space)
+    ra_scopes = np.arange(324.5, 325.5, space)
     dec_scopes = np.arange(-2., 2., space)
     targets = []
     for ii in xrange(len(ra_scopes)):
@@ -27,7 +27,6 @@ def main():
             print 'Skipped:'+ filename
 
 def search_targets_index(hduls, ra_scopes, dec_scopes):
-
     targets_index = []    
     for k in xrange(len(hduls[1].data)):
         delta_ra = hduls[1].data[k]['RA_SUB'] - ra_scopes
@@ -36,7 +35,7 @@ def search_targets_index(hduls, ra_scopes, dec_scopes):
         for ii in xrange(len(ra_scopes)):
             distance[ii*len(dec_scopes):(ii+1)*len(dec_scopes)] = np.sqrt(delta_ra[ii]**2 + delta_dec**2)
         if len(np.where(distance <=0.15)[0]) == 0:
-            targets_index.append([np.nan])
+            targets_index.append([])
         elif len(np.where(distance <=0.15)[0]) != 0:    
             targets_index.append(np.where(distance <=0.15)[0])
     return targets_index
@@ -58,7 +57,7 @@ def search_targets(hduls, filename, targets, ra_scopes, dec_scopes):
 
     '''create dataset for each target location'''
     files = {}
-    if os.path.isfile('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/wz22hr/targets/RA_329.9_DEC_-0.05h5') == True:
+    if os.path.isfile('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/wz22hr/targets/RA_324.5_DEC_0.5h5') == True:
         for i in xrange(len(targets)):
             files[targets[i][0]] = h5py.File(targets[i][0] + 'h5',"r+")
     else:
@@ -91,24 +90,27 @@ def search_targets(hduls, filename, targets, ra_scopes, dec_scopes):
 
     t0_time_file= time.time()
     for k in xrange(len(hduls[1].data)):
-        print 'k= '+str(k)+', number of nearby targets: '+str(len(targets_index[k]))
+        print 'k= ' +str(k) +', targets: ', targets_index[k]
         t0_time_k = time.time()
-        for jj in xrange(len(targets_index[k])):
-            for dataset_name in keys:
-                current_len = files[targets[targets_index[k][jj]][0]][dataset_name].shape[0]
-                files[targets[targets_index[k][jj]][0]][dataset_name].resize(current_len + 1, 0)
-                if dataset_name == 'ABS_TIME':
-                    abs_time = hduls[0].header['STT_IMJD']*86400 + hduls[0].header['STT_SMJD'] + hduls[0].header['STT_OFFS'] + hduls[1].data[k]['OFFS_SUB']
-                    files[targets[targets_index[k][jj]][0]]['ABS_TIME'][current_len-1,...] = abs_time
-                elif dataset_name == 'TBIN':
-                    files[targets[targets_index[k][jj]][0]]['TBIN'][current_len-1,...] = hduls[1].header['TBIN']
-                elif dataset_name == 'RA_sets':
-                    files[targets[targets_index[k][jj]][0]]['RA_sets'][current_len-1,...] = RA_series[k]
-                elif dataset_name == 'DEC_sets':
-                    files[targets[targets_index[k][jj]][0]]['DEC_sets'][current_len-1,...] = DEC_series[k]
-                else:
-                    files[targets[targets_index[k][jj]][0]][dataset_name][current_len-1,...] = hduls[1].data[k][dataset_name]
-        print 'time of this k: '+str(time.time() - t0_time_k)+' sec'
+        if len(targets_index[k]) == 0:
+            print 'a nearby target is nan'
+        else:
+            for jj in xrange(len(targets_index[k])):
+                for dataset_name in keys:
+                    current_len = files[targets[targets_index[k][jj]][0]][dataset_name].shape[0]
+                    files[targets[targets_index[k][jj]][0]][dataset_name].resize(current_len + 1, 0)
+                    if dataset_name == 'ABS_TIME':
+                        abs_time = hduls[0].header['STT_IMJD']*86400 + hduls[0].header['STT_SMJD'] + hduls[0].header['STT_OFFS'] + hduls[1].data[k]['OFFS_SUB']
+                        files[targets[targets_index[k][jj]][0]]['ABS_TIME'][current_len-1,...] = abs_time
+                    elif dataset_name == 'TBIN':
+                        files[targets[targets_index[k][jj]][0]]['TBIN'][current_len-1,...] = hduls[1].header['TBIN']
+                    elif dataset_name == 'RA_sets':
+                        files[targets[targets_index[k][jj]][0]]['RA_sets'][current_len-1,...] = RA_series[k]
+                    elif dataset_name == 'DEC_sets':
+                        files[targets[targets_index[k][jj]][0]]['DEC_sets'][current_len-1,...] = DEC_series[k]
+                    else:
+                        files[targets[targets_index[k][jj]][0]][dataset_name][current_len-1,...] = hduls[1].data[k][dataset_name]
+            print 'time of this k: '+str(time.time() - t0_time_k)+' sec'
     print 'len. of this file:'+str(len(hduls[1].data))+', time of this file: '+str((time.time() - t0_time_file)/60.)+' min'
 
 if __name__ == '__main__':
