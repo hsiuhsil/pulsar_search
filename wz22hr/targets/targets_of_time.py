@@ -42,7 +42,7 @@ def search_targets_index(hduls, ra_scopes, dec_scopes):
 
 
 def search_targets(hduls, filename, targets, ra_scopes, dec_scopes):
-
+    t0_time_line45 = time.time()
     keys = hduls[1].columns.names + ['ABS_TIME'] + ['TBIN'] + ['RA_sets'] + ['DEC_sets']
 
     '''generate sets of RA_series and DEC_series from raw data'''
@@ -66,19 +66,19 @@ def search_targets(hduls, filename, targets, ra_scopes, dec_scopes):
             for dataset_name in keys:
                 if dataset_name == 'ABS_TIME':
                     first_data = hduls[1].data[0]['OFFS_SUB']
-                    this_file.create_dataset(dataset_name, (0,) + first_data.shape, maxshape = (None,) +first_data.shape, dtype=first_data.dtype, chunks=True)
+                    this_file.create_dataset(dataset_name, (1,) + first_data.shape, maxshape = (None,) +first_data.shape, dtype=first_data.dtype, chunks=True)
                 elif dataset_name == 'TBIN':
                     first_data = hduls[1].data[0]['TSUBINT']
-                    this_file.create_dataset(dataset_name, (0,) + first_data.shape, maxshape = (None,) +first_data.shape, dtype=first_data.dtype, chunks=True)
+                    this_file.create_dataset(dataset_name, (1,) + first_data.shape, maxshape = (None,) +first_data.shape, dtype=first_data.dtype, chunks=True)
                 elif dataset_name == 'RA_sets':
                     first_data = np.array([hduls[1].data[0]['RA_SUB'], hduls[1].data[0]['RA_SUB'], hduls[1].data[0]['RA_SUB']])
-                    this_file.create_dataset(dataset_name, (0,) + first_data.shape, maxshape = (None,) +first_data.shape, dtype=first_data.dtype, chunks=True)
+                    this_file.create_dataset(dataset_name, (1,) + first_data.shape, maxshape = (None,) +first_data.shape, dtype=first_data.dtype, chunks=True)
                 elif dataset_name == 'DEC_sets':
                     first_data = np.array([hduls[1].data[0]['DEC_SUB'], hduls[1].data[0]['DEC_SUB'], hduls[1].data[0]['DEC_SUB']])
-                    this_file.create_dataset(dataset_name, (0,) + first_data.shape, maxshape = (None,) +first_data.shape, dtype=first_data.dtype, chunks=True)
+                    this_file.create_dataset(dataset_name, (1,) + first_data.shape, maxshape = (None,) +first_data.shape, dtype=first_data.dtype, chunks=True)
                 else:
                     first_data = hduls[1].data[0][dataset_name]
-                    this_file.create_dataset(dataset_name, (0,) + first_data.shape, maxshape = (None,) +first_data.shape, dtype=first_data.dtype, chunks=True)
+                    this_file.create_dataset(dataset_name, (1,) + first_data.shape, maxshape = (None,) +first_data.shape, dtype=first_data.dtype, chunks=True)
             files[targets[i][0]] = this_file
 
     print 'done create/write initial h5py files.'
@@ -87,7 +87,7 @@ def search_targets(hduls, filename, targets, ra_scopes, dec_scopes):
 
     targets_index = search_targets_index(hduls, ra_scopes, dec_scopes)
     print 'get targets_index'
-
+    print 'time of line 45-90: '+str(time.time() - t0_time_line45)+' sec'
     t0_time_file= time.time()
     for k in xrange(len(hduls[1].data)):
         print 'k= ' +str(k) +', targets: ', targets_index[k]
@@ -95,12 +95,13 @@ def search_targets(hduls, filename, targets, ra_scopes, dec_scopes):
         if len(targets_index[k]) == 0:
             print 'a nearby target is nan'
         else:
+            record = hduls[1].data[k]
             for jj in xrange(len(targets_index[k])):
                 for dataset_name in keys:
                     current_len = files[targets[targets_index[k][jj]][0]][dataset_name].shape[0]
                     files[targets[targets_index[k][jj]][0]][dataset_name].resize(current_len + 1, 0)
                     if dataset_name == 'ABS_TIME':
-                        abs_time = hduls[0].header['STT_IMJD']*86400 + hduls[0].header['STT_SMJD'] + hduls[0].header['STT_OFFS'] + hduls[1].data[k]['OFFS_SUB']
+                        abs_time = hduls[0].header['STT_IMJD']*86400 + hduls[0].header['STT_SMJD'] + hduls[0].header['STT_OFFS'] + record['OFFS_SUB']
                         files[targets[targets_index[k][jj]][0]]['ABS_TIME'][current_len-1,...] = abs_time
                     elif dataset_name == 'TBIN':
                         files[targets[targets_index[k][jj]][0]]['TBIN'][current_len-1,...] = hduls[1].header['TBIN']
@@ -109,7 +110,7 @@ def search_targets(hduls, filename, targets, ra_scopes, dec_scopes):
                     elif dataset_name == 'DEC_sets':
                         files[targets[targets_index[k][jj]][0]]['DEC_sets'][current_len-1,...] = DEC_series[k]
                     else:
-                        files[targets[targets_index[k][jj]][0]][dataset_name][current_len-1,...] = hduls[1].data[k][dataset_name]
+                        files[targets[targets_index[k][jj]][0]][dataset_name][current_len-1,...] = record[dataset_name]
             print 'time of this k: '+str(time.time() - t0_time_k)+' sec'
     print 'len. of this file:'+str(len(hduls[1].data))+', time of this file: '+str((time.time() - t0_time_file)/60.)+' min'
 
