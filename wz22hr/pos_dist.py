@@ -8,6 +8,7 @@ this_file = h5py.File('positionsh5', "r")
 x = this_file['POS'][:-1,0]
 y = this_file['POS'][:-1,1]
 plt.scatter(x, y)
+plt.axis((343,353,14.78,14.83))
 plt.xlabel('RA (degs)', fontsize=14)
 plt.ylabel('DEC (degs)', fontsize=14)
 plt.savefig('wz_pos.png')

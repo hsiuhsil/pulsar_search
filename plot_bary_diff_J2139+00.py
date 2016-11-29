@@ -70,7 +70,7 @@ def plot_bary_diff(filename):
     funcQuad=lambda tpl,time_i,data_i, theta_i : (((data_i - ( (tpl[0]*time_i**2 + tpl[1]*time_i + tpl[2]) + (-1*AU*tpl[3]/c*np.sin(RA*np.pi/180 + theta_i))*(n_phase_bin/period)) + n_phase_bin/2) % n_phase_bin - n_phase_bin/2))
     func=funcQuad
     errorFunc=lambda tpl,time_i,data_i, theta_i : func(tpl,time_i,data_i, theta_i)
-    tplInitial = (1e-02, 3e+01,  1e+02, 1e-05)
+    tplInitial = (1e-03, 3e+02,  1e+02, 1e-05)
     tplFinal,success=leastsq(funcQuad,tplInitial[:],args=(time_i,data_i, theta_i))
     print "quadratic fit: " ,tplFinal
     print "sucess?:", success

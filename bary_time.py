@@ -96,6 +96,8 @@ def find_topo_bary(filename):
     first_data = this_file['ABS_TIME'][0]
     this_file.create_dataset('BARY_TIME', (0,) + first_data.shape, maxshape = (None,) +first_data.shape, dtype=first_data.dtype, chunks=True)
     this_file.create_dataset('TOPO_TIME', (0,) + first_data.shape, maxshape = (None,) +first_data.shape, dtype=first_data.dtype, chunks=True)
+    this_file.create_dataset('dBATdra', (0,) + first_data.shape, maxshape = (None,) +first_data.shape, dtype=first_data.dtype, chunks=True)
+    this_file.create_dataset('dBATddec', (0,) + first_data.shape, maxshape = (None,) +first_data.shape, dtype=first_data.dtype, chunks=True)
 
     for ii in range(len(this_file['ABS_TIME'])-1):
         print ii
@@ -108,8 +110,8 @@ def find_topo_bary(filename):
 #        RA = deg_to_HMS(324.92817)
 #        DEC = deg_to_DMS(0.60222)
         '''J2139+00, atnf'''
-#        RA = str("+21:39:46")
-#        DEC = str("+00:36:00")
+        RA = str("+21:39:46")
+        DEC = str("+00:36:00")
         '''J0030+0451'''
 #        RA = str('00:30:27.42823')
 #        DEC = str('+04:51:39.7112')
@@ -122,15 +124,35 @@ def find_topo_bary(filename):
         '''J1046+0304'''
 #        RA = str('10:46:43.23')
 #        DEC = str('+03:04:06.9')
+
+        RA1 = deg_to_HMS(convHMS(RA)+0.1)
+        DEC1 = deg_to_DMS(convDMS(DEC)+0.1)
+  
         topo_time = repr(this_file['ABS_TIME'][ii]/86400)
         p = subprocess.Popen(["bary", "GBT", RA, DEC], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        bary_time = p.communicate(input=topo_time)[0].split()[1]
+        BAT = p.communicate(input=topo_time)[0].split()[1]
+
+        p_ra1 = subprocess.Popen(["bary", "GBT", RA1, DEC], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        BAT_ra1 = p_ra1.communicate(input=topo_time)[0].split()[1]
+        dBATdra = str((np.float64(BAT_ra1) - np.float64(BAT)) / 0.1)
+
+        p_dec1 = subprocess.Popen(["bary", "GBT", RA, DEC1], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        BAT_dec1 = p_dec1.communicate(input=topo_time)[0].split()[1]
+        dBATddec = str((np.float64(BAT_dec1) - np.float64(BAT)) / 0.1)
+
         current_len_topo = this_file['TOPO_TIME'].shape[0]
         current_len_bary = this_file['BARY_TIME'].shape[0]
+        current_len_dBATdra = this_file['dBATdra'].shape[0]
+        current_len_dBATddec = this_file['dBATddec'].shape[0]
+
         this_file['TOPO_TIME'].resize(current_len_topo + 1, 0)
         this_file['TOPO_TIME'][ii] = np.float64(topo_time)
         this_file['BARY_TIME'].resize(current_len_bary + 1, 0)
-        this_file['BARY_TIME'][ii] = np.float64(bary_time)
-  
+        this_file['BARY_TIME'][ii] = np.float64(BAT)
+        this_file['dBATdra'].resize(current_len_dBATdra + 1, 0)
+        this_file['dBATdra'][ii] = np.float64(dBATdra)
+        this_file['dBATddec'].resize(current_len_dBATddec + 1, 0)
+        this_file['dBATddec'][ii] = np.float64(dBATddec)
+
 if __name__ == '__main__':
     main()
