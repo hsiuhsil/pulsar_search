@@ -97,7 +97,7 @@ def models_plot(time_mjd, dBATdra, dBATddec, filename, time_range=None):
     for ii in range(len(theta)):
         theta[ii] = (time_mjd[ii] - equinox_mjd[np.argmin(np.absolute(time_mjd[ii] - equinox_mjd))]) /  365.259636*2*np.pi
 
-    old_RA = (NPHASEBIN / T) * (-1*AU/C*np.sin(RA*np.pi/180 + theta))
+    old_RA = (NPHASEBIN / T) * (np.sin(RA*np.pi/180 + theta))
     new_RA = (NPHASEBIN / T) * dBATdra 
     new_DEC = (NPHASEBIN / T) * dBATddec
 
