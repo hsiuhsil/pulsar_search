@@ -97,12 +97,19 @@ def models_plot(time_mjd, dBATdra, dBATddec, filename, time_range=None):
     for ii in range(len(theta)):
         theta[ii] = (time_mjd[ii] - equinox_mjd[np.argmin(np.absolute(time_mjd[ii] - equinox_mjd))]) /  365.259636*2*np.pi
 
-    old_RA = (NPHASEBIN / T) * (np.sin(RA*np.pi/180 + theta))
-    new_RA = (NPHASEBIN / T) * dBATdra 
-    new_DEC = (NPHASEBIN / T) * dBATddec
+    old_RA = (NPHASEBIN / T) * (-AU / C * np.sin(RA*np.pi/180 + theta))
+    new_RA = (NPHASEBIN / T) * dBATdra * 180 / np.pi # unit is bins/rad
+    new_DEC = (NPHASEBIN / T) * dBATddec * 180 / np.pi # unit is bins/rad
 
+    plt.subplot(2,1,1)
     plt.plot(transform_time(time_mjd), old_RA, 'r--')
     plt.plot(transform_time(time_mjd), new_RA, 'bo')
+    plt.xlabel('Bary diff (hours)', fontsize=14)
+    plt.ylabel('Quantities', fontsize=14)
+    plt.xlim(transform_time(time_range[0]), transform_time(time_range[1]))
+
+    plt.subplot(2,1,2)
+    plt.plot(transform_time(time_mjd), old_RA, 'r--')
     plt.plot(transform_time(time_mjd), new_DEC, 'g^')
     plt.xlabel('Bary diff (hours)', fontsize=14)
     plt.ylabel('Quantities', fontsize=14)
@@ -234,7 +241,10 @@ def plot_bary_diff(filename):
     perr_leastsq_1 = np.array(error_1)
 
     models_plot(time_mjd, dBATdra, dBATddec,
-                   'models.png')
+                   'models1.png', (untrans_time(-500), untrans_time(1800)))
+    plt.figure()
+    models_plot(time_mjd, dBATdra, dBATddec,
+                   'models2.png', (untrans_time(33300), untrans_time(34500)))
     plt.figure()
     make_save_plot(pars_init_0, time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl],
                    'phase_fit_J2139_init.png')
