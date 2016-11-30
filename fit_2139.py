@@ -22,11 +22,12 @@ def main():
             print IOError
 
 
-RA = 324.92817083333335  # deg
+RA = 324.94166666666666  # deg
+DEC = 0.6 # deg
 AU = 149597870700.0      # m
 C = 299792458.0    # m/s
 NPHASEBIN = 100
-T = 0.31246381331597484
+T = 0.312470
 
 TIME0 = 55707.   # MJD pivot
 
