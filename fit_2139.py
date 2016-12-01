@@ -98,8 +98,8 @@ def models_plot(time_mjd, dBATdra, dBATddec, filename, time_range=None):
         theta[ii] = (time_mjd[ii] - equinox_mjd[np.argmin(np.absolute(time_mjd[ii] - equinox_mjd))]) /  365.259636*2*np.pi
 
     old_RA = (NPHASEBIN / T) * (-AU / C * np.sin(RA*np.pi/180 + theta))
-    new_RA = (NPHASEBIN / T) * dBATdra * 180 / np.pi # unit is bins/rad
-    new_DEC = (NPHASEBIN / T) * dBATddec * 180 / np.pi # unit is bins/rad
+    new_RA = (NPHASEBIN / T) * dBATdra * 86400 * 180 / np.pi # unit is bins/rad
+    new_DEC = (NPHASEBIN / T) * dBATddec * 86400 * 180 / np.pi # unit is bins/rad
 
     plt.subplot(2,1,1)
     plt.plot(transform_time(time_mjd), old_RA, 'r--')
