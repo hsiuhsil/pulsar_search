@@ -78,7 +78,7 @@ def timing_model_1(parameters, time_mjd, dBATdra, dBATddec):
     return out1
 
 def residuals_1(parameters, time_mjd, dBATdra, dBATddec, phase_data):
-    model_1 = timing_model_0(parameters, time_mjd, dBATdra, dBATddec)
+    model_1 = timing_model_1(parameters, time_mjd, dBATdra, dBATddec)
 
     res_1 = phase_data - model_1
     res_1 = (res_1 + NPHASEBIN / 2.) % NPHASEBIN - NPHASEBIN / 2.
@@ -189,7 +189,7 @@ def plot_bary_diff(filename):
 #    pars_init = [-2.64945272e-04,  -2.67567634e-05,   6.00008687e+07,   1.63424988e-02]
 #    pars_init = [-2.64144193e-04,  -6.94531273e-06,   6.00008685e+07,   1.63407963e-02]
     pars_init_0 = [-3.67893666e-07,  -1.63144225e+00,  -1.10469531e+02,   8.00704363e-04]
-    pars_init_1 = [-3.67893901e-07,  -1.63144224e+00,  -1.04695562e+01,   8.00704202e-04, 1.00000000e-04 ]
+    pars_init_1 = [-3.59558205e-07,  -1.63174749e+00,  -5.40254920e+00,   8.54828795e-04, 4.39935479e-05 ]
     p = [ -7.35e-7, -1.63079989e+00,  -1.13336394e+02,   7.82201828e-04] 
 #    pars_init = [2.23877409e-02,  -2.03966527e-03,   5.99999848e+07, 5e-02]
 #    pars_init = [ 1.4e-06,  2.12513909e+01,   8.65355252e+01,  -1e-04, -1e-04]
@@ -264,7 +264,7 @@ def plot_bary_diff(filename):
     plt.figure()
     make_save_plot(pars_init_0, 'model_0', 'res_0', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl],
             'old_phase_fit_J2139_zoom2.png',
-            (untrans_time(30000), untrans_time(36000)))
+            (untrans_time(33400), untrans_time(34400)))
     plt.figure()
     make_save_plot(fit_pars_0, 'model_0', 'res_0', time_mjd, dBATdra, dBATddec,  phase_data, 'old_phase_fit_J2139_all.png')
 
@@ -278,7 +278,7 @@ def plot_bary_diff(filename):
     plt.figure()
     make_save_plot(pars_init_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl],
             'new_phase_fit_J2139_zoom2.png',
-            (untrans_time(30000), untrans_time(36000)))
+            (untrans_time(33400), untrans_time(34400)))
     plt.figure()
     make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd, dBATdra, dBATddec,  phase_data, 'new_phase_fit_J2139_all.png')
 
