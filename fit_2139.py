@@ -117,25 +117,30 @@ def models_plot(time_mjd, dBATdra, dBATddec, filename, time_range=None):
 
     plt.savefig(filename)
 
-def make_save_plot(parameters, time, dBATdra, dBATddec, data, filename, time_range=None):
+def make_save_plot(parameters, model, res, time, dBATdra, dBATddec, data, filename, time_range=None):
     
     if time_range is None:
         time_range = (time[0], time[-1])
 
     num_points = len(time)
     model_time = np.linspace(time_range[0], time_range[1], num_points)
-    model_0 = timing_model_0(parameters, model_time, dBATdra, dBATddec)
-    res_0 = residuals_0(parameters, time, dBATdra, dBATddec, data)
+
+    if model == 'model_0' and res == 'res_0':
+        model = timing_model_0(parameters, model_time, dBATdra, dBATddec)
+        res = residuals_0(parameters, time, dBATdra, dBATddec, data)
+    elif model == 'model_1' and res == 'res_1':
+        model = timing_model_1(parameters, model_time, dBATdra, dBATddec)
+        res = residuals_1(parameters, time, dBATdra, dBATddec, data)
 
     plt.subplot(2,1,1)
     plt.plot(transform_time(time), data, 'bo')
-    plt.plot(transform_time(model_time), model_0, 'r--')
+    plt.plot(transform_time(model_time), model, 'r--')
     plt.xlabel('Bary diff (hours)', fontsize=14)
     plt.ylabel('Max Phase Bins Number', fontsize=14)
     plt.xlim(transform_time(time_range[0]), transform_time(time_range[1]))
 
     plt.subplot(2,1,2)
-    plt.plot(transform_time(time), res_0, 'bo')
+    plt.plot(transform_time(time), res, 'bo')
     plt.xlim(transform_time(time_range[0]), transform_time(time_range[1]))
     if len(time_range) > 2:
         plt.ylim(time_range[2], time_range[3])
@@ -183,9 +188,9 @@ def plot_bary_diff(filename):
 #    pars_init = [-9.60440821e-05,  -2.35686254e-05,   6.00008602e+07,   1.62330135e-02]
 #    pars_init = [-2.64945272e-04,  -2.67567634e-05,   6.00008687e+07,   1.63424988e-02]
 #    pars_init = [-2.64144193e-04,  -6.94531273e-06,   6.00008685e+07,   1.63407963e-02]
-    pars_init_0 = [1e-8 , -1.63253303e+00,  -1.07085707e+02,   1e-03]
-    pars_init_1 = [1e-8 , -1.63289654e+00,  -1e-2,   8.31833155e-04 ,  1.00000000e-04 ]
-    
+    pars_init_0 = [-3.67893666e-07,  -1.63144225e+00,  -1.10469531e+02,   8.00704363e-04]
+    pars_init_1 = [-3.67893901e-07,  -1.63144224e+00,  -1.04695562e+01,   8.00704202e-04, 1.00000000e-04 ]
+    p = [ -7.35e-7, -1.63079989e+00,  -1.13336394e+02,   7.82201828e-04] 
 #    pars_init = [2.23877409e-02,  -2.03966527e-03,   5.99999848e+07, 5e-02]
 #    pars_init = [ 1.4e-06,  2.12513909e+01,   8.65355252e+01,  -1e-04, -1e-04]
     #pars_init = [  2.12388508e+01,   7.65860533e+01,   4.56920031e-04]
@@ -246,33 +251,36 @@ def plot_bary_diff(filename):
     models_plot(time_mjd, dBATdra, dBATddec,
                    'models2.png', (untrans_time(33300), untrans_time(34500)))
     plt.figure()
-    make_save_plot(pars_init_0, time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl],
+    make_save_plot(p, 'model_0', 'res_0', time_mjd, dBATdra, dBATddec, phase_data,
+                   'guess.png', (untrans_time(33300), untrans_time(34500)))
+    plt.figure()
+    make_save_plot(pars_init_0, 'model_0', 'res_0', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl],
                    'old_phase_fit_J2139_init.png')
     plt.figure()
-    make_save_plot(fit_pars_0, time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl], 'old_phase_fit_J2139.png')
+    make_save_plot(fit_pars_0, 'model_0', 'res_0', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl], 'old_phase_fit_J2139.png')
     plt.figure()
-    make_save_plot(fit_pars_0, time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl], 'old_phase_fit_J2139_zoom.png',
+    make_save_plot(fit_pars_0, 'model_0', 'res_0', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl], 'old_phase_fit_J2139_zoom.png',
             (untrans_time(-500), untrans_time(1500)))
     plt.figure()
-    make_save_plot(pars_init_0, time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl],
+    make_save_plot(pars_init_0, 'model_0', 'res_0', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl],
             'old_phase_fit_J2139_zoom2.png',
-            (untrans_time(33500), untrans_time(33600)))
+            (untrans_time(30000), untrans_time(36000)))
     plt.figure()
-    make_save_plot(fit_pars_0, time_mjd, dBATdra, dBATddec,  phase_data, 'old_phase_fit_J2139_all.png')
+    make_save_plot(fit_pars_0, 'model_0', 'res_0', time_mjd, dBATdra, dBATddec,  phase_data, 'old_phase_fit_J2139_all.png')
 
-    make_save_plot(pars_init_1, time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl],
+    make_save_plot(pars_init_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl],
                    'new_phase_fit_J2139_init.png')
     plt.figure()
-    make_save_plot(fit_pars_1, time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl], 'new_phase_fit_J2139.png')
+    make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl], 'new_phase_fit_J2139.png')
     plt.figure()
-    make_save_plot(fit_pars_1, time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl], 'new_phase_fit_J2139_zoom.png',
+    make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl], 'new_phase_fit_J2139_zoom.png',
             (untrans_time(-500), untrans_time(1500)))
     plt.figure()
-    make_save_plot(pars_init_1, time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl],
+    make_save_plot(pars_init_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl],
             'new_phase_fit_J2139_zoom2.png',
-            (untrans_time(33500), untrans_time(33600)))
+            (untrans_time(30000), untrans_time(36000)))
     plt.figure()
-    make_save_plot(fit_pars_1, time_mjd, dBATdra, dBATddec,  phase_data, 'new_phase_fit_J2139_all.png')
+    make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd, dBATdra, dBATddec,  phase_data, 'new_phase_fit_J2139_all.png')
 
 
 if __name__ == '__main__':
