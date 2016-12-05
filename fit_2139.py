@@ -172,24 +172,9 @@ def plot_bary_diff(filename):
     #fit_range = (untrans_time(-1200), untrans_time(1800))
     sl = np.logical_and(time_mjd > fit_range[0], time_mjd < fit_range[1])
 
- 
-    #pars_init = (1e-06,  20.,   10.,   1e-04)
-    #pars_init = [  8.35502582e-03,  -2.68046236e+01,  -3.85750551e+04,  -4.83510862e-01]
-    #pars_init =  [  1.59790741e-03,   1.29654764e+01,  -6.58168024e+03, -8.29025454e-02]
-    #pars_init = [  1.00413585e-03,   1.58649897e+01,  -4.24531396e+03,  -5.36469976e-02]
-    #pars_init = [  3.41365396e-04,   1.93681348e+01,  -1.42306322e+03,  -1.83065288e-02]
-    #pars_init = [  9.39658241e-06,   2.12734451e+01,   1.08429609e+02,   8.70694138e-04]
-    #pars_init = [  1.33857708e-05,   2.12558751e+01,   9.41132616e+01,   6.91371967e-04]
-#    pars_init = [  2.10776559e+01,  -5.13073206e+01,  -1.12983346e-03]
-#    pars_init = [  2.11259893e+01,  -1.29592052e+01,  -6.54054280e-04]
-#    pars_init = [  2.11573398e+01,   1.19145923e+01,  -3.45448859e-04]
-#    pars_init = [  2.11886901e+01,   3.67880992e+01,  -3.68471222e-05]
-#    pars_init = [ 1.3e-02, 2e-03,   6e+07,  5e-03]
-#    pars_init = [-9.60440821e-05,  -2.35686254e-05,   6.00008602e+07,   1.62330135e-02]
-#    pars_init = [-2.64945272e-04,  -2.67567634e-05,   6.00008687e+07,   1.63424988e-02]
-#    pars_init = [-2.64144193e-04,  -6.94531273e-06,   6.00008685e+07,   1.63407963e-02]
-    pars_init_0 = [-3.67893666e-07,  -1.63144225e+00,  -1.10469531e+02,   8.00704363e-04]
-    pars_init_1 = [-3.59558205e-07,  -1.63174749e+00,  -5.40254920e+00,   8.54828795e-04, 4.39935479e-05 ]
+    n = -18
+    pars_init_0 = [-3.67893666e-07,  -1.63144225e+00 + n*3e-3,  -1.10469531e+02,   8.00704363e-04]
+    pars_init_1 = [1.09332142e-07,  -1.63174707e+00 + n*3e-3, 2.00921131e+01,   1.59071053e-03, -1.40983829e-03 ]
     p = [ -7.35e-7, -1.63079989e+00,  -1.13336394e+02,   7.82201828e-04] 
 #    pars_init = [2.23877409e-02,  -2.03966527e-03,   5.99999848e+07, 5e-02]
 #    pars_init = [ 1.4e-06,  2.12513909e+01,   8.65355252e+01,  -1e-04, -1e-04]
@@ -197,7 +182,7 @@ def plot_bary_diff(filename):
 
     '''parameters for old RA correction'''
     fit_pars_0, pcov_0, infodict_0, errmsg_0, success_0 = leastsq(residuals_0, pars_init_0,
-            args=(time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl]), full_output=1)
+            args=(time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl]), xtol = 1e-6, ftol=1e-6, full_output=1)
     print "Fit parameters: ", fit_pars_0
     print "sucess?:", success_0
     print "Chi-squared: ", np.sum(residuals_0(fit_pars_0, time_mjd[sl], dBATdra[sl], dBATddec[sl],
@@ -222,7 +207,7 @@ def plot_bary_diff(filename):
 
     '''parameters for new RA correction'''
     fit_pars_1, pcov_1, infodict_1, errmsg_1, success_1 = leastsq(residuals_1, pars_init_1,
-            args=(time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl]), full_output=1)
+            args=(time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl]), xtol = 1e-6, ftol=1e-6, full_output=1)
     print "Fit parameters: ", fit_pars_1
     print "sucess?:", success_1
     print "Chi-squared: ", np.sum(residuals_1(fit_pars_1, time_mjd[sl], dBATdra[sl], dBATddec[sl],
@@ -245,6 +230,11 @@ def plot_bary_diff(filename):
     pfit_leastsq_1 = fit_pars_1
     perr_leastsq_1 = np.array(error_1)
 
+    print("\nFit paramters and parameter errors from lestsq method :")
+    print("pfit = ", pfit_leastsq_1)
+    print("perr = ", perr_leastsq_1)
+
+
     models_plot(time_mjd, dBATdra, dBATddec,
                    'models1.png', (untrans_time(-500), untrans_time(1800)))
     plt.figure()
@@ -254,7 +244,7 @@ def plot_bary_diff(filename):
     make_save_plot(p, 'model_0', 'res_0', time_mjd, dBATdra, dBATddec, phase_data,
                    'guess.png', (untrans_time(33300), untrans_time(34500)))
     plt.figure()
-    make_save_plot(pars_init_0, 'model_0', 'res_0', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl],
+    make_save_plot(fit_pars_0, 'model_0', 'res_0', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl],
                    'old_phase_fit_J2139_init.png')
     plt.figure()
     make_save_plot(fit_pars_0, 'model_0', 'res_0', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl], 'old_phase_fit_J2139.png')
@@ -262,13 +252,13 @@ def plot_bary_diff(filename):
     make_save_plot(fit_pars_0, 'model_0', 'res_0', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl], 'old_phase_fit_J2139_zoom.png',
             (untrans_time(-500), untrans_time(1500)))
     plt.figure()
-    make_save_plot(pars_init_0, 'model_0', 'res_0', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl],
+    make_save_plot(fit_pars_0, 'model_0', 'res_0', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl],
             'old_phase_fit_J2139_zoom2.png',
             (untrans_time(33400), untrans_time(34400)))
     plt.figure()
     make_save_plot(fit_pars_0, 'model_0', 'res_0', time_mjd, dBATdra, dBATddec,  phase_data, 'old_phase_fit_J2139_all.png')
 
-    make_save_plot(pars_init_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl],
+    make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl],
                    'new_phase_fit_J2139_init.png')
     plt.figure()
     make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl], 'new_phase_fit_J2139.png')
@@ -276,7 +266,7 @@ def plot_bary_diff(filename):
     make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl], 'new_phase_fit_J2139_zoom.png',
             (untrans_time(-500), untrans_time(1500)))
     plt.figure()
-    make_save_plot(pars_init_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl],
+    make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl],
             'new_phase_fit_J2139_zoom2.png',
             (untrans_time(33400), untrans_time(34400)))
     plt.figure()
