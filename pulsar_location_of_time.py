@@ -37,7 +37,7 @@ def search_pulsar(hduls, filename):
              ]
     """ pulsar[i][0] is pulsar's name, pulsar[i][1] is its ra, and  pulsar[i][2] is its dec."""
 
-    keys = hduls[1].columns.names + ['ABS_TIME'] + ['TBIN'] + ['RA_sets'] + ['DEC_sets']    
+    keys = hduls[1].columns.names + ['ABS_TIME'] + ['TBIN'] + ['OBSFREQ'] + ['OBSBW'] + ['RA_sets'] + ['DEC_sets']    
 
     '''generate sets of RA_series and DEC_series from raw data'''
     RA_series = np.ndarray(shape=(len(hduls[1].data),3),dtype=float)
@@ -63,6 +63,12 @@ def search_pulsar(hduls, filename):
                     this_file.create_dataset(dataset_name, (0,) + first_data.shape, maxshape = (None,) +first_data.shape, dtype=first_data.dtype, chunks=True)
                 elif dataset_name == 'TBIN':
                     first_data = hduls[1].data[0]['TSUBINT']
+                    this_file.create_dataset(dataset_name, (0,) + first_data.shape, maxshape = (None,) +first_data.shape, dtype=first_data.dtype, chunks=True)
+                elif dataset_name == 'OBSFREQ':
+                    first_data = hduls[0].header['OBSFREQ']
+                    this_file.create_dataset(dataset_name, (0,) + first_data.shape, maxshape = (None,) +first_data.shape, dtype=first_data.dtype, chunks=True)
+                elif dataset_name == 'OBSBW':
+                    first_data = hduls[0].header['OBSBW']
                     this_file.create_dataset(dataset_name, (0,) + first_data.shape, maxshape = (None,) +first_data.shape, dtype=first_data.dtype, chunks=True)
                 elif dataset_name == 'RA_sets':
                     first_data = np.array([hduls[1].data[0]['RA_SUB'], hduls[1].data[0]['RA_SUB'], hduls[1].data[0]['RA_SUB']])
@@ -95,6 +101,12 @@ def search_pulsar(hduls, filename):
                         files[pulsar[i][0]]['ABS_TIME'][current_len-1,...] = abs_time
                     elif dataset_name == 'TBIN':
                         files[pulsar[i][0]]['TBIN'][current_len-1,...] = hduls[1].header['TBIN']
+                    elif dataset_name == 'OBSFREQ':
+                        first_data = hduls[0].header['OBSFREQ']
+                        this_file.create_dataset(dataset_name, (0,) + first_data.shape, maxshape = (None,) +first_data.shape, dtype=first_data.dtype, chunks=True)
+                    elif dataset_name == 'OBSBW':
+                        first_data = hduls[0].header['OBSBW']
+                        this_file.create_dataset(dataset_name, (0,) + first_data.shape, maxshape = (None,) +first_data.shape, dtype=first_data.dtype, chunks=True)
                     elif dataset_name == 'RA_sets':
                         files[pulsar[i][0]]['RA_sets'][current_len-1,...] = RA_series[k]
                     elif dataset_name == 'DEC_sets':

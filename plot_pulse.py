@@ -39,8 +39,8 @@ def dedisperse_index(freq1, freq2):
     index = np.int64(np.around((DM_CONST * dm * (freq1**-2 - freq2**-2))/delta_t))
     return index
 
-def dedisperse_spec(input_data):
-    freq = np.arange(900., 700., -200./input_data.shape[1])    
+def dedisperse_spec(input_data, freq_max, freq_min, freq_wid):
+    freq = np.arange(freq_max, freq_min, freq_wid/input_data.shape[1])    
     dedis_index_range = dedisperse_index(freq[:], np.amax(freq)) % phase_bins
     output_data = np.zeros((input_data.shape[0], input_data.shape[1]))
     scan_range = output_data.shape[0] - np.max(dedis_index_range)
@@ -51,12 +51,16 @@ def dedisperse_spec(input_data):
 
 def ploting(filename):
     this_file = h5py.File(filename, "r")
+    freq_wid = this_file['OBSBW'][0]
+    freq_max = max(this_file['OBSFREQ'][0] + 0.5*freq_wid, this_file['OBSFREQ'][0] - 0.5*freq_wid) 
+    freq_min = min(this_file['OBSFREQ'][0] + 0.5*freq_wid, this_file['OBSFREQ'][0] - 0.5*freq_wid)
+
     '''Do rebin first and then do dedisperse'''
   
     if rebin == True and dedisperse == True:
-        data_first = dedisperse_spec(this_file['DATA_FOLDING'][:, 0, :, 0])
+        data_first = dedisperse_spec(this_file['DATA_FOLDING'][:, 0, :, 0], freq_max, freq_min, freq_wid)
         data = rebin_spec(data_first).T               
-        data_third = dedisperse_spec(this_file['DATA_FOLDING_TOPO'][:, 0, :, 0])
+        data_third = dedisperse_spec(this_file['DATA_FOLDING_TOPO'][:, 0, :, 0], freq_max, freq_min, freq_wid)
         data3 = rebin_spec(data_third).T
     elif rebin == True and dedisperse == False:
         data_first = this_file['DATA_FOLDING'][:, 0, :, 0]
@@ -64,8 +68,8 @@ def ploting(filename):
         data_third = this_file['DATA_FOLDING_TOPO'][:, 0, :, 0]
         data3 = rebin_spec(data_third).T
     elif rebin == False and dedisperse == True:
-        data = dedisperse_spec(this_file['DATA_FOLDING'][:, 0, :, 0]).T
-        data3 = dedisperse_spec(this_file['DATA_FOLDING_TOPO'][:, 0, :, 0]).T
+        data = dedisperse_spec(this_file['DATA_FOLDING'][:, 0, :, 0], freq_max, freq_min, freq_wid).T
+        data3 = dedisperse_spec(this_file['DATA_FOLDING_TOPO'][:, 0, :, 0], freq_max, freq_min, freq_wid).T
     else:
         data = this_file['DATA_FOLDING'][:, 0, :, 0]
         data3 = this_file['DATA_FOLDING_TOPO'][:, 0, :, 0]
