@@ -110,8 +110,15 @@ def find_topo_bary(filename):
 #        RA = deg_to_HMS(324.92817)
 #        DEC = deg_to_DMS(0.60222)
         '''J2139+00, atnf'''
-        RA = str("+21:39:46")
-        DEC = str("+00:36:00")
+#        RA = str("+21:39:46")
+#        DEC = str("+00:36:00")
+        '''J2139+00, atnf + delta(ra, dec)'''
+        RA = convHMS(str("+21:39:46"))
+        RA += 1.72450646e-03 * 180 / np.pi # convert rad to deg
+        RA = deg_to_HMS(RA)
+        DEC = convDMS(str("+00:36:00"))
+        DEC += -1.67417143e-03 * 180 / np.pi # convert rad to deg
+        DEC = deg_to_DMS(DEC)
         '''J0030+0451'''
 #        RA = str('00:30:27.42823')
 #        DEC = str('+04:51:39.7112')
