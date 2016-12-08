@@ -22,8 +22,8 @@ def main():
             print IOError
 
 
-RA = 325.040475  # deg
-DEC = 0.5040769444444444 # deg
+RA = 324.94166666666666  # deg
+DEC = 0.6 # deg
 AU = 149597870700.0      # m
 C = 299792458.0    # m/s
 NPHASEBIN = 200
@@ -154,7 +154,7 @@ def plot_bary_diff(filename):
     this_file = h5py.File(filename, "r")
  
     '''bin_number[0,1,2] = [initial, final, maximal phase bin number]'''
-    bin_number = np.loadtxt('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_ANTF_delta_ra_dec/bin_number_2139_delta.txt')
+    bin_number = np.loadtxt('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139_bins_200_test/bin_number_2139_200.txt')
     
 
     time_mjd = np.zeros(len(bin_number))
@@ -174,7 +174,7 @@ def plot_bary_diff(filename):
 
     n = -18
     pars_init_0 = [-3.67893666e-07,  -1.63144225e+00 + n*3e-3,  -1.10469531e+02,   8.00704363e-04]
-    pars_init_1 = [2*1.94583554e-07,  2*-1.68755161e+00,   2*2.47273907e+01, 0,  0 ]
+    pars_init_1 = [2*1.94583554e-07,  2*-1.68755161e+00,  2* 2.47273907e+01, 0.5*1.72450646e-03,  0.5*-1.67417143e-03 ]
     p = [ -7.35e-7, -1.63079989e+00,  -1.13336394e+02,   7.82201828e-04] 
 #    pars_init = [2.23877409e-02,  -2.03966527e-03,   5.99999848e+07, 5e-02]
 #    pars_init = [ 1.4e-06,  2.12513909e+01,   8.65355252e+01,  -1e-04, -1e-04]
@@ -230,9 +230,9 @@ def plot_bary_diff(filename):
     pfit_leastsq_1 = fit_pars_1
     perr_leastsq_1 = np.array(error_1)
 
-#    print("\nFit paramters and parameter errors from lestsq method :")
-#    print("pfit = ", pfit_leastsq_1)
-#    print("perr = ", perr_leastsq_1)
+    print("\nFit paramters and parameter errors from lestsq method :")
+    print("pfit = ", pfit_leastsq_1)
+    print("perr = ", perr_leastsq_1)
 
 
     models_plot(time_mjd, dBATdra, dBATddec,
@@ -263,10 +263,10 @@ def plot_bary_diff(filename):
     plt.figure()
     make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl], 'new_phase_fit_J2139.png')
     plt.figure()
-    make_save_plot(pars_init_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl], 'new_phase_fit_J2139_zoom.png',
+    make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl], 'new_phase_fit_J2139_zoom.png',
             (untrans_time(-500), untrans_time(1500)))
     plt.figure()
-    make_save_plot(pars_init_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl],
+    make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl],
             'new_phase_fit_J2139_zoom2.png',
             (untrans_time(33400), untrans_time(34400)))
     plt.figure()
