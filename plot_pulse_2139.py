@@ -78,12 +78,12 @@ def ploting(filename):
         data2[ii] = np.mean(data[:,ii])
     phase_bin_max_ind = np.argmax(data2)
     print initial, final, phase_bin_max_ind
-    filename = 'phase.npy'
-    if os.path.exists(filename):
-        phase = np.load(filename) 
-        np.save(filename, np.vstack((phase, data2)))
+    npy_file = 'phase.npy'
+    if os.path.exists(npy_file):
+        phase = np.load(npy_file) 
+        np.save(npy_file, np.vstack((phase, data2)))
     else:
-        np.save(filename, data2)
+        np.save(npy_file, data2)
 
 
     for ii in range(len(data4)):
