@@ -51,7 +51,7 @@ def timing_model_1(parameters, time_mjd, dBATdra, dBATddec):
 
 def phase_curve(parameters, V):
     # parameters = [amp, phase_bin, offset]
-    phase_curve = parameters[0] * (np.roll(V[0], parameters[1])) + parameters[2]
+    phase_curve = parameters[0] * (np.roll(V[0], int(round(parameters[1])))) + parameters[2]
     return phase_curve
 
 def residuals(parameters, V,  data):
@@ -114,7 +114,7 @@ def ploting(filename):
             args=(V, phase_matrix_origin[1]), xtol = 1e-6, ftol=1e-6, full_output=1)
     print "Fit parameters: ", fit_pars_phase
     print "sucess?:", success
-    print "Chi-squared: ", np.sum(residuals(fit_pars_phase, phase_matrix_origin[1])**2), "DOF: ", len(phase_matrix_origin[1])-len(pars_init)
+    print "Chi-squared: ", np.sum(residuals(fit_pars_phase, V, phase_matrix_origin[1])**2), "DOF: ", len(phase_matrix_origin[1])-len(pars_init)
 
    
 if __name__ == '__main__':
