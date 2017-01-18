@@ -6,6 +6,9 @@ import h5py
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
+from scipy.optimize import curve_fit
+from scipy.optimize import minimize
+from scipy.optimize import leastsq
 
 
 def main():
@@ -46,12 +49,24 @@ def timing_model_1(parameters, time_mjd, dBATdra, dBATddec):
 
     return out1
 
+def phase_curve(parameters, V):
+    # parameters = [amp, phase_bin, offset]
+    phase_curve = parameters[0] * (np.roll(V[0], parameters[1])) + parameters[2]
+    return phase_curve
+
+def residuals(parameters, V,  data):
+    model = phase_curve(parameters, V)
+    res = data - model
+    return res
+
 def ploting(filename):
 
     this_file = h5py.File('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_ANTF_delta_ra_dec_20170116/J2139+00_wzonlyh5', "r")
 
     '''bin_number[0,1,2] = [initial, final, maximal phase bin number]'''
     bin_number = np.loadtxt('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_ANTF_delta_ra_dec_20170116/bin_number_2139_delta_new2.txt')
+ 
+    
 
     time_mjd = np.zeros(len(bin_number))
     dBATdra = np.zeros(len(bin_number))
@@ -72,27 +87,34 @@ def ploting(filename):
     
     U, s, V = np.linalg.svd(phase_matrix_new, full_matrices=True)
 
-    plt.figure()
-    plt.plot(np.arange(200), s, 'ro-')
-    plt.xlabel('phase bin number')
-    plt.ylabel('s values')
-    plt.savefig('phase_s.png')
+#    plt.figure()
+#    plt.plot(np.arange(200), s, 'ro-')
+#    plt.xlabel('phase bin number')
+#    plt.ylabel('s values')
+#    plt.savefig('phase_s.png')
 
-    plt.figure()
-#    plt.plot(np.arange(len(V)), V[0], 'r-', np.arange(len(V)), V[1], 'b-',  np.arange(len(V)), V[2], 'g-', np.arange(len(V)), V[3], 'k--',  np.arange(len(V)), V[4], 'y--', linewidth=2.5)
-    plt.plot(np.arange(-100, 100), np.roll(V[0]     , -100), 'r-',linewidth=2.5)
-    plt.plot(np.arange(-100, 100), np.roll(V[1] -0.1, -100), 'b-',linewidth=2.5)
-    plt.plot(np.arange(-100, 100), np.roll(V[2] -0.2, -100), 'g-',linewidth=2.5)
-    plt.plot(np.arange(-100, 100), np.roll(V[3] -0.3, -100), 'k-',linewidth=2.5)
-    plt.plot(np.arange(-100, 100), np.roll(V[4] -0.4, -100), 'y-',linewidth=2.5)
-    plt.plot(np.arange(-100, 100), np.roll(V[5] -0.5, -100), color = '0.9',linewidth=1.5)
-    plt.plot(np.arange(-100, 100), np.roll(V[6] -0.6, -100), color = '0.7',linewidth=1.5)
-    plt.plot(np.arange(-100, 100), np.roll(V[7] -0.7, -100), color = '0.5',linewidth=1.5)
-    plt.plot(np.arange(-100, 100), np.roll(V[8] -0.8, -100), color = '0.3',linewidth=1.5)
-    plt.plot(np.arange(-100, 100), np.roll(V[9] -0.9, -100), color = '0.1',linewidth=1.5)
-    plt.xlabel('phase bin number')
-    plt.ylabel('V values')
-    plt.savefig('phase_V.png')
+#    plt.figure()
+#    plt.plot(np.arange(-100, 100), np.roll(V[0]     , -100), 'r-',linewidth=2.5)
+#    plt.plot(np.arange(-100, 100), np.roll(V[1] -0.1, -100), 'b-',linewidth=2.5)
+#    plt.plot(np.arange(-100, 100), np.roll(V[2] -0.2, -100), 'g-',linewidth=2.5)
+#    plt.plot(np.arange(-100, 100), np.roll(V[3] -0.3, -100), 'k-',linewidth=2.5)
+#    plt.plot(np.arange(-100, 100), np.roll(V[4] -0.4, -100), 'y-',linewidth=2.5)
+#    plt.plot(np.arange(-100, 100), np.roll(V[5] -0.5, -100), color = '0.9',linewidth=1.5)
+#    plt.plot(np.arange(-100, 100), np.roll(V[6] -0.6, -100), color = '0.7',linewidth=1.5)
+#    plt.plot(np.arange(-100, 100), np.roll(V[7] -0.7, -100), color = '0.5',linewidth=1.5)
+#    plt.plot(np.arange(-100, 100), np.roll(V[8] -0.8, -100), color = '0.3',linewidth=1.5)
+#    plt.plot(np.arange(-100, 100), np.roll(V[9] -0.9, -100), color = '0.1',linewidth=1.5)
+#    plt.xlabel('phase bin number')
+#    plt.ylabel('V values')
+#    plt.savefig('phase_V.png')
+
+    pars_init = [ -0.1, 50, 0.2]
+
+    fit_pars_phase, pcov, infodict, errmsg, success = leastsq(residuals, pars_init,
+            args=(V, phase_matrix_origin[1]), xtol = 1e-6, ftol=1e-6, full_output=1)
+    print "Fit parameters: ", fit_pars_phase
+    print "sucess?:", success
+    print "Chi-squared: ", np.sum(residuals(fit_pars_phase, phase_matrix_origin[1])**2), "DOF: ", len(phase_matrix_origin[1])-len(pars_init)
 
    
 if __name__ == '__main__':
