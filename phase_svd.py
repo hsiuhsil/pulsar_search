@@ -68,20 +68,30 @@ def ploting(filename):
 
     phase_matrix_new = np.zeros(phase_matrix_origin.shape)
     for ii in xrange(len(phase_matrix_new)):
-        phase_matrix_new[ii] = np.roll(phase_matrix_origin[ii], -1 * phase_model[ii])
+        phase_matrix_new[ii] = np.roll(phase_matrix_origin[ii], -1 * phase_model[ii] )
     
     U, s, V = np.linalg.svd(phase_matrix_new, full_matrices=True)
 
     plt.figure()
     plt.plot(np.arange(200), s, 'ro-')
-    plt.xlabel('s values')
-    plt.ylabel('phase bin number')
+    plt.xlabel('phase bin number')
+    plt.ylabel('s values')
     plt.savefig('phase_s.png')
 
     plt.figure()
-    plt.plot(np.arange(len(V)), V[0], 'r-', np.arange(len(V)), V[1], 'b-',  np.arange(len(V)), V[2], 'g-', np.arange(len(V)), V[3], 'k--',  np.arange(len(V)), V[4], 'y--', linewidth=2.5)
-    plt.xlabel('V values')
-    plt.ylabel('phase bin number')
+#    plt.plot(np.arange(len(V)), V[0], 'r-', np.arange(len(V)), V[1], 'b-',  np.arange(len(V)), V[2], 'g-', np.arange(len(V)), V[3], 'k--',  np.arange(len(V)), V[4], 'y--', linewidth=2.5)
+    plt.plot(np.arange(-100, 100), np.roll(V[0]     , -100), 'r-',linewidth=2.5)
+    plt.plot(np.arange(-100, 100), np.roll(V[1] -0.1, -100), 'b-',linewidth=2.5)
+    plt.plot(np.arange(-100, 100), np.roll(V[2] -0.2, -100), 'g-',linewidth=2.5)
+    plt.plot(np.arange(-100, 100), np.roll(V[3] -0.3, -100), 'k-',linewidth=2.5)
+    plt.plot(np.arange(-100, 100), np.roll(V[4] -0.4, -100), 'y-',linewidth=2.5)
+    plt.plot(np.arange(-100, 100), np.roll(V[5] -0.5, -100), color = '0.9',linewidth=1.5)
+    plt.plot(np.arange(-100, 100), np.roll(V[6] -0.6, -100), color = '0.7',linewidth=1.5)
+    plt.plot(np.arange(-100, 100), np.roll(V[7] -0.7, -100), color = '0.5',linewidth=1.5)
+    plt.plot(np.arange(-100, 100), np.roll(V[8] -0.8, -100), color = '0.3',linewidth=1.5)
+    plt.plot(np.arange(-100, 100), np.roll(V[9] -0.9, -100), color = '0.1',linewidth=1.5)
+    plt.xlabel('phase bin number')
+    plt.ylabel('V values')
     plt.savefig('phase_V.png')
 
    
