@@ -10,6 +10,7 @@ from scipy.optimize import curve_fit
 from scipy.optimize import minimize
 from scipy.optimize import leastsq
 
+#from __future__ import division, print_function
 
 def main():
     args = sys.argv[1:]
@@ -51,7 +52,7 @@ def timing_model_1(parameters, time_mjd, dBATdra, dBATddec):
 
 def phase_curve(parameters, V):
     # parameters = [amp, phase_bin, offset]
-    phase_curve = parameters[0] * (np.roll(V[0], int(round(parameters[1])))) + parameters[2]
+    phase_curve = parameters[0] * (np.roll(V[0], int(parameters[1]))) + parameters[2]
     return phase_curve
 
 def residuals(parameters, V,  data):
@@ -108,13 +109,56 @@ def ploting(filename):
 #    plt.ylabel('V values')
 #    plt.savefig('phase_V.png')
 
-    pars_init = [ -0.1, 50, 0.2]
+    for ii in xrange(0,3):
+        pars_init = [ -0.1, 5, 0.2]
 
-    fit_pars_phase, pcov, infodict, errmsg, success = leastsq(residuals, pars_init,
-            args=(V, phase_matrix_origin[1]), xtol = 1e-6, ftol=1e-6, full_output=1)
-    print "Fit parameters: ", fit_pars_phase
-    print "sucess?:", success
-    print "Chi-squared: ", np.sum(residuals(fit_pars_phase, V, phase_matrix_origin[1])**2), "DOF: ", len(phase_matrix_origin[1])-len(pars_init)
+        fit_pars_phase, pcov, infodict, errmsg, success = leastsq(residuals, pars_init,
+               args=(V, phase_matrix_origin[ii]), full_output=1)
+#                args=(V, phase_matrix_origin[ii]), xtol = 1e-6, ftol=1e-6, full_output=1)
+        print 'ii = '+str(ii)
+        print "Fit parameters: ", fit_pars_phase
+        print "sucess?:", success
+        print "Chi-squared: ", np.sum(residuals(fit_pars_phase, V, phase_matrix_origin[ii])**2), "DOF: ", len(phase_matrix_origin[ii])-len(pars_init)
+
+
+# points in time series
+    n= len(V)
+# final time (initial time is 0)
+    tfin= 200
+
+# *end of changeable parameters*
+
+# stepsize
+    dt= tfin/(n-1)
+# sample count
+    s= np.arange(n)
+# signal; somewhat arbitrary
+    y= phase_matrix_origin[1]
+# DFT
+    fy= np.fft.fft(y)
+# frequency spectrum in rad/sample
+    wps= np.linspace(0,2*np.pi,n+1)[:-1]
+
+# basis for DFT
+# see, e.g., http://en.wikipedia.org/wiki/Discrete_Fourier_transform#equation_Eq.2
+# and section "Properties -> Orthogonality"; the columns of 'basis' are the u_k vectors
+# described there
+    basis= 1.0/n*np.exp(1.0j * V * wps * s[:,np.newaxis]) 
+
+# reconstruct signal from DFT coeffs and basis
+    recon_y= np.dot(basis,fy)
+
+# expect yerr to be "small"
+    yerr= np.max(np.abs(y-recon_y))
+    print('yerr:',yerr)
+
+# find coefficients by fitting to basis
+    lin_fy= np.linalg.solve(basis,y)
+
+# fyerr should also be "small"
+    fyerr= np.max(np.abs(fy-lin_fy))
+    print('fyerr',fyerr)
+
 
    
 if __name__ == '__main__':
