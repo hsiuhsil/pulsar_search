@@ -50,20 +50,20 @@ def timing_model_1(parameters, time_mjd, dBATdra, dBATddec):
 
     return out1
 
-def fft_phase_curve(parameters, V):
-    n= len(V)
-#    tfin= int((this_file['ABS_TIME'][999] - this_file['ABS_TIME'][0])/86400)
-    tfin = 1437
-    dt= tfin/(n-1)
-    s= np.arange(n)
-    wps= np.linspace(-np.pi, np.pi, n+1)[:-1]
-    fft_model = parameters[0] * 1.0/n * np.exp(1.0j * parameters[1] * wps) *np.fft.fft(V[0])
+def fft(file):
+    profile_fft = np.fft.fft(file)
+    profile_fft[0] = 0
+    return profile_fft
+
+def fft_phase_curve(parameters, profile_fft):
+    freq = np.fft.fftfreq(len(profile_fft))
+    n= len(profile_fft)
+    fft_model = parameters[0] * np.exp(1.0j * 2 * np.pi * freq * (parameters[1] / n)) * profile_fft
     return fft_model
 
-
-def residuals(parameters, V, data):
-    model = fft_phase_curve(parameters, V)
-    res = np.abs(np.fft.fft(data) - model)
+def residuals(parameters, model_fft, data_fft):
+    model = fft_phase_curve(parameters, model_fft)
+    res = np.abs(data_fft - model)
     return res
 
 def ploting(filename):
@@ -115,16 +115,23 @@ def ploting(filename):
 #    plt.ylabel('V values')
 #    plt.savefig('phase_V.png')
 
-    pars_init = [1, 5]
-    model_test = np.arange(200)
-    data_test = np.arange(-200, 200, 2)
+    pars_init = [1.6, 0.27]
 
+    model_fft = fft(V[0])
+    data_fft = fft(phase_matrix_origin[1])   
+
+    print('V0_max', np.amax(V[0]), 'index', np.argmax(V[0]))
+    print('data1_max', np.amax(phase_matrix_origin[1]), 'index', np.argmax(phase_matrix_origin[1]))
+    print('estimate amp', np.amax(phase_matrix_origin[1])/np.amax(V[0]))
+    print('estimate pars[1]', np.sqrt(sum(phase_matrix_origin[1]**2) / sum(V[0]**2)))
     fit_pars_phase, pcov, infodict, errmsg, success = leastsq(residuals, pars_init,
-                   args=(V, phase_matrix_origin[1]), full_output=1)
+                   args=(model_fft, data_fft), full_output=1)
+#                    args=(model_test, data_test), full_output=1)
 
     print "Fit parameters: ", fit_pars_phase
     print "sucess?:", success
-    print "Chi-squared: ", np.sum(residuals(fit_pars_phase, V, phase_matrix_origin[ii])**2), "DOF: ", len(phase_matrix_origin[ii])-len(pars_init)
+    '''DOF -1, since we set fft_file[0] = 0.'''
+    print "Chi-squared: ", np.sum(residuals(fit_pars_phase, model_fft, data_fft)**2), "DOF: ", len(data_fft)-len(pars_init)-1
 
    
 if __name__ == '__main__':
