@@ -55,6 +55,10 @@ def fft(file):
     profile_fft[0] = 0
     return profile_fft
 
+def ifft(file):
+    profile_ifft = np.fft.ifft(file)
+    return profile_ifft
+
 def fft_phase_curve(parameters, profile_fft):
     freq = np.fft.fftfreq(len(profile_fft))
     n= len(profile_fft)
@@ -94,6 +98,10 @@ def ploting(filename):
     
     U, s, V = np.linalg.svd(phase_matrix_new, full_matrices=True)
 
+    if np.abs(np.amax(V[0])) < np.abs(np.amin(V[0])):
+        V[0] = -V[0]
+
+
 #    plt.figure()
 #    plt.plot(np.arange(200), s, 'ro-')
 #    plt.xlabel('phase bin number')
@@ -115,8 +123,9 @@ def ploting(filename):
 #    plt.ylabel('V values')
 #    plt.savefig('phase_V.png')
 
-    pars_init = [1.6, 0.27]
-
+    pars_init = [1.6, phase_model[1]]
+#    print phase_model
+#    print phase_model[ii]
     model_fft = fft(V[0])
     data_fft = fft(phase_matrix_origin[1])   
 
@@ -133,6 +142,26 @@ def ploting(filename):
     '''DOF -1, since we set fft_file[0] = 0.'''
     print "Chi-squared: ", np.sum(residuals(fit_pars_phase, model_fft, data_fft)**2), "DOF: ", len(data_fft)-len(pars_init)-1
 
+
+    plt.figure()
+    x_range = np.arange(-100, 100)
+    res = residuals(fit_pars_phase, model_fft, data_fft)
+    plt.plot(x_range, np.roll(model_fft, -100),'r-')
+    plt.plot(x_range, np.roll(data_fft, -100),'b-')
+    plt.plot(x_range, np.roll(res, -100),'k--')
+    plt.xlabel('phase bin number')
+#    plt.ylabel('s values')
+    plt.savefig('phase_fft_fourier.png')
+
+    plt.figure()
+    x_range = np.arange(-100, 100)
+    res = residuals(fit_pars_phase, model_fft, data_fft)
+    plt.plot(x_range, np.roll(ifft(model_fft).real, -100), 'r-')
+    plt.plot(x_range, np.roll(ifft(data_fft).real, -100), 'b-')
+    plt.plot(x_range, np.roll(res, -100),'k--')
+    plt.xlabel('phase bin number')
+#    plt.ylabel('s values')
+    plt.savefig('phase_fft_real.png')
    
 if __name__ == '__main__':
     main()
