@@ -62,7 +62,7 @@ def ifft(file):
 def fft_phase_curve(parameters, profile_fft):
     freq = np.fft.fftfreq(len(profile_fft))
     n= len(profile_fft)
-    fft_model = parameters[0] * np.exp(1.0j * 2 * np.pi * freq * (parameters[1] / n)) * profile_fft
+    fft_model = parameters[0] * np.exp(1.0j * 2 * np.pi * freq * ( n - parameters[1])) * profile_fft
     return fft_model
 
 def residuals(parameters, model_fft, data_fft):
@@ -125,10 +125,9 @@ def ploting(filename):
 #    plt.ylabel('V values')
 #    plt.savefig('phase_V.png')
 
-#    pars_init = [0.29, phase_model[1]]
-    pars_init = [0.29, 3.0e+4]
-    pars_init2 = [0.29, 3.1e+4]
-    pars_init3 = [0.29, 3.2e+4]
+    pars_init = [0.29, phase_model[1] - 0.5]
+    pars_init2 = [0.29,phase_model[1]  + 0.8]
+    pars_init3 = [0.29,phase_model[1]  + 0.1]
     model_fft = fft(V[0])
     data_fft = fft(phase_matrix_origin[1])   
 
@@ -147,21 +146,29 @@ def ploting(filename):
 
 
     '''functions in Fourier space'''
+#    res = residuals(fit_pars_phase, model_fft, data_fft)
     '''Real part'''
     model_fft_real = fft_phase_curve(fit_pars_phase, model_fft).real
     data_fft_real = data_fft.real
     init_fft_real = fft_phase_curve(pars_init, model_fft).real
+    res_fft_real = res[:(len(res)/2)]
     '''Imag part'''
     model_fft_imag = fft_phase_curve(fit_pars_phase, model_fft).imag
     data_fft_imag = data_fft.imag
     init_fft_imag = fft_phase_curve(pars_init, model_fft).imag
+    res_fft_imag = res[(len(res)/2):]
 
     '''functions in Real space (ifft)'''
     model_ifft = np.fft.ifft(fft_phase_curve(fit_pars_phase, model_fft))
     data_ifft = np.fft.ifft(data_fft)
+    res_ifft = np.fft.ifft(fft_phase_curve(fit_pars_phase, model_fft) - data_fft).real
     init_ifft = np.fft.ifft(fft_phase_curve(pars_init, model_fft))
     init_ifft2 = np.fft.ifft(fft_phase_curve(pars_init2, model_fft))    
     init_ifft3 = np.fft.ifft(fft_phase_curve(pars_init3, model_fft))
+
+#    print('model_ifft.imag', model_ifft.imag)
+#    print('data_ifft.imag', data_ifft.imag)
+#    print('init_ifft.imag', init_ifft.imag)
 
     freq_range = np.linspace(np.amin(np.fft.fftfreq(len(model_fft))), np.amax(np.fft.fftfreq(len(model_fft))), num = len(model_fft), endpoint=True)
     freq_min = np.amin(freq_range)
@@ -169,29 +176,55 @@ def ploting(filename):
 
     phase_range = np.arange(-100,100)
 
-    plt.figure
+    '''Plot for real part in the Fourier space'''
+    plt.figure()
+    plt.subplot(2,1,1)
     plt.plot(freq_range, np.roll(model_fft_real, -100),'r-')
     plt.plot(freq_range, np.roll(data_fft_real, -100),'b-')
     plt.plot(freq_range, np.roll(init_fft_real, -100),'k--')
     plt.xlabel('Frequency')
     plt.xlim((freq_min,freq_max))
+
+    plt.subplot(2,1,2)
+    plt.plot(freq_range, np.roll(res_fft_real, -100),'bo')
+    plt.xlabel('Frequency')
+    plt.ylabel('Residuals')
+    plt.xlim((freq_min,freq_max))
+
     plt.savefig('phase_fft_real.png')
 
+    '''Plot for imag part in the Fourier space'''
     plt.figure()
+    plt.subplot(2,1,1)
     plt.plot(freq_range, np.roll(model_fft_imag, -100),'r-')
     plt.plot(freq_range, np.roll(data_fft_imag, -100),'b-')
     plt.plot(freq_range, np.roll(init_fft_imag, -100),'k--')
     plt.xlabel('Frequency')
     plt.xlim((freq_min,freq_max))
+
+    plt.subplot(2,1,2)
+    plt.plot(freq_range, np.roll(res_fft_imag, -100),'bo')
+    plt.xlabel('Frequency')
+    plt.ylabel('Residuals')
+    plt.xlim((freq_min,freq_max))
+
     plt.savefig('phase_fft_imag.png')
 
+    '''Plot for imag part in real space'''
     plt.figure()
+    plt.subplot(2,1,1)
     plt.plot(phase_range, np.roll(model_ifft, -100),'r-')
     plt.plot(phase_range, np.roll(data_ifft, -100),'b-')
     plt.plot(phase_range, np.roll(init_ifft, -100),'k--')
 #    plt.plot(phase_range, np.roll(init_ifft2, -100),'y--')
 #    plt.plot(phase_range, np.roll(init_ifft3, -100),'g-.')
     plt.xlabel('Phase bin number')
+
+    plt.subplot(2,1,2)
+    plt.plot(phase_range, np.roll(res_ifft, -100),'bo')
+    plt.xlabel('Phase bin number')
+    plt.ylabel('Residuals')
+
     plt.savefig('phase_ifft.png')
 
 
