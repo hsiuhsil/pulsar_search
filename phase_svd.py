@@ -10,7 +10,7 @@ from scipy.optimize import curve_fit
 from scipy.optimize import minimize
 from scipy.optimize import leastsq
 
-#from __future__ import division, print_function
+
 
 def main():
     args = sys.argv[1:]
@@ -67,7 +67,9 @@ def fft_phase_curve(parameters, profile_fft):
 
 def residuals(parameters, model_fft, data_fft):
     model = fft_phase_curve(parameters, model_fft)
-    res = np.abs(data_fft - model)
+    res_Re = (data_fft - model).real
+    res_Im = (data_fft - model).imag
+    res = np.concatenate((res_Re, res_Im))
     return res
 
 def ploting(filename):
@@ -123,9 +125,10 @@ def ploting(filename):
 #    plt.ylabel('V values')
 #    plt.savefig('phase_V.png')
 
-    pars_init = [1.6, phase_model[1]]
-#    print phase_model
-#    print phase_model[ii]
+#    pars_init = [0.29, phase_model[1]]
+    pars_init = [0.29, 3.0e+4]
+    pars_init2 = [0.29, 3.1e+4]
+    pars_init3 = [0.29, 3.2e+4]
     model_fft = fft(V[0])
     data_fft = fft(phase_matrix_origin[1])   
 
@@ -135,33 +138,63 @@ def ploting(filename):
     print('estimate pars[1]', np.sqrt(sum(phase_matrix_origin[1]**2) / sum(V[0]**2)))
     fit_pars_phase, pcov, infodict, errmsg, success = leastsq(residuals, pars_init,
                    args=(model_fft, data_fft), full_output=1)
-#                    args=(model_test, data_test), full_output=1)
 
     print "Fit parameters: ", fit_pars_phase
     print "sucess?:", success
     '''DOF -1, since we set fft_file[0] = 0.'''
-    print "Chi-squared: ", np.sum(residuals(fit_pars_phase, model_fft, data_fft)**2), "DOF: ", len(data_fft)-len(pars_init)-1
-
-
-    plt.figure()
-    x_range = np.arange(-100, 100)
     res = residuals(fit_pars_phase, model_fft, data_fft)
-    plt.plot(x_range, np.roll(model_fft, -100),'r-')
-    plt.plot(x_range, np.roll(data_fft, -100),'b-')
-    plt.plot(x_range, np.roll(res, -100),'k--')
-    plt.xlabel('phase bin number')
-#    plt.ylabel('s values')
-    plt.savefig('phase_fft_fourier.png')
+    print "Chi-squared: ", np.sum(np.abs(res)**2), "DOF: ", len(data_fft)-len(pars_init)-1
 
-    plt.figure()
-    x_range = np.arange(-100, 100)
-    res = residuals(fit_pars_phase, model_fft, data_fft)
-    plt.plot(x_range, np.roll(ifft(model_fft).real, -100), 'r-')
-    plt.plot(x_range, np.roll(ifft(data_fft).real, -100), 'b-')
-    plt.plot(x_range, np.roll(res, -100),'k--')
-    plt.xlabel('phase bin number')
-#    plt.ylabel('s values')
+
+    '''functions in Fourier space'''
+    '''Real part'''
+    model_fft_real = fft_phase_curve(fit_pars_phase, model_fft).real
+    data_fft_real = data_fft.real
+    init_fft_real = fft_phase_curve(pars_init, model_fft).real
+    '''Imag part'''
+    model_fft_imag = fft_phase_curve(fit_pars_phase, model_fft).imag
+    data_fft_imag = data_fft.imag
+    init_fft_imag = fft_phase_curve(pars_init, model_fft).imag
+
+    '''functions in Real space (ifft)'''
+    model_ifft = np.fft.ifft(fft_phase_curve(fit_pars_phase, model_fft))
+    data_ifft = np.fft.ifft(data_fft)
+    init_ifft = np.fft.ifft(fft_phase_curve(pars_init, model_fft))
+    init_ifft2 = np.fft.ifft(fft_phase_curve(pars_init2, model_fft))    
+    init_ifft3 = np.fft.ifft(fft_phase_curve(pars_init3, model_fft))
+
+    freq_range = np.linspace(np.amin(np.fft.fftfreq(len(model_fft))), np.amax(np.fft.fftfreq(len(model_fft))), num = len(model_fft), endpoint=True)
+    freq_min = np.amin(freq_range)
+    freq_max = np.amax(freq_range)
+
+    phase_range = np.arange(-100,100)
+
+    plt.figure
+    plt.plot(freq_range, np.roll(model_fft_real, -100),'r-')
+    plt.plot(freq_range, np.roll(data_fft_real, -100),'b-')
+    plt.plot(freq_range, np.roll(init_fft_real, -100),'k--')
+    plt.xlabel('Frequency')
+    plt.xlim((freq_min,freq_max))
     plt.savefig('phase_fft_real.png')
+
+    plt.figure()
+    plt.plot(freq_range, np.roll(model_fft_imag, -100),'r-')
+    plt.plot(freq_range, np.roll(data_fft_imag, -100),'b-')
+    plt.plot(freq_range, np.roll(init_fft_imag, -100),'k--')
+    plt.xlabel('Frequency')
+    plt.xlim((freq_min,freq_max))
+    plt.savefig('phase_fft_imag.png')
+
+    plt.figure()
+    plt.plot(phase_range, np.roll(model_ifft, -100),'r-')
+    plt.plot(phase_range, np.roll(data_ifft, -100),'b-')
+    plt.plot(phase_range, np.roll(init_ifft, -100),'k--')
+#    plt.plot(phase_range, np.roll(init_ifft2, -100),'y--')
+#    plt.plot(phase_range, np.roll(init_ifft3, -100),'g-.')
+    plt.xlabel('Phase bin number')
+    plt.savefig('phase_ifft.png')
+
+
    
 if __name__ == '__main__':
     main()
