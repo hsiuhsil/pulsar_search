@@ -26,11 +26,11 @@ AU = 149597870700.0      # m
 C = 299792458.0    # m/s
 NPHASEBIN = 200
 T = 0.312470
-
 TIME0 = 55707.   # MJD pivot
 
 fit_pars =  [3.47609206e-07,  -3.37370520e+00,   4.74201487e+01,  -1.39689904e-05,  2.21425268e-05]
 
+save_fit_pars = False
 
 def transform_time(time_mjd):
     return (time_mjd - TIME0) * 24
@@ -60,16 +60,19 @@ def ifft(file):
     return profile_ifft
 
 def fft_phase_curve(parameters, profile_fft):
+
     freq = np.fft.fftfreq(len(profile_fft))
     n= len(profile_fft)
     fft_model = parameters[0] * np.exp(1.0j * 2 * np.pi * freq * ( n - parameters[1])) * profile_fft
     return fft_model
 
 def residuals(parameters, model_fft, data_fft):
+    '''Only use positive frequencies for residuals'''
     model = fft_phase_curve(parameters, model_fft)
     res_Re = (data_fft - model).real
     res_Im = (data_fft - model).imag
     res = np.concatenate((res_Re, res_Im))
+#    res = res[:len(res)/2]
     return res
 
 def phase_fit(index, phase_matrix_origin, V, phase_model):
@@ -85,13 +88,13 @@ def phase_fit(index, phase_matrix_origin, V, phase_model):
 #    print('estimate amp', np.amax(phase_matrix_origin[1])/np.amax(V[0]))
 #    print('estimate pars[1]', np.sqrt(sum(phase_matrix_origin[1]**2) / sum(V[0]**2)))
     fit_pars_phase, pcov, infodict, errmsg, success = leastsq(residuals, pars_init,
-                   args=(model_fft, data_fft), full_output=1)
+                   args=( model_fft, data_fft), full_output=1)
 
     print "Fit parameters: ", fit_pars_phase
     print "sucess?:", success
     '''DOF -1, since we set fft_file[0] = 0.'''
     res = residuals(fit_pars_phase, model_fft, data_fft)
-    print "Chi-squared: ", np.sum(np.abs(res)**2), "DOF: ", len(data_fft)-len(pars_init)-1
+    print "Chi-squared: ", np.sum(np.abs(res[:len(res)/2])**2), "DOF: ", len(data_fft)-len(pars_init)-1
 
     if (len(data_fft) > len(pars_init)) and pcov is not None:
         s_sq = (residuals(fit_pars_phase, model_fft, data_fft)**2).sum()/(len(data_fft)-len(pars_init)-1)
@@ -115,11 +118,12 @@ def phase_fit(index, phase_matrix_origin, V, phase_model):
     '''save the fitting amp and bin as [amp, bin, amp_err, bin_err]'''
     npy_file = 'phase_amp_bin.npy'
     phase_amp_bin = np.concatenate((pfit_leastsq, perr_leastsq ))
-    if os.path.exists(npy_file):
-        sequence = np.load(npy_file)
-        np.save(npy_file, np.vstack((sequence, phase_amp_bin)))
-    else:
-        np.save(npy_file, phase_amp_bin)
+    if save_fit_pars == True:
+        if os.path.exists(npy_file):
+            sequence = np.load(npy_file)
+            np.save(npy_file, np.vstack((sequence, phase_amp_bin)))
+        else:
+            np.save(npy_file, phase_amp_bin)
 
     '''functions in Fourier space'''
     '''Real part'''
@@ -134,12 +138,10 @@ def phase_fit(index, phase_matrix_origin, V, phase_model):
     res_fft_imag = res[(len(res)/2):]
 
     '''functions in Real space (ifft)'''
-    model_ifft = np.fft.ifft(fft_phase_curve(fit_pars_phase, model_fft)).real
+    model_ifft = np.fft.ifft(fft_phase_curve(fit_pars_phase,  model_fft)).real
     data_ifft = np.fft.ifft(data_fft).real
     res_ifft = np.fft.ifft(fft_phase_curve(fit_pars_phase, model_fft) - data_fft).real
     init_ifft = np.fft.ifft(fft_phase_curve(pars_init, model_fft)).real
-    init_ifft2 = np.fft.ifft(fft_phase_curve(pars_init2, model_fft)).real
-    init_ifft3 = np.fft.ifft(fft_phase_curve(pars_init3, model_fft)).real
 
     freq_range = np.linspace(np.amin(np.fft.fftfreq(len(model_fft))), np.amax(np.fft.fftfreq(len(model_fft))), num = len(model_fft), endpoint=True)
     freq_min = np.amin(freq_range)
@@ -230,9 +232,11 @@ def ploting(filename):
     if np.abs(np.amax(V[0])) < np.abs(np.amin(V[0])):
         V[0] = -V[0]
 
-    for ii in xrange(0,5):
-        print 'ii= '+str(ii)
-        phase_fit(ii, phase_matrix_origin, V, phase_model)
+    phase_fit(1, phase_matrix_origin, V, phase_model)
+
+#    for ii in xrange(len(phase_model)):
+#        print 'ii= '+str(ii)
+#        phase_fit(ii, phase_matrix_origin, V, phase_model)
 
 #    plt.figure()
 #    plt.plot(np.arange(200), s, 'ro-')
