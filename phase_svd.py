@@ -72,6 +72,133 @@ def residuals(parameters, model_fft, data_fft):
     res = np.concatenate((res_Re, res_Im))
     return res
 
+def phase_fit(index, phase_matrix_origin, V, phase_model):
+
+    pars_init = [np.amax(phase_matrix_origin[index])/np.amax(V[0]) , phase_model[index] % NPHASEBIN]
+    pars_init2 = [0.29,phase_model[index]  + 0.8]
+    pars_init3 = [0.29,phase_model[index]  + 0.1]
+    model_fft = fft(V[0])
+    data_fft = fft(phase_matrix_origin[index])
+
+#    print('V0_max', np.amax(V[0]), 'index', np.argmax(V[0]))
+#    print('data1_max', np.amax(phase_matrix_origin[1]), 'index', np.argmax(phase_matrix_origin[1]))
+#    print('estimate amp', np.amax(phase_matrix_origin[1])/np.amax(V[0]))
+#    print('estimate pars[1]', np.sqrt(sum(phase_matrix_origin[1]**2) / sum(V[0]**2)))
+    fit_pars_phase, pcov, infodict, errmsg, success = leastsq(residuals, pars_init,
+                   args=(model_fft, data_fft), full_output=1)
+
+    print "Fit parameters: ", fit_pars_phase
+    print "sucess?:", success
+    '''DOF -1, since we set fft_file[0] = 0.'''
+    res = residuals(fit_pars_phase, model_fft, data_fft)
+    print "Chi-squared: ", np.sum(np.abs(res)**2), "DOF: ", len(data_fft)-len(pars_init)-1
+
+    if (len(data_fft) > len(pars_init)) and pcov is not None:
+        s_sq = (residuals(fit_pars_phase, model_fft, data_fft)**2).sum()/(len(data_fft)-len(pars_init)-1)
+        pcov = pcov * s_sq
+    else:
+        pcov = np.inf
+
+    error = []
+    for i in range(len(fit_pars_phase)):
+        try:
+          error.append(np.absolute(pcov[i][i])**0.5)
+        except:
+          error.append( 0.00 )
+    pfit_leastsq = fit_pars_phase
+    perr_leastsq = np.array(error)
+
+    print("\nFit paramters and parameter errors from lestsq method :")
+    print("pfit = ", pfit_leastsq)
+    print("perr = ", perr_leastsq)
+
+    '''save the fitting amp and bin as [amp, bin, amp_err, bin_err]'''
+    npy_file = 'phase_amp_bin.npy'
+    phase_amp_bin = np.concatenate((pfit_leastsq, perr_leastsq ))
+    if os.path.exists(npy_file):
+        sequence = np.load(npy_file)
+        np.save(npy_file, np.vstack((sequence, phase_amp_bin)))
+    else:
+        np.save(npy_file, phase_amp_bin)
+
+    '''functions in Fourier space'''
+    '''Real part'''
+    model_fft_real = fft_phase_curve(fit_pars_phase, model_fft).real
+    data_fft_real = data_fft.real
+    init_fft_real = fft_phase_curve(pars_init, model_fft).real
+    res_fft_real = res[:(len(res)/2)]
+    '''Imag part'''
+    model_fft_imag = fft_phase_curve(fit_pars_phase, model_fft).imag
+    data_fft_imag = data_fft.imag
+    init_fft_imag = fft_phase_curve(pars_init, model_fft).imag
+    res_fft_imag = res[(len(res)/2):]
+
+    '''functions in Real space (ifft)'''
+    model_ifft = np.fft.ifft(fft_phase_curve(fit_pars_phase, model_fft)).real
+    data_ifft = np.fft.ifft(data_fft).real
+    res_ifft = np.fft.ifft(fft_phase_curve(fit_pars_phase, model_fft) - data_fft).real
+    init_ifft = np.fft.ifft(fft_phase_curve(pars_init, model_fft)).real
+    init_ifft2 = np.fft.ifft(fft_phase_curve(pars_init2, model_fft)).real
+    init_ifft3 = np.fft.ifft(fft_phase_curve(pars_init3, model_fft)).real
+
+    freq_range = np.linspace(np.amin(np.fft.fftfreq(len(model_fft))), np.amax(np.fft.fftfreq(len(model_fft))), num = len(model_fft), endpoint=True)
+    freq_min = np.amin(freq_range)
+    freq_max = np.amax(freq_range)
+
+    phase_range = np.arange(-100,100)
+
+    plot_title = 'Phase_bin = ' + str("%.3f" % phase_amp_bin[1]) + ' +/- ' + str("%.3f" % phase_amp_bin[3])
+    plot_name = 'phase_' + str(index) + '_'
+
+    '''Plot for real part in the Fourier space'''
+    plt.figure()
+    plt.subplot(2,1,1)
+    plt.title(plot_title)
+    plt.plot(freq_range, np.roll(model_fft_real, -100),'r-')
+    plt.plot(freq_range, np.roll(data_fft_real, -100),'b-')
+    plt.plot(freq_range, np.roll(init_fft_real, -100),'k--')
+    plt.xlabel('Frequency')
+    plt.xlim((freq_min,freq_max))
+
+    plt.subplot(2,1,2)
+    plt.plot(freq_range, np.roll(res_fft_real, -100),'bo')
+    plt.xlabel('Frequency')
+    plt.ylabel('Residuals')
+    plt.xlim((freq_min,freq_max))
+    plt.savefig(plot_name + 'fft_real.png')
+
+    '''Plot for imag part in the Fourier space'''
+    plt.figure()
+    plt.subplot(2,1,1)
+    plt.title(plot_title)
+    plt.plot(freq_range, np.roll(model_fft_imag, -100),'r-')
+    plt.plot(freq_range, np.roll(data_fft_imag, -100),'b-')
+    plt.plot(freq_range, np.roll(init_fft_imag, -100),'k--')
+    plt.xlabel('Frequency')
+    plt.xlim((freq_min,freq_max))
+
+    plt.subplot(2,1,2)
+    plt.plot(freq_range, np.roll(res_fft_imag, -100),'bo')
+    plt.xlabel('Frequency')
+    plt.ylabel('Residuals')
+    plt.xlim((freq_min,freq_max))
+    plt.savefig(plot_name + 'fft_imag.png')
+
+    '''Plot for real part in real space'''
+    plt.figure()
+    plt.subplot(2,1,1)
+    plt.title(plot_title)
+    plt.plot(phase_range, np.roll(model_ifft, -100),'r-')
+    plt.plot(phase_range, np.roll(data_ifft, -100),'b-')
+    plt.plot(phase_range, np.roll(init_ifft, -100),'k--')
+    plt.xlabel('Phase bin number')
+
+    plt.subplot(2,1,2)
+    plt.plot(phase_range, np.roll(res_ifft, -100),'bo')
+    plt.xlabel('Phase bin number')
+    plt.ylabel('Residuals')
+    plt.savefig(plot_name + 'ifft.png')
+
 def ploting(filename):
 
     this_file = h5py.File('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_ANTF_delta_ra_dec_20170116/J2139+00_wzonlyh5', "r")
@@ -103,6 +230,9 @@ def ploting(filename):
     if np.abs(np.amax(V[0])) < np.abs(np.amin(V[0])):
         V[0] = -V[0]
 
+    for ii in xrange(0,5):
+        print 'ii= '+str(ii)
+        phase_fit(ii, phase_matrix_origin, V, phase_model)
 
 #    plt.figure()
 #    plt.plot(np.arange(200), s, 'ro-')
@@ -125,110 +255,8 @@ def ploting(filename):
 #    plt.ylabel('V values')
 #    plt.savefig('phase_V.png')
 
-    pars_init = [0.29, phase_model[1] - 0.5]
-    pars_init2 = [0.29,phase_model[1]  + 0.8]
-    pars_init3 = [0.29,phase_model[1]  + 0.1]
-    model_fft = fft(V[0])
-    data_fft = fft(phase_matrix_origin[1])   
 
-    print('V0_max', np.amax(V[0]), 'index', np.argmax(V[0]))
-    print('data1_max', np.amax(phase_matrix_origin[1]), 'index', np.argmax(phase_matrix_origin[1]))
-    print('estimate amp', np.amax(phase_matrix_origin[1])/np.amax(V[0]))
-    print('estimate pars[1]', np.sqrt(sum(phase_matrix_origin[1]**2) / sum(V[0]**2)))
-    fit_pars_phase, pcov, infodict, errmsg, success = leastsq(residuals, pars_init,
-                   args=(model_fft, data_fft), full_output=1)
-
-    print "Fit parameters: ", fit_pars_phase
-    print "sucess?:", success
-    '''DOF -1, since we set fft_file[0] = 0.'''
-    res = residuals(fit_pars_phase, model_fft, data_fft)
-    print "Chi-squared: ", np.sum(np.abs(res)**2), "DOF: ", len(data_fft)-len(pars_init)-1
-
-
-    '''functions in Fourier space'''
-#    res = residuals(fit_pars_phase, model_fft, data_fft)
-    '''Real part'''
-    model_fft_real = fft_phase_curve(fit_pars_phase, model_fft).real
-    data_fft_real = data_fft.real
-    init_fft_real = fft_phase_curve(pars_init, model_fft).real
-    res_fft_real = res[:(len(res)/2)]
-    '''Imag part'''
-    model_fft_imag = fft_phase_curve(fit_pars_phase, model_fft).imag
-    data_fft_imag = data_fft.imag
-    init_fft_imag = fft_phase_curve(pars_init, model_fft).imag
-    res_fft_imag = res[(len(res)/2):]
-
-    '''functions in Real space (ifft)'''
-    model_ifft = np.fft.ifft(fft_phase_curve(fit_pars_phase, model_fft))
-    data_ifft = np.fft.ifft(data_fft)
-    res_ifft = np.fft.ifft(fft_phase_curve(fit_pars_phase, model_fft) - data_fft).real
-    init_ifft = np.fft.ifft(fft_phase_curve(pars_init, model_fft))
-    init_ifft2 = np.fft.ifft(fft_phase_curve(pars_init2, model_fft))    
-    init_ifft3 = np.fft.ifft(fft_phase_curve(pars_init3, model_fft))
-
-#    print('model_ifft.imag', model_ifft.imag)
-#    print('data_ifft.imag', data_ifft.imag)
-#    print('init_ifft.imag', init_ifft.imag)
-
-    freq_range = np.linspace(np.amin(np.fft.fftfreq(len(model_fft))), np.amax(np.fft.fftfreq(len(model_fft))), num = len(model_fft), endpoint=True)
-    freq_min = np.amin(freq_range)
-    freq_max = np.amax(freq_range)
-
-    phase_range = np.arange(-100,100)
-
-    '''Plot for real part in the Fourier space'''
-    plt.figure()
-    plt.subplot(2,1,1)
-    plt.plot(freq_range, np.roll(model_fft_real, -100),'r-')
-    plt.plot(freq_range, np.roll(data_fft_real, -100),'b-')
-    plt.plot(freq_range, np.roll(init_fft_real, -100),'k--')
-    plt.xlabel('Frequency')
-    plt.xlim((freq_min,freq_max))
-
-    plt.subplot(2,1,2)
-    plt.plot(freq_range, np.roll(res_fft_real, -100),'bo')
-    plt.xlabel('Frequency')
-    plt.ylabel('Residuals')
-    plt.xlim((freq_min,freq_max))
-
-    plt.savefig('phase_fft_real.png')
-
-    '''Plot for imag part in the Fourier space'''
-    plt.figure()
-    plt.subplot(2,1,1)
-    plt.plot(freq_range, np.roll(model_fft_imag, -100),'r-')
-    plt.plot(freq_range, np.roll(data_fft_imag, -100),'b-')
-    plt.plot(freq_range, np.roll(init_fft_imag, -100),'k--')
-    plt.xlabel('Frequency')
-    plt.xlim((freq_min,freq_max))
-
-    plt.subplot(2,1,2)
-    plt.plot(freq_range, np.roll(res_fft_imag, -100),'bo')
-    plt.xlabel('Frequency')
-    plt.ylabel('Residuals')
-    plt.xlim((freq_min,freq_max))
-
-    plt.savefig('phase_fft_imag.png')
-
-    '''Plot for imag part in real space'''
-    plt.figure()
-    plt.subplot(2,1,1)
-    plt.plot(phase_range, np.roll(model_ifft, -100),'r-')
-    plt.plot(phase_range, np.roll(data_ifft, -100),'b-')
-    plt.plot(phase_range, np.roll(init_ifft, -100),'k--')
-#    plt.plot(phase_range, np.roll(init_ifft2, -100),'y--')
-#    plt.plot(phase_range, np.roll(init_ifft3, -100),'g-.')
-    plt.xlabel('Phase bin number')
-
-    plt.subplot(2,1,2)
-    plt.plot(phase_range, np.roll(res_ifft, -100),'bo')
-    plt.xlabel('Phase bin number')
-    plt.ylabel('Residuals')
-
-    plt.savefig('phase_ifft.png')
-
-
-   
+  
 if __name__ == '__main__':
     main()
 
