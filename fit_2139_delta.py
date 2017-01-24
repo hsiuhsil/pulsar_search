@@ -75,6 +75,7 @@ def timing_model_1(parameters, time_mjd, dBATdra, dBATddec):
     out1 +=  (NPHASEBIN / T) * (dBATdra * 86400 * 180 / np.pi * parameters[3] + dBATddec * 86400 * 180 / np.pi * parameters[4])
     out1 = out1 % NPHASEBIN
 
+#    print out1
     return out1
 
 def residuals_1(parameters, time_mjd, dBATdra, dBATddec, phase_data):
@@ -154,7 +155,7 @@ def plot_bary_diff(filename):
     this_file = h5py.File(filename, "r")
  
     '''bin_number[0,1,2] = [initial, final, maximal phase bin number]'''
-    bin_number = np.loadtxt('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_ANTF_delta_ra_dec/bin_number_2139_delta.txt')
+    bin_number = np.loadtxt('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_ANTF_delta_ra_dec_20170116/bin_number_2139_delta_new2.txt')
     
 
     time_mjd = np.zeros(len(bin_number))
@@ -164,23 +165,18 @@ def plot_bary_diff(filename):
         time_mjd[ii] = (this_file['BARY_TIME'][bin_number[ii][0]] + this_file['BARY_TIME'][bin_number[ii][1]])/2.
         dBATdra[ii] = (this_file['dBATdra'][bin_number[ii][0]] + this_file['dBATdra'][bin_number[ii][1]])/2.
         dBATddec[ii] = (this_file['dBATddec'][bin_number[ii][0]] + this_file['dBATddec'][bin_number[ii][1]])/2.
-    phase_data = bin_number[:,2]
-
+#    phase_data = bin_number[:,2]
+    phase_amp_bin = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_ANTF_delta_ra_dec_20170116/phase_amp_bin.npy')
+    phase_data = phase_amp_bin[:,1]
 
     # What data to fit.
     fit_range = (untrans_time(-1500), untrans_time(50000))
-    #fit_range = (untrans_time(-1200), untrans_time(1800))
     sl = np.logical_and(time_mjd > fit_range[0], time_mjd < fit_range[1])
 
     n = -18
     pars_init_0 = [-3.67893666e-07,  -1.63144225e+00 + n*3e-3,  -1.10469531e+02,   8.00704363e-04]
-#    pars_init_1 = [2*1.94583554e-07,  2*-1.68755161e+00,   2*2.47273907e+01]
-#    pars_init_1 = [3.93934677e-07,  -3.37523445e+00,   4.82981320e+01, 2* 1.72609745e-03, 2* -1.68600031e-03]
     pars_init_1 = [3.93934677e-07,  -3.37523445e+00,   4.82981320e+01, 1e-05, 1e-05 ]
     p = [ -7.35e-7, -1.63079989e+00,  -1.13336394e+02,   7.82201828e-04] 
-#    pars_init = [2.23877409e-02,  -2.03966527e-03,   5.99999848e+07, 5e-02]
-#    pars_init = [ 1.4e-06,  2.12513909e+01,   8.65355252e+01,  -1e-04, -1e-04]
-    #pars_init = [  2.12388508e+01,   7.65860533e+01,   4.56920031e-04]
 
     '''parameters for old RA correction'''
     fit_pars_0, pcov_0, infodict_0, errmsg_0, success_0 = leastsq(residuals_0, pars_init_0,
@@ -232,9 +228,9 @@ def plot_bary_diff(filename):
     pfit_leastsq_1 = fit_pars_1
     perr_leastsq_1 = np.array(error_1)
 
-#    print("\nFit paramters and parameter errors from lestsq method :")
-#    print("pfit = ", pfit_leastsq_1)
-#    print("perr = ", perr_leastsq_1)
+    print("\nFit paramters and parameter errors from lestsq method :")
+    print("pfit = ", pfit_leastsq_1)
+    print("perr = ", perr_leastsq_1)
 
 
     models_plot(time_mjd, dBATdra, dBATddec,
@@ -260,16 +256,15 @@ def plot_bary_diff(filename):
     plt.figure()
     make_save_plot(fit_pars_0, 'model_0', 'res_0', time_mjd, dBATdra, dBATddec,  phase_data, 'old_phase_fit_J2139_all.png')
     plt.figure()
-
     make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl],
                    'new_phase_fit_J2139_init.png')
     plt.figure()
     make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl], 'new_phase_fit_J2139.png')
     plt.figure()
-    make_save_plot(pars_init_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl], 'new_phase_fit_J2139_zoom.png',
+    make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl], 'new_phase_fit_J2139_zoom.png',
             (untrans_time(-500), untrans_time(1500)))
     plt.figure()
-    make_save_plot(pars_init_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl],
+    make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl],
             'new_phase_fit_J2139_zoom2.png',
             (untrans_time(33400), untrans_time(34400)))
     plt.figure()
