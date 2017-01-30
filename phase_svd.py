@@ -69,10 +69,13 @@ def fft_phase_curve(parameters, profile_fft):
 def residuals(parameters, model_fft, data_fft):
     '''Only use positive frequencies for residuals'''
     model = fft_phase_curve(parameters, model_fft)
-    res_Re = (data_fft - model).real
-    res_Im = (data_fft - model).imag
+    residuals_complex = (data_fft - model)[:len(model)/2]
+    res_Re = residuals_complex.real
+    res_Im = residuals_complex.imag
+#    res_Re = (data_fft - model).real
+#    res_Im = (data_fft - model).imag
     res = np.concatenate((res_Re, res_Im))
-#    res = res[:len(res)/2]
+    print 'len of res'+str(len(res))
     return res
 
 def phase_fit(index, phase_matrix_origin, V, phase_model):
@@ -94,7 +97,7 @@ def phase_fit(index, phase_matrix_origin, V, phase_model):
     print "sucess?:", success
     '''DOF -1, since we set fft_file[0] = 0.'''
     res = residuals(fit_pars_phase, model_fft, data_fft)
-    print "Chi-squared: ", np.sum(np.abs(res[:len(res)/2])**2), "DOF: ", len(data_fft)-len(pars_init)-1
+    print "Chi-squared: ", np.sum(np.abs(res)**2), "DOF: ", len(data_fft)-len(pars_init)-1
 
     if (len(data_fft) > len(pars_init)) and pcov is not None:
         s_sq = (residuals(fit_pars_phase, model_fft, data_fft)**2).sum()/(len(data_fft)-len(pars_init)-1)
