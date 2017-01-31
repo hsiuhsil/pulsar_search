@@ -72,10 +72,7 @@ def residuals(parameters, model_fft, data_fft):
     residuals_complex = (data_fft - model)[:len(model)/2]
     res_Re = residuals_complex.real
     res_Im = residuals_complex.imag
-#    res_Re = (data_fft - model).real
-#    res_Im = (data_fft - model).imag
     res = np.concatenate((res_Re, res_Im))
-    print 'len of res'+str(len(res))
     return res
 
 def phase_fit(index, phase_matrix_origin, V, phase_model):
@@ -133,12 +130,15 @@ def phase_fit(index, phase_matrix_origin, V, phase_model):
     model_fft_real = fft_phase_curve(fit_pars_phase, model_fft).real
     data_fft_real = data_fft.real
     init_fft_real = fft_phase_curve(pars_init, model_fft).real
-    res_fft_real = res[:(len(res)/2)]
+    res_fft_real = np.concatenate((res[:(len(res)/2)], res[:(len(res)/2)][::-1]))
+#    print 'len of res', len(res)
+#    print 'len of res_fft_real', len(res_fft_real)
+#    print 'res_fft_real', res_fft_real
     '''Imag part'''
     model_fft_imag = fft_phase_curve(fit_pars_phase, model_fft).imag
     data_fft_imag = data_fft.imag
     init_fft_imag = fft_phase_curve(pars_init, model_fft).imag
-    res_fft_imag = res[(len(res)/2):]
+    res_fft_imag = np.concatenate((res[(len(res)/2):], -res[(len(res)/2):][::-1]))
 
     '''functions in Real space (ifft)'''
     model_ifft = np.fft.ifft(fft_phase_curve(fit_pars_phase,  model_fft)).real
