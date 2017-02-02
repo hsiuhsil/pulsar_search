@@ -13,18 +13,18 @@ from scipy.optimize import leastsq
 
 
 def main():
-#    args = sys.argv[1:]
-#    for filename in args:
-    try:
-        ploting()
-    except (IOError, ValueError):
-        print IOError
+    args = sys.argv[1:]
+    for filename in args:
+        try:
+            ploting(filename)
+        except (IOError, ValueError):
+            print IOError
 
 RA = 324.8428583333333  # deg
 DEC = 0.6959230555555556 # deg
 AU = 149597870700.0      # m
 C = 299792458.0    # m/s
-NPHASEBIN = 200
+NPHASEBIN = 800
 SCALE = 200/800.
 T = 0.312470
 TIME0 = 55707.   # MJD pivot
@@ -76,17 +76,22 @@ def residuals(parameters, model_fft, data_fft):
     res = np.concatenate((res_Re, res_Im))
     return res
 
-def phase_fit(index, phase_matrix_origin, V):
+def phase_fit(index, phase_matrix_origin, V, phase_model):
 
-    pars_init = [np.amax(phase_matrix_origin[index])/np.amax(V[0]), np.argmax(phase_matrix_origin[index]) % NPHASEBIN]
-    print 'pars_init', pars_init
+    pars_init = [np.amax(phase_matrix_origin[index])/np.amax(V[0]) , phase_model[index] % NPHASEBIN]
+    pars_init2 = [0.29,phase_model[index]  + 0.8]
+    pars_init3 = [0.29,phase_model[index]  + 0.1]
     model_fft = fft(V[0])
     data_fft = fft(phase_matrix_origin[index])
 
+#    print('V0_max', np.amax(V[0]), 'index', np.argmax(V[0]))
+#    print('data1_max', np.amax(phase_matrix_origin[1]), 'index', np.argmax(phase_matrix_origin[1]))
+#    print('estimate amp', np.amax(phase_matrix_origin[1])/np.amax(V[0]))
+#    print('estimate pars[1]', np.sqrt(sum(phase_matrix_origin[1]**2) / sum(V[0]**2)))
     fit_pars_phase, pcov, infodict, errmsg, success = leastsq(residuals, pars_init,
                    args=( model_fft, data_fft), full_output=1)
 
-    print "Fit parameters: ", fit_pars_phase
+#    print "Fit parameters: ", fit_pars_phase
     print "sucess?:", success
     '''DOF -1, since we set fft_file[0] = 0.'''
     res = residuals(fit_pars_phase, model_fft, data_fft)
@@ -104,8 +109,8 @@ def phase_fit(index, phase_matrix_origin, V):
           error.append(np.absolute(pcov[i][i])**0.5)
         except:
           error.append( 0.00 )
-    pfit_leastsq = fit_pars_phase 
-    perr_leastsq = np.array(error)
+    pfit_leastsq = fit_pars_phase *SCALE
+    perr_leastsq = np.array(error) *SCALE
 
     print("\nFit paramters and parameter errors from lestsq method :")
     print("pfit = ", pfit_leastsq)
@@ -114,12 +119,12 @@ def phase_fit(index, phase_matrix_origin, V):
     '''save the fitting amp and bin as [amp, bin, amp_err, bin_err]'''
     npy_file = 'phase_amp_bin_57178.npy'
     phase_amp_bin = np.concatenate((pfit_leastsq, perr_leastsq ))
-#    if save_fit_pars == True:
-#        if os.path.exists(npy_file):
-#            sequence = np.load(npy_file)
-#            np.save(npy_file, np.vstack((sequence, phase_amp_bin)))
-#        else:
-#            np.save(npy_file, phase_amp_bin)
+    if save_fit_pars == True:
+        if os.path.exists(npy_file):
+            sequence = np.load(npy_file)
+            np.save(npy_file, np.vstack((sequence, phase_amp_bin)))
+        else:
+            np.save(npy_file, phase_amp_bin)
 
     '''functions in Fourier space'''
     '''Real part'''
@@ -143,23 +148,23 @@ def phase_fit(index, phase_matrix_origin, V):
     freq_min = np.amin(freq_range)
     freq_max = np.amax(freq_range)
 
-    phase_range = np.arange(-100,100)
+    phase_range = np.arange(-400,400)
 
     plot_title = 'rescaled phase_bin = ' + str("%.3f" % phase_amp_bin[1]) + ' +/- ' + str("%.3f" % phase_amp_bin[3])
-    plot_name = 'phase_wz_1hr_' + str(index) + '_'
+    plot_name = 'phase_57178_' + str(index) + '_'
 
     '''Plot for real part in the Fourier space'''
     plt.figure()
     plt.subplot(2,1,1)
     plt.title(plot_title)
-    plt.plot(freq_range, np.roll(model_fft_real, -100),'r-')
-    plt.plot(freq_range, np.roll(data_fft_real, -100),'b-')
-    plt.plot(freq_range, np.roll(init_fft_real, -100),'k--')
+    plt.plot(freq_range, np.roll(model_fft_real, -400),'r-')
+    plt.plot(freq_range, np.roll(data_fft_real, -400),'b-')
+    plt.plot(freq_range, np.roll(init_fft_real, -400),'k--')
     plt.xlabel('Frequency')
     plt.xlim((freq_min,freq_max))
 
     plt.subplot(2,1,2)
-    plt.plot(freq_range, np.roll(res_fft_real, -100),'bo')
+    plt.plot(freq_range, np.roll(res_fft_real, -400),'bo')
     plt.xlabel('Frequency')
     plt.ylabel('Residuals')
     plt.xlim((freq_min,freq_max))
@@ -169,14 +174,14 @@ def phase_fit(index, phase_matrix_origin, V):
     plt.figure()
     plt.subplot(2,1,1)
     plt.title(plot_title)
-    plt.plot(freq_range, np.roll(model_fft_imag, -100),'r-')
-    plt.plot(freq_range, np.roll(data_fft_imag, -100),'b-')
-    plt.plot(freq_range, np.roll(init_fft_imag, -100),'k--')
+    plt.plot(freq_range, np.roll(model_fft_imag, -400),'r-')
+    plt.plot(freq_range, np.roll(data_fft_imag, -400),'b-')
+    plt.plot(freq_range, np.roll(init_fft_imag, -400),'k--')
     plt.xlabel('Frequency')
     plt.xlim((freq_min,freq_max))
 
     plt.subplot(2,1,2)
-    plt.plot(freq_range, np.roll(res_fft_imag, -100),'bo')
+    plt.plot(freq_range, np.roll(res_fft_imag, -400),'bo')
     plt.xlabel('Frequency')
     plt.ylabel('Residuals')
     plt.xlim((freq_min,freq_max))
@@ -186,18 +191,26 @@ def phase_fit(index, phase_matrix_origin, V):
     plt.figure()
     plt.subplot(2,1,1)
     plt.title(plot_title)
-    plt.plot(phase_range, np.roll(model_ifft, -100),'r-')
-    plt.plot(phase_range, np.roll(data_ifft, -100),'b-')
-    plt.plot(phase_range, np.roll(init_ifft, -100),'k--')
+    plt.plot(phase_range, np.roll(model_ifft, -400),'r-')
+    plt.plot(phase_range, np.roll(data_ifft, -400),'b-')
+    plt.plot(phase_range, np.roll(init_ifft, -400),'k--')
     plt.xlabel('Phase bin number')
 
     plt.subplot(2,1,2)
-    plt.plot(phase_range, np.roll(res_ifft, -100),'bo')
+    plt.plot(phase_range, np.roll(res_ifft, -400),'bo')
     plt.xlabel('Phase bin number')
     plt.ylabel('Residuals')
     plt.savefig(plot_name + 'ifft.png')
 
-def svd(this_file, bin_number, phase_npy_file):
+def ploting(filename):
+
+    this_file = h5py.File('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_1hr/J2139+00_57178h5', "r")
+
+    '''bin_number[0,1,2] = [initial, final, maximal phase bin number]'''
+    bin_number = np.loadtxt('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_1hr/bin_number_2139_57178.txt')
+ 
+    
+
     time_mjd = np.zeros(len(bin_number))
     dBATdra = np.zeros(len(bin_number))
     dBATddec = np.zeros(len(bin_number))
@@ -208,52 +221,17 @@ def svd(this_file, bin_number, phase_npy_file):
     phase_data = bin_number[:,2]
 
 
-    phase_matrix_origin = phase_npy_file
-    phase_model = timing_model_1(fit_pars, time_mjd, dBATdra, dBATddec)
+    phase_matrix_origin = np.load(filename)
+    phase_model = timing_model_1(fit_pars, time_mjd, dBATdra, dBATddec) 
 
     phase_matrix_new = np.zeros(phase_matrix_origin.shape)
     for ii in xrange(len(phase_matrix_new)):
         phase_matrix_new[ii] = np.roll(phase_matrix_origin[ii], -1 * phase_model[ii] )
-
+    
     U, s, V = np.linalg.svd(phase_matrix_new, full_matrices=True)
 
     if np.abs(np.amax(V[0])) < np.abs(np.amin(V[0])):
         V[0] = -V[0]
-
-    return U, s, V, phase_model
-
-def ploting():
-
-    this_file_wz = h5py.File('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_ANTF_delta_ra_dec_20170116/J2139+00_wzonlyh5', "r")
-
-    '''bin_number[0,1,2] = [initial, final, maximal phase bin number]'''
-    bin_number_wz = np.loadtxt('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_ANTF_delta_ra_dec_20170116/bin_number_2139_delta_new2.txt')
-
-    phase_npy_wz = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_ANTF_delta_ra_dec_20170116/phase_wz.npy')
-
-    this_file_1hr = h5py.File('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_1hr/J2139+00_57178h5', "r")
-
-    '''bin_number[0,1,2] = [initial, final, maximal phase bin number]'''
-    bin_number_1hr = np.loadtxt('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_1hr/bin_number_2139_57178.txt')
-
-    phase_npy_1hr = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_1hr/phase_1hr.npy') 
-
-    U_wz, s_wz, V_wz, phase_model_wz = svd(this_file_wz, bin_number_wz, phase_npy_wz)
-    U_1hr_origin, s_1hr_origin, V_1hr_origin, phase_model_1hr = svd(this_file_1hr, bin_number_1hr, phase_npy_1hr)
-    
-    V0_wz = V_wz[0]
-#    print 'V0_wz.shape', V0_wz.shape
-
-    '''resacle V0_1hr'''
-    V_1hr = np.zeros((V_1hr_origin.shape[0], int(V_1hr_origin.shape[0]*SCALE)))  
-    for ii in xrange(len(V_1hr)):
-        for jj in xrange(len(V_1hr[0])):
-            V_1hr[ii, jj] = np.average(V_1hr_origin[ii,int(jj/SCALE):int(jj/SCALE)+4])    
-
-#    print 'V_1hr.shape', V_1hr.shape
-
-    phase_fit(0, V_wz, V_1hr)
-#    phase_fit(0, V_1hr, V_wz)
 
 #    phase_fit(1, phase_matrix_origin, V, phase_model)
 
@@ -270,9 +248,9 @@ def ploting():
 #    plt.ylabel('s values')
 #    plt.savefig('phase_57178_s.png')
 
-#    plt.figure()
-#    plt.plot(np.arange(-400, 400), np.roll(V[0]     , -400), 'r-',linewidth=2.5)
-#    plt.plot(np.arange(-400, 400), np.roll(V[1] -0.1, -400), 'b-',linewidth=2.5)
+    plt.figure()
+    plt.plot(np.arange(-400, 400), np.roll(V[0]     , -400), 'r-',linewidth=2.5)
+    plt.plot(np.arange(-400, 400), np.roll(V[1] -0.1, -400), 'b-',linewidth=2.5)
 #    plt.plot(np.arange(-400, 400), np.roll(V[2] -0.2, -400), 'g-',linewidth=2.5)
 #    plt.plot(np.arange(-400, 400), np.roll(V[3] -0.3, -400), 'k-',linewidth=2.5)
 #    plt.plot(np.arange(-400, 400), np.roll(V[4] -0.4, -400), 'y-',linewidth=2.5)
@@ -281,9 +259,9 @@ def ploting():
 #    plt.plot(np.arange(-400, 400), np.roll(V[7] -0.7, -400), color = '0.5',linewidth=1.5)
 #    plt.plot(np.arange(-400, 400), np.roll(V[8] -0.8, -400), color = '0.3',linewidth=1.5)
 #    plt.plot(np.arange(-400, 400), np.roll(V[9] -0.9, -400), color = '0.1',linewidth=1.5)
-#    plt.xlabel('phase bin number')
-#    plt.ylabel('V values')
-#    plt.savefig('phase_57178_V.png')
+    plt.xlabel('phase bin number')
+    plt.ylabel('V values')
+    plt.savefig('phase_57178_V.png')
 
 
   
