@@ -24,8 +24,9 @@ RA = 324.8428583333333  # deg
 DEC = 0.6959230555555556 # deg
 AU = 149597870700.0      # m
 C = 299792458.0    # m/s
-NPHASEBIN = 200
-SCALE = 200/800.
+NPHASEBIN_wz = 200
+NPHASEBIN_1hr = 800
+SCALE = np.float(NPHASEBIN_wz) / np.float(NPHASEBIN_1hr)
 T = 0.312470
 TIME0 = 55707.   # MJD pivot
 
@@ -36,7 +37,7 @@ save_fit_pars = False
 def transform_time(time_mjd):
     return (time_mjd - TIME0) * 24
 
-def timing_model_1(parameters, time_mjd, dBATdra, dBATddec):
+def timing_model_1(parameters, time_mjd, dBATdra, dBATddec, NPHASEBIN):
     time = transform_time(time_mjd)
 
     out1 = parameters[0] * time**2
@@ -76,9 +77,9 @@ def residuals(parameters, model_fft, data_fft):
     res = np.concatenate((res_Re, res_Im))
     return res
 
-def phase_fit(index, phase_matrix_origin, V):
+def phase_fit(index, phase_matrix_origin, V, plot_name):
 
-    pars_init = [np.amax(phase_matrix_origin[index])/np.amax(V[0]), np.argmax(phase_matrix_origin[index]) % NPHASEBIN]
+    pars_init = [np.amax(phase_matrix_origin[index])/np.amax(V[0]), np.argmax(phase_matrix_origin[index]) % NPHASEBIN_wz]
     print 'pars_init', pars_init
     model_fft = fft(V[0])
     data_fft = fft(phase_matrix_origin[index])
@@ -146,7 +147,7 @@ def phase_fit(index, phase_matrix_origin, V):
     phase_range = np.arange(-100,100)
 
     plot_title = 'rescaled phase_bin = ' + str("%.3f" % phase_amp_bin[1]) + ' +/- ' + str("%.3f" % phase_amp_bin[3])
-    plot_name = 'phase_wz_1hr_' + str(index) + '_'
+    plot_name += str(index) + '_'
 
     '''Plot for real part in the Fourier space'''
     plt.figure()
@@ -197,7 +198,7 @@ def phase_fit(index, phase_matrix_origin, V):
     plt.ylabel('Residuals')
     plt.savefig(plot_name + 'ifft.png')
 
-def svd(this_file, bin_number, phase_npy_file):
+def svd(this_file, bin_number, phase_npy_file, NPHASEBIN):
     time_mjd = np.zeros(len(bin_number))
     dBATdra = np.zeros(len(bin_number))
     dBATddec = np.zeros(len(bin_number))
@@ -209,7 +210,7 @@ def svd(this_file, bin_number, phase_npy_file):
 
 
     phase_matrix_origin = phase_npy_file
-    phase_model = timing_model_1(fit_pars, time_mjd, dBATdra, dBATddec)
+    phase_model = timing_model_1(fit_pars, time_mjd, dBATdra, dBATddec, NPHASEBIN)
 
     phase_matrix_new = np.zeros(phase_matrix_origin.shape)
     for ii in xrange(len(phase_matrix_new)):
@@ -238,22 +239,21 @@ def ploting():
 
     phase_npy_1hr = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_1hr/phase_1hr.npy') 
 
-    U_wz, s_wz, V_wz, phase_model_wz = svd(this_file_wz, bin_number_wz, phase_npy_wz)
-    U_1hr_origin, s_1hr_origin, V_1hr_origin, phase_model_1hr = svd(this_file_1hr, bin_number_1hr, phase_npy_1hr)
+    U_wz, s_wz, V_wz, phase_model_wz = svd(this_file_wz, bin_number_wz, phase_npy_wz, NPHASEBIN_wz)
+    U_1hr_origin, s_1hr_origin, V_1hr_origin, phase_model_1hr = svd(this_file_1hr, bin_number_1hr, phase_npy_1hr, NPHASEBIN_1hr)
+
+
     
     V0_wz = V_wz[0]
-#    print 'V0_wz.shape', V0_wz.shape
-
     '''resacle V0_1hr'''
-    V_1hr = np.zeros((V_1hr_origin.shape[0], int(V_1hr_origin.shape[0]*SCALE)))  
+    V_1hr = np.zeros((V_1hr_origin.shape[0], int((V_1hr_origin.shape[1])*SCALE)))  
     for ii in xrange(len(V_1hr)):
         for jj in xrange(len(V_1hr[0])):
             V_1hr[ii, jj] = np.average(V_1hr_origin[ii,int(jj/SCALE):int(jj/SCALE)+4])    
 
-#    print 'V_1hr.shape', V_1hr.shape
 
-    phase_fit(0, V_wz, V_1hr)
-#    phase_fit(0, V_1hr, V_wz)
+    phase_fit(0, V_wz, V_1hr, 'phase_wz_1hr_')
+    phase_fit(0, V_1hr, V_wz, 'phase_1hr_wz_')
 
 #    phase_fit(1, phase_matrix_origin, V, phase_model)
 
@@ -261,14 +261,13 @@ def ploting():
 #        print 'ii= '+str(ii)
 #        phase_fit(ii, phase_matrix_origin, V, phase_model)
 
-#    print 'phase_matrix_new.shape', phase_matrix_new.shape
-#    print 's.shape', s.shape
 
-#    plt.figure()
-#    plt.plot(np.arange(64), s, 'ro-')
-#    plt.xlabel('phase bin number')
-#    plt.ylabel('s values')
-#    plt.savefig('phase_57178_s.png')
+    plt.figure()
+    plt.plot(np.arange(-100, 100), np.roll(V_wz[0]     , -100), 'r-',linewidth=2.5)
+    plt.plot(np.arange(-100, 100), np.roll(V_1hr[0] -0.5, -100), 'b-',linewidth=2.5)
+    plt.xlabel('phase bin number')
+    plt.ylabel('amp')
+    plt.savefig('phase_wz_and_1hr.png')
 
 #    plt.figure()
 #    plt.plot(np.arange(-400, 400), np.roll(V[0]     , -400), 'r-',linewidth=2.5)
