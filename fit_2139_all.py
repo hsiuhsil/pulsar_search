@@ -29,7 +29,7 @@ NPHASEBIN = NPHASEBIN_wz
 NPHASEBIN_1hr = 800
 SCALE = np.float(NPHASEBIN_wz) / np.float(NPHASEBIN_1hr)
 T = 0.312470
-PHASE_DIFF_wz_1hr = 6.20587204
+PHASE_DIFF_wz_1hr = -6.20587204
 PHASE_DIFF_wz_1hr_err = 0.02407328
 
 TIME0 = 55707.   # MJD pivot
@@ -50,17 +50,13 @@ def timing_model_1(parameters, time_mjd, dBATdra, dBATddec, wz_range):
     for ii in xrange(len(time)):
         if ii < wz_range:
             NPHASEBIN = NPHASEBIN_wz
-#            print 'NPHASEBIN, <236', NPHASEBIN
             out1[ii] +=  (NPHASEBIN / T) * (dBATdra[ii] * 86400 * 180 / np.pi * parameters[3] + dBATddec[ii] * 86400 * 180 / np.pi * parameters[4])
             out1[ii] = out1[ii] % NPHASEBIN
-#            print 'out1 < wz_range', out1
         elif ii >= wz_range:
-#            print 'NPHASEBIN, >=236', NPHASEBIN
             NPHASEBIN = NPHASEBIN_1hr
             out1[ii] +=  (NPHASEBIN / T) * (dBATdra[ii] * 86400 * 180 / np.pi * parameters[3] + dBATddec[ii] * 86400 * 180 / np.pi * parameters[4])
             out1[ii] = out1[ii] % NPHASEBIN
             out1[ii] = out1[ii] * SCALE + PHASE_DIFF_wz_1hr
-#            print 'out1 >= wz_range', out1 
 
     return out1
 
@@ -69,7 +65,6 @@ def residuals_1(parameters, time_mjd, dBATdra, dBATddec, phase_data, phase_data_
     
     res_1 = phase_data - model_1
     res_1 = (res_1 + NPHASEBIN / 2.) % NPHASEBIN - NPHASEBIN / 2.
-#    print 'NPHASEBIN in res', NPHASEBIN
     res_1 = res_1 / phase_data_err
     return res_1
 
@@ -147,8 +142,11 @@ def time_pattern(this_file, bin_number, phase_amp_bin, NPHASEBIN):
         phase_data_err = phase_amp_bin[:,3]
     elif NPHASEBIN == NPHASEBIN_1hr:
         'As WZ to be the template, need to rescale the phase bin and then add the difference between two templates.'
-        phase_data = phase_amp_bin[:,1] * SCALE + PHASE_DIFF_wz_1hr
-        phase_data_err = np.sqrt(phase_amp_bin[:,3]**2 * SCALE**2 + PHASE_DIFF_wz_1hr_err**2)
+        phase_data = phase_amp_bin[:,1] + PHASE_DIFF_wz_1hr
+        phase_data_err = (np.sqrt(phase_amp_bin[:,3]**2  + PHASE_DIFF_wz_1hr_err**2)) * 10
+
+#        phase_data = phase_amp_bin[:,1] * SCALE + PHASE_DIFF_wz_1hr
+#        phase_data_err = (np.sqrt(phase_amp_bin[:,3]**2 * SCALE**2 + PHASE_DIFF_wz_1hr_err**2))*50
     else:
         print 'NPHASEBIN error'
 
@@ -172,6 +170,7 @@ def plot_bary_diff():
     time_mjd_wz, dBATdra_wz, dBATddec_wz, phase_data_wz, phase_data_err_wz = time_pattern(this_file_wz, bin_number_wz, phase_amp_bin_wz, NPHASEBIN_wz)
     time_mjd_1hr, dBATdra_1hr, dBATddec_1hr, phase_data_1hr, phase_data_err_1hr = time_pattern(this_file_1hr, bin_number_1hr, phase_amp_bin_1hr, NPHASEBIN_1hr)
 
+#    print 'time_mjd_1hr',time_mjd_1hr
 #    print 'phase_data_1hr',phase_data_1hr
 #    print 'phase_data_err_1hr',phase_data_err_1hr
 
@@ -183,14 +182,15 @@ def plot_bary_diff():
 
 
     # What data to fit.
-    fit_range = (untrans_time(-1500), untrans_time(36000))
+    fit_range = (untrans_time(-15000), untrans_time(36000))
     sl = np.logical_and(time_mjd > fit_range[0], time_mjd < fit_range[1])
     n = 5
+#    pars_init_1 = [3.78248638e-05, -3.66575834e+00, -2.22991159e+04,  7.74034269e-03, 9.01380002e-02]
     pars_init_1 = [3.93934677e-07,  -3.37523445e+00 + n*3e-3,   4.82981320e+01, 1e-05, 1e-05 ]
 #    pars_init_1 = [2.e-07  , -3.353   ,3.4e+01  , 1e-05, 1e-05]
     p = [ -7.35e-7, -1.63079989e+00,  -1.13336394e+02,   7.82201828e-04] 
 
-    print 'timing_model_1', timing_model_1(pars_init_1, time_mjd, dBATdra, dBATddec, len(time_mjd_wz))
+#    print 'timing_model_1', timing_model_1(pars_init_1, time_mjd, dBATdra, dBATddec, len(time_mjd_wz))
 
 
     '''parameters for new RA correction'''
@@ -202,6 +202,8 @@ def plot_bary_diff():
     print "Chi-squared: ", np.sum(residuals_1(fit_pars_1, time_mjd[sl], dBATdra[sl], dBATddec[sl],
                          phase_data[sl], phase_data_err[sl], len(time_mjd_wz))**2), "DOF: ", len(phase_data[sl])-len(pars_init_1)
 
+#    print'residuals_1',residuals_1(fit_pars_1, time_mjd[sl], dBATdra[sl], dBATddec[sl],
+#                         phase_data[sl], phase_data_err[sl], len(time_mjd_wz))
 
     if (len(phase_data) > len(pars_init_1)) and pcov_1 is not None:
         s_sq_1 = (residuals_1(fit_pars_1, time_mjd[sl], dBATdra[sl], dBATddec[sl],
@@ -219,9 +221,9 @@ def plot_bary_diff():
     pfit_leastsq_1 = fit_pars_1
     perr_leastsq_1 = np.array(error_1)
 
-#    print("\nFit paramters and parameter errors from lestsq method :")
-#    print("pfit = ", pfit_leastsq_1)
-#    print("perr = ", perr_leastsq_1)
+    print("\nFit paramters and parameter errors from lestsq method :")
+    print("pfit = ", pfit_leastsq_1)
+    print("perr = ", perr_leastsq_1)
 
 
     models_plot(time_mjd, dBATdra, dBATddec,
@@ -239,7 +241,10 @@ def plot_bary_diff():
             (untrans_time(-500), untrans_time(1500)))
     plt.figure()
     make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl], phase_data_err[sl], len(time_mjd_wz), 'new_phase_fit_J2139_zoom2.png',
-            (untrans_time(33400), untrans_time(34400)))
+            (untrans_time(33400), untrans_time(36000)))
+    plt.figure()
+    make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd[236:], dBATdra[236:], dBATddec[236:], phase_data[236:], phase_data_err[236:], len(time_mjd_wz), 'new_phase_fit_J2139_zoom3.png',
+            (untrans_time(35312), untrans_time(35314)))
     plt.figure()
     make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd, dBATdra, dBATddec,  phase_data, phase_data_err[sl], len(time_mjd_wz), 'new_phase_fit_J2139_all.png')
 
