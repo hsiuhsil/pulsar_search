@@ -128,6 +128,27 @@ def make_save_plot(parameters, model, res, time, dBATdra, dBATddec, data, data_e
 
     plt.savefig(filename)
 
+def make_save_plot_pointing(parameters, model, res, time, dBATdra, dBATddec, data, data_err, wz_range, filename, time_range=None):
+
+    time_range = np.linspace(time[wz_range], time[-1], 64)
+    timing_model_1_pointing = timing_model_1(parameters, time, dBATdra, dBATddec, wz_range)[236:]
+
+    phase_data_pointing =  data[236:]
+    residuals_1_pointing = residuals_1(parameters, time, dBATdra, dBATddec, 
+                            data, data_err, wz_range)[236:]
+
+    plt.subplot(2,1,1)
+    plt.plot(time_range, phase_data_pointing, 'bo')
+    plt.plot(time_range, timing_model_1_pointing, 'r--')
+    plt.xlabel('Bary diff (hours)', fontsize=14)
+    plt.ylabel('Max Phase Bins Number', fontsize=14)
+    plt.subplot(2,1,2)
+    plt.plot(time_range, residuals_1_pointing, 'bo')
+    plt.xlabel('Bary diff (hours)', fontsize=14)
+    plt.ylabel('Phase bin residuals', fontsize=14)
+
+    plt.savefig(filename)
+
 def time_pattern(this_file, bin_number, phase_amp_bin, NPHASEBIN):
     time_mjd = np.zeros(len(bin_number))
     dBATdra = np.zeros(len(bin_number))
@@ -144,9 +165,6 @@ def time_pattern(this_file, bin_number, phase_amp_bin, NPHASEBIN):
         'As WZ to be the template, need to rescale the phase bin and then add the difference between two templates.'
         phase_data = phase_amp_bin[:,1] + PHASE_DIFF_wz_1hr
         phase_data_err = (np.sqrt(phase_amp_bin[:,3]**2  + PHASE_DIFF_wz_1hr_err**2)) * 10
-
-#        phase_data = phase_amp_bin[:,1] * SCALE + PHASE_DIFF_wz_1hr
-#        phase_data_err = (np.sqrt(phase_amp_bin[:,3]**2 * SCALE**2 + PHASE_DIFF_wz_1hr_err**2))*50
     else:
         print 'NPHASEBIN error'
 
@@ -182,7 +200,7 @@ def plot_bary_diff():
 
 
     # What data to fit.
-    fit_range = (untrans_time(-15000), untrans_time(36000))
+    fit_range = (untrans_time(-15000), untrans_time(35000))
     sl = np.logical_and(time_mjd > fit_range[0], time_mjd < fit_range[1])
     n = 5
 #    pars_init_1 = [3.78248638e-05, -3.66575834e+00, -2.22991159e+04,  7.74034269e-03, 9.01380002e-02]
@@ -205,6 +223,13 @@ def plot_bary_diff():
 #    print'residuals_1',residuals_1(fit_pars_1, time_mjd[sl], dBATdra[sl], dBATddec[sl],
 #                         phase_data[sl], phase_data_err[sl], len(time_mjd_wz))
 
+    print'timing_model_1_pointing',timing_model_1(fit_pars_1, time_mjd, dBATdra, dBATddec, len(time_mjd_wz))[236:]
+
+    print 'phase_data', phase_data[236:]
+
+    print'residuals_1_pointing',residuals_1(fit_pars_1, time_mjd, dBATdra, dBATddec,
+                         phase_data, phase_data_err, len(time_mjd_wz))[236:]
+
     if (len(phase_data) > len(pars_init_1)) and pcov_1 is not None:
         s_sq_1 = (residuals_1(fit_pars_1, time_mjd[sl], dBATdra[sl], dBATddec[sl],
             phase_data[sl], phase_data_err[sl], len(time_mjd_wz))**2).sum()/(len(phase_data[sl])-len(pars_init_1))
@@ -225,15 +250,6 @@ def plot_bary_diff():
     print("pfit = ", pfit_leastsq_1)
     print("perr = ", perr_leastsq_1)
 
-
-    models_plot(time_mjd, dBATdra, dBATddec,
-                   'models1.png', (untrans_time(-500), untrans_time(1800)))
-    plt.figure()
-    models_plot(time_mjd, dBATdra, dBATddec,
-                   'models2.png', (untrans_time(33300), untrans_time(34500)))
-
-    plt.figure()
-    make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl], phase_data_err[sl], len(time_mjd_wz), 'new_phase_fit_J2139_init.png')
     plt.figure()
     make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl], phase_data_err[sl], len(time_mjd_wz), 'new_phase_fit_J2139.png')
     plt.figure()
@@ -241,12 +257,12 @@ def plot_bary_diff():
             (untrans_time(-500), untrans_time(1500)))
     plt.figure()
     make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl], phase_data_err[sl], len(time_mjd_wz), 'new_phase_fit_J2139_zoom2.png',
-            (untrans_time(33400), untrans_time(36000)))
+            (untrans_time(33400), untrans_time(35000)))
     plt.figure()
-    make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd[236:], dBATdra[236:], dBATddec[236:], phase_data[236:], phase_data_err[236:], len(time_mjd_wz), 'new_phase_fit_J2139_zoom3.png',
-            (untrans_time(35312), untrans_time(35314)))
+    make_save_plot_pointing(fit_pars_1, 'model_1', 'res_1', time_mjd, dBATdra, dBATddec, phase_data, phase_data_err, len(time_mjd_wz), 'new_phase_fit_J2139_zoom3.png')
+#            (untrans_time(35312), untrans_time(35314)))
     plt.figure()
-    make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd, dBATdra, dBATddec,  phase_data, phase_data_err[sl], len(time_mjd_wz), 'new_phase_fit_J2139_all.png')
+    make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd, dBATdra, dBATddec,  phase_data, phase_data_err, len(time_mjd_wz), 'new_phase_fit_J2139_all.png')
 
 
 if __name__ == '__main__':
