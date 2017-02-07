@@ -29,7 +29,7 @@ NPHASEBIN = NPHASEBIN_wz
 NPHASEBIN_1hr = 800
 SCALE = np.float(NPHASEBIN_wz) / np.float(NPHASEBIN_1hr)
 T = 0.312470
-PHASE_DIFF_wz_1hr = -6.20587204
+PHASE_DIFF_wz_1hr = -6.20587204 
 PHASE_DIFF_wz_1hr_err = 0.02407328
 
 TIME0 = 55707.   # MJD pivot
@@ -53,11 +53,12 @@ def timing_model_1(parameters, time_mjd, dBATdra, dBATddec, wz_range):
             out1[ii] +=  (NPHASEBIN / T) * (dBATdra[ii] * 86400 * 180 / np.pi * parameters[3] + dBATddec[ii] * 86400 * 180 / np.pi * parameters[4])
             out1[ii] = out1[ii] % NPHASEBIN
         elif ii >= wz_range:
-            NPHASEBIN = NPHASEBIN_1hr
+            NPHASEBIN = NPHASEBIN_wz
+#            NPHASEBIN = NPHASEBIN_1hr
             out1[ii] +=  (NPHASEBIN / T) * (dBATdra[ii] * 86400 * 180 / np.pi * parameters[3] + dBATddec[ii] * 86400 * 180 / np.pi * parameters[4])
-            out1[ii] = out1[ii] % NPHASEBIN
-            out1[ii] = out1[ii] * SCALE + PHASE_DIFF_wz_1hr
-
+            out1[ii] = (out1[ii] )% NPHASEBIN
+#            out1[ii] = out1[ii] * SCALE #+ PHASE_DIFF_wz_1hr
+#    print out1
     return out1
 
 def residuals_1(parameters, time_mjd, dBATdra, dBATddec, phase_data, phase_data_err, wz_range):
@@ -200,7 +201,7 @@ def plot_bary_diff():
 
 
     # What data to fit.
-    fit_range = (untrans_time(-15000), untrans_time(35000))
+    fit_range = (untrans_time(-15000), untrans_time(36000))
     sl = np.logical_and(time_mjd > fit_range[0], time_mjd < fit_range[1])
     n = 5
 #    pars_init_1 = [3.78248638e-05, -3.66575834e+00, -2.22991159e+04,  7.74034269e-03, 9.01380002e-02]
