@@ -29,7 +29,9 @@ SCALE = 200/800.
 T = 0.312470
 TIME0 = 55707.   # MJD pivot
 
-fit_pars =  [3.47609206e-07,  -3.37370520e+00,   4.74201487e+01,  -1.39689904e-05,  2.21425268e-05]
+#fit_pars =  [3.47609206e-07,  -3.37370520e+00,   4.74201487e+01,  -1.39689904e-05,  2.21425268e-05]
+
+fit_pars = [9.37426903e-08,  -3.34800232e+00,   3.26992424e+01,   2.14807618e-04,  -4.11457078e-04]
 
 save_fit_pars = False
 
@@ -240,18 +242,18 @@ def ploting(filename):
     for ii in xrange(len(phase_matrix_new)):
 #        phase_matrix_new[ii] = np.roll(phase_matrix_origin[ii], -1 * phase_model[ii] )
 #        profile_aligned[ii] = np.roll(profile[ii], -int(round(timing_model[ii])))
-        phase_matrix_new[ii] = ifft(fft_phase_curve_inverse([1, phase_model[ii]], fft(phase_matrix_origin[ii])))
+        phase_matrix_new[ii] = ifft(fft_phase_curve_inverse([1, phase_model[ii]], fft(phase_matrix_origin[ii]))).real
 #        phase_matrix_new[ii] = ifft(fft(phase_matrix_origin[ii]) * np.exp(-1.0j * 2 * np.pi * freq * (n - phase_model[ii])))
     
-    print 'finish phase_matrix_new' 
+#    print 'finish phase_matrix_new' 
     U, s, V = np.linalg.svd(phase_matrix_new, full_matrices=True)
 
     if np.abs(np.amax(V[0])) < np.abs(np.amin(V[0])):
         V[0] = -V[0]
 
-    print 'V[0][0:10]:', V[0][0:10]
+#    print 'V[0][0:10]:', V[0][0:10]
 
-    phase_fit(1, phase_matrix_origin, V, phase_model)
+#    phase_fit(1, phase_matrix_origin, V, phase_model)
 
 #    for ii in xrange(len(phase_model)):
 #        print 'ii= '+str(ii)
