@@ -14,10 +14,11 @@ from scipy.optimize import leastsq
 from astropy.time import Time
 
 def main():
-    try:
-        plot_bary_diff()
-    except None:
-        print IOError
+    for ii in xrange(3,4):
+        try:
+            plot_bary_diff(ii)
+        except None:
+            print IOError
 
 
 RA = 324.8428583333333  # deg
@@ -50,12 +51,13 @@ def timing_model_1(parameters, time_mjd, dBATdra, dBATddec, wz_range):
     for ii in xrange(len(time)):
         if ii < wz_range:
             NPHASEBIN = NPHASEBIN_wz
-            out1[ii] +=  (NPHASEBIN / T) * (dBATdra[ii] * 86400 * 180 / np.pi * parameters[3] + dBATddec[ii] * 86400 * 180 / np.pi * parameters[4])
+            out1[ii] +=  (NPHASEBIN / T) * (-1) *(dBATdra[ii] * 86400 * 180 / np.pi * parameters[3] + dBATddec[ii] * 86400 * 180 / np.pi * parameters[4])
             out1[ii] = out1[ii] % NPHASEBIN
         elif ii >= wz_range:
+            '''Make sure the data of pointing has been rescale to the same phase bin numbers as WZ data'''
             NPHASEBIN = NPHASEBIN_wz
 #            NPHASEBIN = NPHASEBIN_1hr
-            out1[ii] +=  (NPHASEBIN / T) * (dBATdra[ii] * 86400 * 180 / np.pi * parameters[3] + dBATddec[ii] * 86400 * 180 / np.pi * parameters[4])
+            out1[ii] +=  (NPHASEBIN / T) * (-1) *(dBATdra[ii] * 86400 * 180 / np.pi * parameters[3] + dBATddec[ii] * 86400 * 180 / np.pi * parameters[4])
             out1[ii] = (out1[ii] )% NPHASEBIN
 #            out1[ii] = out1[ii] * SCALE #+ PHASE_DIFF_wz_1hr
 #    print out1
@@ -165,7 +167,7 @@ def time_pattern(this_file, bin_number, phase_amp_bin, NPHASEBIN):
     elif NPHASEBIN == NPHASEBIN_1hr:
         'As WZ to be the template, need to rescale the phase bin and then add the difference between two templates.'
         phase_data = phase_amp_bin[:,1] + PHASE_DIFF_wz_1hr
-        phase_data_err = (np.sqrt(phase_amp_bin[:,3]**2  + PHASE_DIFF_wz_1hr_err**2)) * 10
+        phase_data_err = (np.sqrt(phase_amp_bin[:,3]**2  + PHASE_DIFF_wz_1hr_err**2)) 
     else:
         print 'NPHASEBIN error'
 
@@ -173,7 +175,7 @@ def time_pattern(this_file, bin_number, phase_amp_bin, NPHASEBIN):
     return time_mjd, dBATdra, dBATddec, phase_data, phase_data_err
 
 
-def plot_bary_diff():
+def plot_bary_diff(n):
 
     this_file_wz = h5py.File('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_ANTF_delta_ra_dec_20170116/J2139+00_wzonlyh5', "r")
     '''bin_number[0,1,2] = [initial, final, maximal phase bin number]'''
@@ -203,9 +205,11 @@ def plot_bary_diff():
     # What data to fit.
     fit_range = (untrans_time(-15000), untrans_time(36000))
     sl = np.logical_and(time_mjd > fit_range[0], time_mjd < fit_range[1])
-    n = 5
+#    n = 5
 #    pars_init_1 = [3.78248638e-05, -3.66575834e+00, -2.22991159e+04,  7.74034269e-03, 9.01380002e-02]
-    pars_init_1 = [3.93934677e-07,  -3.37523445e+00 + n*3e-3,   4.82981320e+01, 1e-05, 1e-05 ]
+    pars_init_1 = [3.93934677e-07,  -3.37523445e+00 + n*(2*3e-3),   4.82981320e+01, 1e-05, 1e-05 ]
+#    pars_init_1 = [9.37507652e-08,  -3.34800261e+00 + n*(2*3e-3),   3.27001079e+01,  -2.14805292e-04,
+#   4.11458588e-04]
 #    pars_init_1 = [2.e-07  , -3.353   ,3.4e+01  , 1e-05, 1e-05]
     p = [ -7.35e-7, -1.63079989e+00,  -1.13336394e+02,   7.82201828e-04] 
 
@@ -221,15 +225,18 @@ def plot_bary_diff():
     print "Chi-squared: ", np.sum(residuals_1(fit_pars_1, time_mjd[sl], dBATdra[sl], dBATddec[sl],
                          phase_data[sl], phase_data_err[sl], len(time_mjd_wz))**2), "DOF: ", len(phase_data[sl])-len(pars_init_1)
 
+    print(n, np.sum(residuals_1(fit_pars_1, time_mjd[sl], dBATdra[sl], dBATddec[sl],
+                         phase_data[sl], phase_data_err[sl], len(time_mjd_wz))**2))
+
 #    print'residuals_1',residuals_1(fit_pars_1, time_mjd[sl], dBATdra[sl], dBATddec[sl],
 #                         phase_data[sl], phase_data_err[sl], len(time_mjd_wz))
 
-    print'timing_model_1_pointing',timing_model_1(fit_pars_1, time_mjd, dBATdra, dBATddec, len(time_mjd_wz))[236:]
+#    print'timing_model_1_pointing',timing_model_1(fit_pars_1, time_mjd, dBATdra, dBATddec, len(time_mjd_wz))[236:]
 
-    print 'phase_data', phase_data[236:]
+#    print 'phase_data', phase_data[236:]
 
-    print'residuals_1_pointing',residuals_1(fit_pars_1, time_mjd, dBATdra, dBATddec,
-                         phase_data, phase_data_err, len(time_mjd_wz))[236:]
+#    print'residuals_1_pointing',residuals_1(fit_pars_1, time_mjd, dBATdra, dBATddec,
+#                         phase_data, phase_data_err, len(time_mjd_wz))[236:]
 
     if (len(phase_data) > len(pars_init_1)) and pcov_1 is not None:
         s_sq_1 = (residuals_1(fit_pars_1, time_mjd[sl], dBATdra[sl], dBATddec[sl],
