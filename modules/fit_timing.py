@@ -41,31 +41,41 @@ def transform_time(time_mjd):
 def untrans_time(delta_time_hrs):
     return delta_time_hrs / 24. + TIME0
 
-def timing_model_1(parameters, time_mjd, dBATdra, dBATddec, NPHASEBIN=None):
+def timing_model_1(parameters, time_mjd, dBATdra, dBATddec, NPHASEBIN=None, RESCALE=None):
+
     time = transform_time(time_mjd)
 
     out1 = parameters[0] * time**2
     out1 += parameters[1] * time
     out1 += parameters[2]
+    print 'out1_1',out1[0:10]
     if (NPHASEBIN == None) or (NPHASEBIN == NPHASEBIN_wz):
         NPHASEBIN = NPHASEBIN_wz
     elif NPHASEBIN == NPHASEBIN_1hr:
-        NPHASEBIN = NPHASEBIN_1hr
-
+        NPHASEBIN = NPHASEBIN_wz
+    
     out1 += (NPHASEBIN / T) * (-1) *(dBATdra * 86400 * 180 / np.pi * parameters[3] + dBATddec * 86400 * 180 / np.pi * parameters[4])
-    out1 = out1 % NPHASEBIN
+    print 'out1_2', out1[0:10]
+    out1 = out1 % NPHASEBIN 
+    print 'out1_3', out1[0:10]
 
+    if (time_mjd[0] > 57178) and RESCALE == None :
+        out1 = out1 / SCALE
+    print 'out1_4', out1[0:10]
     for ii in xrange(len(out1)):
         if out1[ii] == NPHASEBIN:
             out1[ii] == 0
 
     return out1
 
-def residuals_1(parameters, time_mjd, dBATdra, dBATddec, phase_data, phase_data_err, NPHASEBIN=None):
+def residuals_1(parameters, time_mjd, dBATdra, dBATddec, phase_data, phase_data_err, NPHASEBIN=None, RESCALE=None):
 
     if (NPHASEBIN == None) or (NPHASEBIN == NPHASEBIN_wz):
         NPHASEBIN = NPHASEBIN_wz
-    model_1 = timing_model_1(parameters, time_mjd, dBATdra, dBATddec, NPHASEBIN=None)  
+    elif NPHASEBIN == NPHASEBIN_1hr:
+        NPHASEBIN = NPHASEBIN_1hr
+    model_1 = timing_model_1(parameters, time_mjd, dBATdra, dBATddec, NPHASEBIN, RESCALE)
+#    print 'timing_model_1',model_1
     res_1 = phase_data - model_1
     res_1 = (res_1 + NPHASEBIN / 2.) % NPHASEBIN - NPHASEBIN / 2.
     res_1 = res_1 / phase_data_err
@@ -173,14 +183,15 @@ def time_pattern(this_file, bin_number, phase_amp_bin, NPHASEBIN = None):
 
     return time_mjd, dBATdra, dBATddec, phase_data, phase_data_err
 
-def fitting(pars_init_1, time_mjd, dBATdra, dBATddec, phase_data, phase_data_err, len_time_mjd_wz):
- 
+def fitting(pars_init_1, time_mjd, dBATdra, dBATddec, phase_data, phase_data_err):
+
+    len_time_mjd_wz = len(pars.bin_number_wz) 
     fit_range = (untrans_time(pars.fit_time_start), untrans_time(pars.fit_time_end))
     sl = np.logical_and(time_mjd > fit_range[0], time_mjd < fit_range[1])
 
     '''parameters for new RA correction'''
     fit_pars_1, pcov_1, infodict_1, errmsg_1, success_1 = leastsq(residuals_1, pars_init_1,
-            args=(time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl], phase_data_err[sl], len_time_mjd_wz), xtol = 1e-6, ftol=1e-6, full_output=1)
+            args=(time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl], phase_data_err[sl]), xtol = 1e-6, ftol=1e-6, full_output=1)
 
     print "Fit parameters: ", fit_pars_1
     print "sucess?:", success_1

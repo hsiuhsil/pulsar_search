@@ -194,6 +194,14 @@ def phase_fit(index, phase_matrix_origin, V, plot_name):
     plt.ylabel('Residuals')
     plt.savefig(plot_name + 'ifft.png')
 
+def scale_matrix(old_matrix, SCALE):
+    matrix = np.zeros((old_matrix.shape[0], int((old_matrix.shape[1])*SCALE)))
+    for ii in xrange(len(matrix)):
+        for jj in xrange(len(matrix[0])):
+            matrix[ii, jj] = np.average(old_matrix[ii,int(jj/SCALE):int((jj+1)/SCALE)])
+    return matrix
+
+
 def svd(this_file, bin_number, phase_amp_bin, phase_npy, NPHASEBIN, RESCALE):
 
     if (NPHASEBIN == None) or (NPHASEBIN == NPHASEBIN_wz):
@@ -202,12 +210,17 @@ def svd(this_file, bin_number, phase_amp_bin, phase_npy, NPHASEBIN, RESCALE):
         NPHASEBIN = NPHASEBIN_1hr
 
     time_mjd, dBATdra, dBATddec, _ , _ = fit_timing.time_pattern(this_file, bin_number, phase_amp_bin, NPHASEBIN)
+    
+    phase_model = fit_timing.timing_model_1(fit_pars, time_mjd, dBATdra, dBATddec, NPHASEBIN, RESCALE)
+    print 'phase_model', phase_model
 
-    phase_matrix_origin = phase_npy
-#    print 'phase_matrix_origin', phase_matrix_origin
-    phase_model = fit_timing.timing_model_1(fit_pars, time_mjd, dBATdra, dBATddec, NPHASEBIN)
-#    print 'phase_model', phase_model
+    if (phase_npy.shape[1] == pars.phase_npy_1hr.shape[1]) and (RESCALE == True):
+        phase_matrix_origin = scale_matrix(phase_npy, pars.SCALE)
+        print 'phase_matrix_origin.shape',phase_matrix_origin.shape
+    else:
+        phase_matrix_origin = phase_npy
     phase_matrix_new = np.zeros(phase_matrix_origin.shape)
+    print'phase_matrix_new.shape', phase_matrix_new.shape
 
     for ii in xrange(len(phase_matrix_new)):
         if aligned_1bin == True and aligned_fft == False:
@@ -224,13 +237,10 @@ def svd(this_file, bin_number, phase_amp_bin, phase_npy, NPHASEBIN, RESCALE):
     if np.abs(np.amax(V[0])) < np.abs(np.amin(V[0])):
         V[0] = -V[0]
 
-    if RESCALE == True:
-        '''resacle V0_1hr'''
-        V_SCALE = np.zeros((V.shape[0], int((V.shape[1])*SCALE)))
-        for ii in xrange(len(V_SCALE)):
-            for jj in xrange(len(V_SCALE[0])):
-                V_SCALE[ii, jj] = np.average(V[ii,int(jj/SCALE):int(jj/SCALE)+4])
-        V = V_SCALE 
+#    if (phase_npy.shape[1] == pars.phase_npy_1hr.shape[1]) and (RESCALE == True):
+#        V_new = scale_matrix(V, pars.SCALE)
+#        V = V_new
+
 
     return U, s, V, phase_model
 
