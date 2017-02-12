@@ -48,20 +48,19 @@ def timing_model_1(parameters, time_mjd, dBATdra, dBATddec, NPHASEBIN=None, RESC
     out1 = parameters[0] * time**2
     out1 += parameters[1] * time
     out1 += parameters[2]
-    print 'out1_1',out1[0:10]
+
     if (NPHASEBIN == None) or (NPHASEBIN == NPHASEBIN_wz):
         NPHASEBIN = NPHASEBIN_wz
     elif NPHASEBIN == NPHASEBIN_1hr:
         NPHASEBIN = NPHASEBIN_wz
     
     out1 += (NPHASEBIN / T) * (-1) *(dBATdra * 86400 * 180 / np.pi * parameters[3] + dBATddec * 86400 * 180 / np.pi * parameters[4])
-    print 'out1_2', out1[0:10]
+
     out1 = out1 % NPHASEBIN 
-    print 'out1_3', out1[0:10]
 
     if (time_mjd[0] > 57178) and RESCALE == None :
         out1 = out1 / SCALE
-    print 'out1_4', out1[0:10]
+
     for ii in xrange(len(out1)):
         if out1[ii] == NPHASEBIN:
             out1[ii] == 0

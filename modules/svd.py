@@ -20,9 +20,9 @@ def main():
     except (IOError, ValueError):
         print IOError
 
-aligned_1bin = True 
-aligned_fft = False
-save_fit_pars = False
+aligned_1bin = False 
+aligned_fft = True
+save_fit_pars = True
 
 
 RA = pars.RA
@@ -73,9 +73,14 @@ def residuals(parameters, model_fft, data_fft):
     res = np.concatenate((res_Re, res_Im))
     return res
 
-def phase_fit(index, phase_matrix_origin, V, plot_name):
+def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=None):
 
-    pars_init = [np.amax(phase_matrix_origin[index])/np.amax(V[0]), np.argmax(phase_matrix_origin[index]) % NPHASEBIN_wz]
+    if (NPHASEBIN == None) or (NPHASEBIN == NPHASEBIN_wz):
+        NPHASEBIN = NPHASEBIN_wz
+    elif NPHASEBIN == NPHASEBIN_1hr:
+        NPHASEBIN = NPHASEBIN_1hr
+
+    pars_init = [np.amax(phase_matrix_origin[index])/np.amax(V[0]), np.argmax(phase_matrix_origin[index]) % NPHASEBIN]
     print 'pars_init', pars_init
     model_fft = fft(V[0])
     data_fft = fft(phase_matrix_origin[index])
@@ -109,15 +114,18 @@ def phase_fit(index, phase_matrix_origin, V, plot_name):
     print("perr = ", perr_leastsq)
 
     '''save the fitting amp and bin as [amp, bin, amp_err, bin_err]'''
-    npy_file = 'phase_amp_bin_57178.npy'
-    phase_amp_bin = np.concatenate((pfit_leastsq, perr_leastsq ))
+    npy_file = 'phase_amp_bin_57178_fft.npy'
+    if (phase_matrix_origin.shape[1] == pars.phase_npy_1hr.shape[1]):
+        phase_amp_bin = np.concatenate((pfit_leastsq * SCALE, perr_leastsq *SCALE))
+    else:
+        phase_amp_bin = np.concatenate((pfit_leastsq, perr_leastsq ))
+
     if save_fit_pars == True:
         if os.path.exists(npy_file):
             sequence = np.load(npy_file)
             np.save(npy_file, np.vstack((sequence, phase_amp_bin)))
         else:
             np.save(npy_file, phase_amp_bin)
-
     '''functions in Fourier space'''
     '''Real part'''
     model_fft_real = fft_phase_curve(fit_pars_phase, model_fft).real
@@ -140,7 +148,7 @@ def phase_fit(index, phase_matrix_origin, V, plot_name):
     freq_min = np.amin(freq_range)
     freq_max = np.amax(freq_range)
 
-    phase_range = np.arange(-100,100)
+    phase_range = np.arange(-int(NPHASEBIN/2), int(NPHASEBIN/2))
 
     plot_title = 'rescaled phase_bin = ' + str("%.3f" % phase_amp_bin[1]) + ' +/- ' + str("%.3f" % phase_amp_bin[3])
     plot_name += str(index) + '_'
@@ -149,14 +157,14 @@ def phase_fit(index, phase_matrix_origin, V, plot_name):
     plt.figure()
     plt.subplot(2,1,1)
     plt.title(plot_title)
-    plt.plot(freq_range, np.roll(model_fft_real, -100),'r-')
-    plt.plot(freq_range, np.roll(data_fft_real, -100),'b-')
-    plt.plot(freq_range, np.roll(init_fft_real, -100),'k--')
+    plt.plot(freq_range, np.roll(model_fft_real, -int(NPHASEBIN/2)),'r-')
+    plt.plot(freq_range, np.roll(data_fft_real, -int(NPHASEBIN/2)),'b-')
+    plt.plot(freq_range, np.roll(init_fft_real, -int(NPHASEBIN/2)),'k--')
     plt.xlabel('Frequency')
     plt.xlim((freq_min,freq_max))
 
     plt.subplot(2,1,2)
-    plt.plot(freq_range, np.roll(res_fft_real, -100),'bo')
+    plt.plot(freq_range, np.roll(res_fft_real, -int(NPHASEBIN/2)),'bo')
     plt.xlabel('Frequency')
     plt.ylabel('Residuals')
     plt.xlim((freq_min,freq_max))
@@ -166,14 +174,14 @@ def phase_fit(index, phase_matrix_origin, V, plot_name):
     plt.figure()
     plt.subplot(2,1,1)
     plt.title(plot_title)
-    plt.plot(freq_range, np.roll(model_fft_imag, -100),'r-')
-    plt.plot(freq_range, np.roll(data_fft_imag, -100),'b-')
-    plt.plot(freq_range, np.roll(init_fft_imag, -100),'k--')
+    plt.plot(freq_range, np.roll(model_fft_imag, -int(NPHASEBIN/2)),'r-')
+    plt.plot(freq_range, np.roll(data_fft_imag, -int(NPHASEBIN/2)),'b-')
+    plt.plot(freq_range, np.roll(init_fft_imag, -int(NPHASEBIN/2)),'k--')
     plt.xlabel('Frequency')
     plt.xlim((freq_min,freq_max))
 
     plt.subplot(2,1,2)
-    plt.plot(freq_range, np.roll(res_fft_imag, -100),'bo')
+    plt.plot(freq_range, np.roll(res_fft_imag, -int(NPHASEBIN/2)),'bo')
     plt.xlabel('Frequency')
     plt.ylabel('Residuals')
     plt.xlim((freq_min,freq_max))
@@ -183,9 +191,9 @@ def phase_fit(index, phase_matrix_origin, V, plot_name):
     plt.figure()
     plt.subplot(2,1,1)
     plt.title(plot_title)
-    plt.plot(phase_range, np.roll(model_ifft, -100),'r-')
-    plt.plot(phase_range, np.roll(data_ifft, -100),'b-')
-    plt.plot(phase_range, np.roll(init_ifft, -100),'k--')
+    plt.plot(phase_range, np.roll(model_ifft, -int(NPHASEBIN/2)),'r-')
+    plt.plot(phase_range, np.roll(data_ifft, -int(NPHASEBIN/2)),'b-')
+    plt.plot(phase_range, np.roll(init_ifft, -int(NPHASEBIN/2)),'k--')
     plt.xlabel('Phase bin number')
 
     plt.subplot(2,1,2)
@@ -212,7 +220,7 @@ def svd(this_file, bin_number, phase_amp_bin, phase_npy, NPHASEBIN, RESCALE):
     time_mjd, dBATdra, dBATddec, _ , _ = fit_timing.time_pattern(this_file, bin_number, phase_amp_bin, NPHASEBIN)
     
     phase_model = fit_timing.timing_model_1(fit_pars, time_mjd, dBATdra, dBATddec, NPHASEBIN, RESCALE)
-    print 'phase_model', phase_model
+#    print 'phase_model', phase_model
 
     if (phase_npy.shape[1] == pars.phase_npy_1hr.shape[1]) and (RESCALE == True):
         phase_matrix_origin = scale_matrix(phase_npy, pars.SCALE)
@@ -220,7 +228,7 @@ def svd(this_file, bin_number, phase_amp_bin, phase_npy, NPHASEBIN, RESCALE):
     else:
         phase_matrix_origin = phase_npy
     phase_matrix_new = np.zeros(phase_matrix_origin.shape)
-    print'phase_matrix_new.shape', phase_matrix_new.shape
+#    print'phase_matrix_new.shape', phase_matrix_new.shape
 
     for ii in xrange(len(phase_matrix_new)):
         if aligned_1bin == True and aligned_fft == False:
@@ -244,10 +252,10 @@ def svd(this_file, bin_number, phase_amp_bin, phase_npy, NPHASEBIN, RESCALE):
 
     return U, s, V, phase_model
 
-def plot_two_temps(this_file_wz, bin_number_wz, phase_npy_wz, this_file_1hr, bin_number_1hr, phase_npy_1hr):
+def plot_two_temps(this_file_wz, bin_number_wz, phase_amp_bin_wz, phase_npy_wz, this_file_1hr, bin_number_1hr, phase_amp_bin_1hr, phase_npy_1hr, RESCALE=None):
 
-    U_wz, s_wz, V_wz, phase_model_wz = svd(this_file_wz, bin_number_wz, phase_npy_wz, NPHASEBIN_wz)
-    U_1hr_origin, s_1hr_origin, V_1hr_origin, phase_model_1hr = svd(this_file_1hr, bin_number_1hr, phase_npy_1hr, NPHASEBIN_1hr)
+    U_wz, s_wz, V_wz, phase_model_wz = svd(this_file_wz, bin_number_wz, phase_amp_bin_wz, phase_npy_wz, pars.NPHASEBIN_wz, RESCALE)
+    U_1hr_origin, s_1hr_origin, V_1hr_origin, phase_model_1hr = svd(this_file_1hr, bin_number_1hr, phase_amp_bin_1hr, phase_npy_1hr, pars.NPHASEBIN_1hr, RESCALE)
     
     V0_wz = V_wz[0]
     '''resacle V0_1hr'''

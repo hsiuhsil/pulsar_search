@@ -16,8 +16,12 @@ NPHASEBIN = NPHASEBIN_wz
 NPHASEBIN_1hr = 800
 SCALE = np.float(NPHASEBIN_wz) / np.float(NPHASEBIN_1hr)
 
-PHASE_DIFF_wz_1hr = -6.20587204
-PHASE_DIFF_wz_1hr_err = 0.02407328
+PHASE_DIFF_wz_1hr = 0.01735147
+PHASE_DIFF_wz_1hr_err = 0.02428669
+
+#PHASE_DIFF_wz_1hr = -6.20587204
+#PHASE_DIFF_wz_1hr_err = 0.02407328
+
 
 TIME0 = 55707.   # MJD pivot
 
@@ -37,6 +41,7 @@ phase_npy_wz = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_
 this_file_1hr = h5py.File('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_1hr/J2139+00_57178h5', "r")
 '''bin_number[0,1,2] = [initial, final, maximal phase bin number]'''
 bin_number_1hr = np.loadtxt('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_1hr/bin_number_2139_57178.txt')
-phase_amp_bin_1hr = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_1hr/phase_amp_bin_57178.npy')
+#phase_amp_bin_1hr = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_1hr/phase_amp_bin_57178.npy')
+phase_amp_bin_1hr = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_1hr/phase_amp_bin_57178_fft.npy')
 phase_npy_1hr = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_1hr/phase_1hr.npy')
 
