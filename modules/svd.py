@@ -22,7 +22,7 @@ def main():
 
 aligned_1bin = False 
 aligned_fft = True
-save_fit_pars = True
+save_fit_pars = False
 
 
 RA = pars.RA
@@ -80,9 +80,18 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
     elif NPHASEBIN == NPHASEBIN_1hr:
         NPHASEBIN = NPHASEBIN_1hr
 
-    pars_init = [np.amax(phase_matrix_origin[index])/np.amax(V[0]), np.argmax(phase_matrix_origin[index]) % NPHASEBIN]
+    '''pars_init = [phase_bin, amp_V0, amp_V1, amp_V2]'''
+    pars_init = [ np.argmax(phase_matrix_origin[index]) % NPHASEBIN, np.amax(phase_matrix_origin[index])/np.amax(V[0]), 0.05, 0.005]
     print 'pars_init', pars_init
-    model_fft = fft(V[0])
+
+    model_fft = 0.
+    n = len(fft(V))
+    freq = np.fft.fftfreq(len(fft(V)))
+    for ii in xrange(0,3):
+        model_fft += pars_init[ii + 1] * fft(V[ii,:])
+    model_fft *= np.exp(1.0j * 2 * np.pi * freq * ( n - pars_init[0]))
+
+#    model_fft = fft(V[0])
     data_fft = fft(phase_matrix_origin[index])
 
     fit_pars_phase, pcov, infodict, errmsg, success = leastsq(residuals, pars_init,
