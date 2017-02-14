@@ -52,10 +52,18 @@ def ifft(file):
 
 def fft_phase_curve(parameters, profile):
 
-    model = 0.
+    profile_fft = 0.
     for ii in xrange(0,len(parameters)-1):
-        model += parameters[ii + 1] * (profile[ii,:])
-    profile_fft = fft(model)
+        if ii == 0:
+            profile_fft += parameters[ii + 1] * fft(profile[ii,:])
+        elif ii >= 1:
+            profile_ii_fft = fft(profile[ii,:])
+            for jj in xrange(len(profile[ii,:])):
+                if (np.abs(np.fft.fftfreq(len(profile[ii,:]), 1./len(profile[ii,:]))) > 100)[jj] ==True:
+                    profile_ii_fft[jj] = 0
+            profile_fft += parameters[ii + 1] * profile_ii_fft
+        
+#    profile_fft = fft(model)
     freq = np.fft.fftfreq(len(profile_fft))
     n= len(profile_fft)
     fft_model = np.exp(1.0j * 2 * np.pi * freq * ( n - parameters[0])) * parameters[1] * profile_fft
