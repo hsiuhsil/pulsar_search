@@ -50,23 +50,27 @@ def ifft(file):
     profile_ifft = np.fft.ifft(file)
     return profile_ifft
 
-def fft_phase_curve(parameters, profile_fft):
+def fft_phase_curve(parameters, profile):
 
+    model = 0.
+    for ii in xrange(0,3):
+        model += parameters[ii + 1] * (profile[ii,:])
+    profile_fft = fft(model)
     freq = np.fft.fftfreq(len(profile_fft))
     n= len(profile_fft)
-    fft_model = parameters[0] * np.exp(1.0j * 2 * np.pi * freq * ( n - parameters[1])) * profile_fft
+    fft_model = np.exp(1.0j * 2 * np.pi * freq * ( n - parameters[0])) * parameters[1] * profile_fft
     return fft_model
 
 def fft_phase_curve_inverse(parameters, profile_fft):
     '''inverse phase for chaning 1.0j to -1 1.0j'''
     freq = np.fft.fftfreq(len(profile_fft))
     n= len(profile_fft)
-    fft_model = parameters[0] * np.exp(-1.0j * 2 * np.pi * freq * ( n - parameters[1])) * profile_fft
+    fft_model = parameters[1] * np.exp(-1.0j * 2 * np.pi * freq * ( n - parameters[0])) * profile_fft
     return fft_model
 
-def residuals(parameters, model_fft, data_fft):
+def residuals(parameters, model, data_fft):
     '''Only use positive frequencies for residuals'''
-    model = fft_phase_curve(parameters, model_fft)
+    model = fft_phase_curve(parameters, model)
     residuals_complex = (data_fft - model)[:len(model)/2]
     res_Re = residuals_complex.real
     res_Im = residuals_complex.imag
@@ -81,30 +85,32 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
         NPHASEBIN = NPHASEBIN_1hr
 
     '''pars_init = [phase_bin, amp_V0, amp_V1, amp_V2]'''
-    pars_init = [ np.argmax(phase_matrix_origin[index]) % NPHASEBIN, np.amax(phase_matrix_origin[index])/np.amax(V[0]), 0.05, 0.005]
+    pars_init = [ np.argmax(phase_matrix_origin[index]) % NPHASEBIN, np.amax(phase_matrix_origin[index])/np.amax(V[0]), 1e-1, 1e-2]
     print 'pars_init', pars_init
 
-    model_fft = 0.
-    n = len(fft(V))
-    freq = np.fft.fftfreq(len(fft(V)))
-    for ii in xrange(0,3):
-        model_fft += pars_init[ii + 1] * fft(V[ii,:])
-    model_fft *= np.exp(1.0j * 2 * np.pi * freq * ( n - pars_init[0]))
+#    model = 0.
+#    for ii in xrange(0,3):
+#        model += pars_init[ii + 1] * (V[ii,:])
+#    model_fft = fft(model)
+
+#    model_fft = fft_phase_curve(pars_init[0:2], model_fft)
+
 
 #    model_fft = fft(V[0])
-    data_fft = fft(phase_matrix_origin[index])
+    model = V
+    data_fft = fft(phase_matrix_origin[index]) 
 
     fit_pars_phase, pcov, infodict, errmsg, success = leastsq(residuals, pars_init,
-                   args=( model_fft, data_fft), full_output=1)
+                   args=( model, data_fft), full_output=1)
 
     print "Fit parameters: ", fit_pars_phase
     print "sucess?:", success
     '''DOF -1, since we set fft_file[0] = 0.'''
-    res = residuals(fit_pars_phase, model_fft, data_fft)
+    res = residuals(fit_pars_phase, model, data_fft)
     print "Chi-squared: ", np.sum(np.abs(res)**2), "DOF: ", len(data_fft)-len(pars_init)-1
 
     if (len(data_fft) > len(pars_init)) and pcov is not None:
-        s_sq = (residuals(fit_pars_phase, model_fft, data_fft)**2).sum()/(len(data_fft)-len(pars_init)-1)
+        s_sq = (residuals(fit_pars_phase, model, data_fft)**2).sum()/(len(data_fft)-len(pars_init)-1)
         pcov = pcov * s_sq
     else:
         pcov = np.inf
@@ -137,29 +143,29 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
             np.save(npy_file, phase_amp_bin)
     '''functions in Fourier space'''
     '''Real part'''
-    model_fft_real = fft_phase_curve(fit_pars_phase, model_fft).real
+    model_fft_real = fft_phase_curve(fit_pars_phase, model).real
     data_fft_real = data_fft.real
-    init_fft_real = fft_phase_curve(pars_init, model_fft).real
+    init_fft_real = fft_phase_curve(pars_init, model).real
     res_fft_real = np.concatenate((res[:(len(res)/2)], res[:(len(res)/2)][::-1]))
     '''Imag part'''
-    model_fft_imag = fft_phase_curve(fit_pars_phase, model_fft).imag
+    model_fft_imag = fft_phase_curve(fit_pars_phase, model).imag
     data_fft_imag = data_fft.imag
-    init_fft_imag = fft_phase_curve(pars_init, model_fft).imag
+    init_fft_imag = fft_phase_curve(pars_init, model).imag
     res_fft_imag = np.concatenate((res[(len(res)/2):], -res[(len(res)/2):][::-1]))
 
     '''functions in Real space (ifft)'''
-    model_ifft = np.fft.ifft(fft_phase_curve(fit_pars_phase,  model_fft)).real
+    model_ifft = np.fft.ifft(fft_phase_curve(fit_pars_phase,  model)).real
     data_ifft = np.fft.ifft(data_fft).real
-    res_ifft = np.fft.ifft(fft_phase_curve(fit_pars_phase, model_fft) - data_fft).real
-    init_ifft = np.fft.ifft(fft_phase_curve(pars_init, model_fft)).real
+    res_ifft = np.fft.ifft(fft_phase_curve(fit_pars_phase, model) - data_fft).real
+    init_ifft = np.fft.ifft(fft_phase_curve(pars_init, model)).real
 
-    freq_range = np.linspace(np.amin(np.fft.fftfreq(len(model_fft))), np.amax(np.fft.fftfreq(len(model_fft))), num = len(model_fft), endpoint=True)
+    freq_range = np.linspace(np.amin(np.fft.fftfreq(len(model))), np.amax(np.fft.fftfreq(len(model))), num = len(model), endpoint=True)
     freq_min = np.amin(freq_range)
     freq_max = np.amax(freq_range)
 
     phase_range = np.arange(-int(NPHASEBIN/2), int(NPHASEBIN/2))
 
-    plot_title = 'rescaled phase_bin = ' + str("%.3f" % phase_amp_bin[1]) + ' +/- ' + str("%.3f" % phase_amp_bin[3])
+    plot_title = 'rescaled phase_bin = ' + str("%.3f" % phase_amp_bin[0]) + ' +/- ' + str("%.3f" % phase_amp_bin[len(phase_amp_bin)/2])
     plot_name += str(index) + '_'
 
     '''Plot for real part in the Fourier space'''
@@ -243,7 +249,7 @@ def svd(this_file, bin_number, phase_amp_bin, phase_npy, NPHASEBIN, RESCALE):
         if aligned_1bin == True and aligned_fft == False:
             phase_matrix_new[ii] = np.roll(phase_matrix_origin[ii], -1 * int(round(phase_model[ii])))
         elif aligned_1bin == False and aligned_fft == True:
-            phase_matrix_new[ii] = ifft(fft_phase_curve_inverse([1, phase_model[ii]], fft(phase_matrix_origin[ii]))).real
+            phase_matrix_new[ii] = ifft(fft_phase_curve_inverse([phase_model[ii], 1], fft(phase_matrix_origin[ii]))).real
         else:
             print 'conflict setting of aligned_1bin and aligned_fft'
 #    print 'phase_matrix_new', phase_matrix_new
