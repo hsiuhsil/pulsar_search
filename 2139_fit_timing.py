@@ -34,7 +34,7 @@ def plot_bary_diff():
     phase_data_err = np.concatenate((phase_data_err_wz, phase_data_err_1hr))
 
     
-    fit_timing.fitting(pars.fit_pars, time_mjd, dBATdra, dBATddec, phase_data, phase_data_err, len(time_mjd_wz))
+    fit_timing.fitting(pars.fit_pars, time_mjd, dBATdra, dBATddec, phase_data, phase_data_err)
 
 
 
