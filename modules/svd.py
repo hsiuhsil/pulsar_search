@@ -22,7 +22,7 @@ def main():
 
 aligned_1bin = False 
 aligned_fft = True
-save_fit_pars = False
+save_fit_pars = True
 
 
 RA = pars.RA
@@ -53,7 +53,7 @@ def ifft(file):
 def fft_phase_curve(parameters, profile):
 
     model = 0.
-    for ii in xrange(0,3):
+    for ii in xrange(0,len(parameters)-1):
         model += parameters[ii + 1] * (profile[ii,:])
     profile_fft = fft(model)
     freq = np.fft.fftfreq(len(profile_fft))
@@ -85,16 +85,9 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
         NPHASEBIN = NPHASEBIN_1hr
 
     '''pars_init = [phase_bin, amp_V0, amp_V1, amp_V2]'''
-    pars_init = [ np.argmax(phase_matrix_origin[index]) % NPHASEBIN, np.amax(phase_matrix_origin[index])/np.amax(V[0]), 1e-1, 1e-2]
+    amp_V0 = np.amax(phase_matrix_origin[index])/np.amax(V[0])
+    pars_init = [ np.argmax(phase_matrix_origin[index]) % NPHASEBIN, amp_V0, 0.5* amp_V0, 0.1*amp_V0, 0.05*amp_V0]
     print 'pars_init', pars_init
-
-#    model = 0.
-#    for ii in xrange(0,3):
-#        model += pars_init[ii + 1] * (V[ii,:])
-#    model_fft = fft(model)
-
-#    model_fft = fft_phase_curve(pars_init[0:2], model_fft)
-
 
 #    model_fft = fft(V[0])
     model = V
@@ -142,23 +135,28 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
         else:
             np.save(npy_file, phase_amp_bin)
     '''functions in Fourier space'''
+    model_fft = fft_phase_curve(fit_pars_phase, model)  
+    print 'get model_fft'
+    init_fft = fft_phase_curve(pars_init, model)
+    print 'get init_fft'
     '''Real part'''
-    model_fft_real = fft_phase_curve(fit_pars_phase, model).real
+    model_fft_real = model_fft.real
     data_fft_real = data_fft.real
-    init_fft_real = fft_phase_curve(pars_init, model).real
+    init_fft_real = init_fft.real
     res_fft_real = np.concatenate((res[:(len(res)/2)], res[:(len(res)/2)][::-1]))
+    print 'finish real part'
     '''Imag part'''
-    model_fft_imag = fft_phase_curve(fit_pars_phase, model).imag
+    model_fft_imag = model_fft.imag
     data_fft_imag = data_fft.imag
-    init_fft_imag = fft_phase_curve(pars_init, model).imag
+    init_fft_imag = init_fft.imag
     res_fft_imag = np.concatenate((res[(len(res)/2):], -res[(len(res)/2):][::-1]))
-
+    print 'finish imag part'
     '''functions in Real space (ifft)'''
-    model_ifft = np.fft.ifft(fft_phase_curve(fit_pars_phase,  model)).real
+    model_ifft = np.fft.ifft(model_fft).real
     data_ifft = np.fft.ifft(data_fft).real
-    res_ifft = np.fft.ifft(fft_phase_curve(fit_pars_phase, model) - data_fft).real
-    init_ifft = np.fft.ifft(fft_phase_curve(pars_init, model)).real
-
+    res_ifft = np.fft.ifft(model_fft - data_fft).real
+    init_ifft = np.fft.ifft(init_fft).real
+    print 'finish ifft part'
     freq_range = np.linspace(np.amin(np.fft.fftfreq(len(model))), np.amax(np.fft.fftfreq(len(model))), num = len(model), endpoint=True)
     freq_min = np.amin(freq_range)
     freq_max = np.amax(freq_range)
@@ -167,9 +165,10 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
 
     plot_title = 'rescaled phase_bin = ' + str("%.3f" % phase_amp_bin[0]) + ' +/- ' + str("%.3f" % phase_amp_bin[len(phase_amp_bin)/2])
     plot_name += str(index) + '_'
-
+    print 'start plotting'
     '''Plot for real part in the Fourier space'''
     plt.figure()
+    print 'open up a figure'
     plt.subplot(2,1,1)
     plt.title(plot_title)
     plt.plot(freq_range, np.roll(model_fft_real, -int(NPHASEBIN/2)),'r-')
@@ -177,13 +176,14 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
     plt.plot(freq_range, np.roll(init_fft_real, -int(NPHASEBIN/2)),'k--')
     plt.xlabel('Frequency')
     plt.xlim((freq_min,freq_max))
-
+    print 'done plot real part Fourier 1'
     plt.subplot(2,1,2)
     plt.plot(freq_range, np.roll(res_fft_real, -int(NPHASEBIN/2)),'bo')
     plt.xlabel('Frequency')
     plt.ylabel('Residuals')
     plt.xlim((freq_min,freq_max))
     plt.savefig(plot_name + 'fft_real.png')
+    print 'done plot real part Fourier 2'
 
     '''Plot for imag part in the Fourier space'''
     plt.figure()
@@ -194,14 +194,14 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
     plt.plot(freq_range, np.roll(init_fft_imag, -int(NPHASEBIN/2)),'k--')
     plt.xlabel('Frequency')
     plt.xlim((freq_min,freq_max))
-
+    print 'done plot imag part Fourier 1'
     plt.subplot(2,1,2)
     plt.plot(freq_range, np.roll(res_fft_imag, -int(NPHASEBIN/2)),'bo')
     plt.xlabel('Frequency')
     plt.ylabel('Residuals')
     plt.xlim((freq_min,freq_max))
     plt.savefig(plot_name + 'fft_imag.png')
-
+    print 'done plot imag part Fourier 2'
     '''Plot for real part in real space'''
     plt.figure()
     plt.subplot(2,1,1)
@@ -210,12 +210,13 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
     plt.plot(phase_range, np.roll(data_ifft, -int(NPHASEBIN/2)),'b-')
     plt.plot(phase_range, np.roll(init_ifft, -int(NPHASEBIN/2)),'k--')
     plt.xlabel('Phase bin number')
-
+    print 'done plot ifft part 1'
     plt.subplot(2,1,2)
     plt.plot(phase_range, np.roll(res_ifft, -100),'bo')
     plt.xlabel('Phase bin number')
     plt.ylabel('Residuals')
     plt.savefig(plot_name + 'ifft.png')
+    print 'done plot ifft part 2'
 
 def scale_matrix(old_matrix, SCALE):
     matrix = np.zeros((old_matrix.shape[0], int((old_matrix.shape[1])*SCALE)))
