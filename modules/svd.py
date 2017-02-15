@@ -50,7 +50,7 @@ def ifft(file):
     profile_ifft = np.fft.ifft(file)
     return profile_ifft
 
-def fft_phase_curve(parameters, profile):
+def fft_phase_curve(parameters, profile, data_fft, truncate=None):
 
     profile_fft = 0.
     for ii in xrange(0,len(parameters)-1):
@@ -64,9 +64,15 @@ def fft_phase_curve(parameters, profile):
             profile_fft += parameters[ii + 1] * profile_ii_fft
         
 #    profile_fft = fft(model)
-    freq = np.fft.fftfreq(len(profile_fft))
-    n= len(profile_fft)
-    fft_model = np.exp(1.0j * 2 * np.pi * freq * ( n - parameters[0])) * parameters[1] * profile_fft
+    freq = np.fft.fftfreq(len(data_fft))
+    n= len(data_fft)
+    fft_model = np.exp(1.0j * 2 * np.pi * freq * ( n - parameters[0])) * parameters[1] * np.concatenate((profile_fft[:len(data_fft)/2], profile_fft[-len(data_fft)/2:]))
+#    if len(fft_model) > len(data_fft):
+#        fft_model = np.concatenate((fft_model[:len(data_fft)/2], fft_model[-len(data_fft)/2:]))
+#        print 'profile.shape', profile.shape
+#    else:
+#        fft_model = fft_model
+
     return fft_model
 
 def fft_phase_curve_inverse(parameters, profile_fft):
@@ -78,7 +84,8 @@ def fft_phase_curve_inverse(parameters, profile_fft):
 
 def residuals(parameters, model, data_fft):
     '''Only use positive frequencies for residuals'''
-    model = fft_phase_curve(parameters, model)
+
+    model = fft_phase_curve(parameters, model, data_fft)
     residuals_complex = (data_fft - model)[:len(model)/2]
     res_Re = residuals_complex.real
     res_Im = residuals_complex.imag
@@ -102,15 +109,19 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
 
     model_phase_bin_1hr = fit_timing.timing_model_1(pars.fit_pars, time_mjd_1hr, dBATdra_1hr, dBATddec_1hr, pars.NPHASEBIN_1hr, RESCALE=None)
 
-    amp_V0 = np.amax(phase_matrix_origin[index])/np.amax(V[0])
+    model = V
+    data_fft = fft(phase_matrix_origin[index])
+
+    if len(model) > len(data_fft):
+        amp_V0 = np.amax(phase_matrix_origin[index])/np.amax(V[0]) * 0.5
+    else:
+        amp_V0 = np.amax(phase_matrix_origin[index])/np.amax(V[0])
     pars_init = [ model_phase_bin_wz[index], amp_V0, amp_V0/10, amp_V0/5000, amp_V0/500000]
 
 #    pars_init = [ np.argmax(phase_matrix_origin[index]) % NPHASEBIN, amp_V0, amp_V0/10, amp_V0/5000, amp_V0/500000]
     print 'pars_init', pars_init
 
 #    model_fft = fft(V[0])
-    model = V
-    data_fft = fft(phase_matrix_origin[index]) 
 
     fit_pars_phase, pcov, infodict, errmsg, success = leastsq(residuals, pars_init,
                    args=( model, data_fft), full_output=1)
@@ -155,8 +166,8 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
         else:
             np.save(npy_file, phase_amp_bin)
     '''functions in Fourier space'''
-    model_fft = fft_phase_curve(fit_pars_phase, model)  
-    init_fft = fft_phase_curve(pars_init, model)
+    model_fft = fft_phase_curve(fit_pars_phase, model, data_fft)  
+    init_fft = fft_phase_curve(pars_init, model, data_fft)
 
     '''Real part'''
     model_fft_real = model_fft.real
@@ -176,7 +187,7 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
     res_ifft = np.fft.ifft(model_fft - data_fft).real
     init_ifft = np.fft.ifft(init_fft).real
 
-    freq_range = np.linspace(np.amin(np.fft.fftfreq(len(model[0]))), np.amax(np.fft.fftfreq(len(model[0]))), num = len(model[0]), endpoint=True)
+    freq_range = np.linspace(np.amin(np.fft.fftfreq(len(data_fft))), np.amax(np.fft.fftfreq(len(data_fft))), num = len(data_fft), endpoint=True)
 
     freq_min = np.amin(freq_range)
     freq_max = np.amax(freq_range)
