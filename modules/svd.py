@@ -94,12 +94,16 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
 
     '''pars_init = [phase_bin, amp_V0, amp_V1, amp_V2]'''
     '''initial value of phase_bin'''
+    time_mjd_wz, dBATdra_wz, dBATddec_wz, phase_data_wz, phase_data_err_wz = fit_timing.time_pattern(pars.this_file_wz, pars.bin_number_wz, pars.phase_amp_bin_wz, pars.NPHASEBIN_wz)
+
+    model_phase_bin_wz = fit_timing.timing_model_1(pars.fit_pars, time_mjd_wz, dBATdra_wz, dBATddec_wz, pars.NPHASEBIN_wz, RESCALE=None)
+
     time_mjd_1hr, dBATdra_1hr, dBATddec_1hr, phase_data_1hr, phase_data_err_1hr = fit_timing.time_pattern(pars.this_file_1hr, pars.bin_number_1hr, pars.phase_amp_bin_1hr, pars.NPHASEBIN_1hr)
 
-    model_phase_bin = fit_timing.timing_model_1(pars.fit_pars, time_mjd_1hr, dBATdra_1hr, dBATddec_1hr, pars.NPHASEBIN_1hr, RESCALE=None)
+    model_phase_bin_1hr = fit_timing.timing_model_1(pars.fit_pars, time_mjd_1hr, dBATdra_1hr, dBATddec_1hr, pars.NPHASEBIN_1hr, RESCALE=None)
 
     amp_V0 = np.amax(phase_matrix_origin[index])/np.amax(V[0])
-    pars_init = [ model_phase_bin[index], amp_V0, amp_V0/10, amp_V0/5000, amp_V0/500000]
+    pars_init = [ model_phase_bin_wz[index], amp_V0, amp_V0/10, amp_V0/5000, amp_V0/500000]
 
 #    pars_init = [ np.argmax(phase_matrix_origin[index]) % NPHASEBIN, amp_V0, amp_V0/10, amp_V0/5000, amp_V0/500000]
     print 'pars_init', pars_init
@@ -137,7 +141,7 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
     print("perr = ", perr_leastsq)
 
     '''save the fitting amp and bin as [amp, bin, amp_err, bin_err]'''
-    npy_file = 'phase_amp_bin_57178_fft.npy'
+    npy_file = 'phase_amp_bin_wz_fft.npy'
 
     if (phase_matrix_origin.shape[1] == pars.phase_npy_1hr.shape[1]):
         phase_amp_bin = np.concatenate(([pfit_leastsq[0]*SCALE], pfit_leastsq[1:], [perr_leastsq[0]*SCALE], perr_leastsq[1:] ))
@@ -172,7 +176,8 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
     res_ifft = np.fft.ifft(model_fft - data_fft).real
     init_ifft = np.fft.ifft(init_fft).real
 
-    freq_range = np.linspace(np.amin(np.fft.fftfreq(len(model))), np.amax(np.fft.fftfreq(len(model))), num = len(model), endpoint=True)
+    freq_range = np.linspace(np.amin(np.fft.fftfreq(len(model[0]))), np.amax(np.fft.fftfreq(len(model[0]))), num = len(model[0]), endpoint=True)
+
     freq_min = np.amin(freq_range)
     freq_max = np.amax(freq_range)
 
