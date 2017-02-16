@@ -13,22 +13,22 @@ rad_to_deg = 360/(2*np.pi)
 rad_to_arcmin = rad_to_deg * 60
 rad_to_arcsec = rad_to_arcmin *60
 
-'''Converts corrections of RA and DEC to arcsec'''
+'''Converts corrections of RA and DEC to arcmin'''
 RA = pars.RA
 DEC = pars.DEC
 RA_HMS = str(bary_time.deg_to_HMS(RA))
 DEC_DMS = str(bary_time.deg_to_DMS(DEC))
 
-RA_cor = pars.fit_pars_err[3] * rad_to_arcsec
-RA_cor_err = pars.fit_pars_err[3] * rad_to_arcsec
+RA_cor = pars.fit_pars[3] * rad_to_arcmin
+RA_cor_err = pars.fit_pars_err[3] * rad_to_arcmin
 
-DEC_cor = pars.fit_pars_err[4] * rad_to_arcsec
-DEC_cor_err = pars.fit_pars_err[4] * rad_to_arcsec
+DEC_cor = pars.fit_pars[4] * rad_to_arcmin
+DEC_cor_err = pars.fit_pars_err[4] * rad_to_arcmin
 
 print "New RA: ", RA_HMS
 print "New DEC: ", DEC_DMS
-print 'Delta RA: ', RA_cor, '\+-', RA_cor_err, '(arcsec)'
-print 'Delta DEC: ', DEC_cor, '\+-', DEC_cor_err, '(arcsec)'
+print 'Delta RA: ', RA_cor, '\+-', RA_cor_err, '(arcmin)'
+print 'Delta DEC: ', DEC_cor, '\+-', DEC_cor_err, '(arcmin)'
 
 '''Converts accelerations and period to sec. Show epoch and phase offset in Barycentric MJD.'''
 accel = pars.fit_pars[0] * bins / hr / hr
