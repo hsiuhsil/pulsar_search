@@ -30,8 +30,8 @@ NPHASEBIN = pars.NPHASEBIN
 NPHASEBIN_1hr = pars.NPHASEBIN_1hr
 SCALE = pars.SCALE
 T = pars.T
-PHASE_DIFF_wz_1hr = pars.PHASE_DIFF_wz_1hr
-PHASE_DIFF_wz_1hr_err = pars.PHASE_DIFF_wz_1hr_err
+#PHASE_DIFF_wz_1hr = pars.PHASE_DIFF_wz_1hr
+#PHASE_DIFF_wz_1hr_err = pars.PHASE_DIFF_wz_1hr_err
 
 TIME0 = pars.TIME0
 
@@ -77,7 +77,7 @@ def residuals_1(parameters, time_mjd, dBATdra, dBATddec, phase_data, phase_data_
 #    print 'timing_model_1',model_1
     res_1 = phase_data - model_1
     res_1 = (res_1 + NPHASEBIN / 2.) % NPHASEBIN - NPHASEBIN / 2.
-    res_1 = res_1 / phase_data_err
+#    res_1 = res_1 / phase_data_err
     return res_1
 
 def models_plot(time_mjd, dBATdra, dBATddec, filename, time_range=None):
@@ -123,15 +123,19 @@ def make_save_plot(parameters, model, res, time, dBATdra, dBATddec, data, data_e
     model = timing_model_1(parameters, model_time, dBATdra, dBATddec)
     res = residuals_1(parameters, time, dBATdra, dBATddec, data, data_err)
 
+    markersize = 2.0
+
     plt.subplot(2,1,1)
-    plt.plot(transform_time(time), data, 'bo')
+    plt.plot(transform_time(time), data, 'bo', markersize=markersize)
+    plt.errorbar(transform_time(time), data, yerr= data_err, fmt=None, color='b')
     plt.plot(transform_time(model_time), model, 'r--')
     plt.xlabel('Bary diff (hours)', fontsize=14)
     plt.ylabel('Max Phase Bins Number', fontsize=14)
     plt.xlim(transform_time(time_range[0]), transform_time(time_range[1]))
 
     plt.subplot(2,1,2)
-    plt.plot(transform_time(time), res, 'bo')
+    plt.plot(transform_time(time), res, 'bo', markersize=markersize)
+    plt.errorbar(transform_time(time), res, yerr= data_err, fmt=None, color='b')
     plt.xlim(transform_time(time_range[0]), transform_time(time_range[1]))
     if len(time_range) > 2:
         plt.ylim(time_range[2], time_range[3])
@@ -146,16 +150,20 @@ def make_save_plot_pointing(parameters, model, res, time, dBATdra, dBATddec, dat
     timing_model_1_pointing = timing_model_1(parameters, time, dBATdra, dBATddec)[236:]
 
     phase_data_pointing =  data[236:]
-    residuals_1_pointing = residuals_1(parameters, time, dBATdra, dBATddec, 
-                            data, data_err)[236:]
+    phase_data_pointing_err =  data_err[236:]
+    residuals_1_pointing = residuals_1(parameters, time, dBATdra, dBATddec,  data, data_err)[236:]
+
+    markersize = 3.0
 
     plt.subplot(2,1,1)
-    plt.plot(time_range, phase_data_pointing, 'bo')
+    plt.plot(time_range, phase_data_pointing, 'bo', markersize=markersize)
+    plt.errorbar(time_range, phase_data_pointing, yerr = phase_data_pointing_err)
     plt.plot(time_range, timing_model_1_pointing, 'r--')
     plt.xlabel('Bary diff (hours)', fontsize=14)
     plt.ylabel('Max Phase Bins Number', fontsize=14)
     plt.subplot(2,1,2)
-    plt.plot(time_range, residuals_1_pointing, 'bo')
+    plt.plot(time_range, residuals_1_pointing, 'bo', markersize=markersize)
+    plt.errorbar(time_range, residuals_1_pointing, yerr= phase_data_pointing_err, fmt=None, color='b')
     plt.xlabel('Bary diff (hours)', fontsize=14)
     plt.ylabel('Phase bin residuals', fontsize=14)
 
@@ -173,8 +181,8 @@ def time_pattern(this_file, bin_number, phase_amp_bin, NPHASEBIN = None):
     '''As pointed data to be the template, need to add the difference between two templates. Note: The phase_data of 1hr has been rescaled to 200, rather than 800 in origin.'''
 
     if (NPHASEBIN == None) or (NPHASEBIN == NPHASEBIN_wz):
-        phase_data = phase_amp_bin[:,0] +  PHASE_DIFF_wz_1hr
-        phase_data_err = (np.sqrt(phase_amp_bin[:,phase_amp_bin.shape[1]/2]**2  + PHASE_DIFF_wz_1hr_err**2))
+        phase_data = phase_amp_bin[:,0] 
+        phase_data_err = phase_amp_bin[:,phase_amp_bin.shape[1]/2]
     elif NPHASEBIN == NPHASEBIN_1hr:
         phase_data = phase_amp_bin[:,0] 
         phase_data_err = phase_amp_bin[:,phase_amp_bin.shape[1]/2]
