@@ -1,7 +1,7 @@
 import numpy as np
 import pars
 import bary_time
-import subprocess
+
 '''fit_pars in the module of pars is in the sequence of acceleration, period correction, phase offset, correction of RA, correction of DEC. The units are [bins/hr/hr, bins/hr, bins, radians, radians]'''
 
 '''converts units of bins and hr to second'''
@@ -43,10 +43,7 @@ period_new_err =  period_cor_err
 epoch = pars.TIME0
 
 phase_offset = pars.fit_pars[2] 
-topo_phase_offset_TOA = repr(epoch + (pars.T * phase_offset)/86400)
-
-p = bary_time.subprocess.Popen(["bary", "GBT", str(RA_HMS), str(DEC_DMS)], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-BAT_phase_offset = p.communicate(input=topo_phase_offset_TOA)[0].split()[1]
+BAT_phase_offset = epoch + (pars.T * phase_offset)/86400
 
 print 'Period derivative: ', accel, '\+-', accel_err, '(sec 1/sec)'
 print 'Period correction: ', period_cor, '\+-', period_cor_err, '(sec)' 
