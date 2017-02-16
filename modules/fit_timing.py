@@ -77,7 +77,7 @@ def residuals_1(parameters, time_mjd, dBATdra, dBATddec, phase_data, phase_data_
 #    print 'timing_model_1',model_1
     res_1 = phase_data - model_1
     res_1 = (res_1 + NPHASEBIN / 2.) % NPHASEBIN - NPHASEBIN / 2.
-#    res_1 = res_1 / phase_data_err
+    res_1 = res_1 / phase_data_err
     return res_1
 
 def models_plot(time_mjd, dBATdra, dBATddec, filename, time_range=None):
@@ -122,6 +122,8 @@ def make_save_plot(parameters, model, res, time, dBATdra, dBATddec, data, data_e
 
     model = timing_model_1(parameters, model_time, dBATdra, dBATddec)
     res = residuals_1(parameters, time, dBATdra, dBATddec, data, data_err)
+    '''plot res, rather than res/errors'''
+    res *= data_err    
 
     markersize = 2.0
 
@@ -135,7 +137,7 @@ def make_save_plot(parameters, model, res, time, dBATdra, dBATddec, data, data_e
 
     plt.subplot(2,1,2)
     plt.plot(transform_time(time), res, 'bo', markersize=markersize)
-    plt.errorbar(transform_time(time), res, yerr= data_err, fmt=None, color='b')
+    plt.errorbar(transform_time(time), res , yerr= data_err, fmt=None, color='b')
     plt.xlim(transform_time(time_range[0]), transform_time(time_range[1]))
     if len(time_range) > 2:
         plt.ylim(time_range[2], time_range[3])
@@ -152,7 +154,10 @@ def make_save_plot_pointing(parameters, model, res, time, dBATdra, dBATddec, dat
     phase_data_pointing =  data[236:]
     phase_data_pointing_err =  data_err[236:]
     residuals_1_pointing = residuals_1(parameters, time, dBATdra, dBATddec,  data, data_err)[236:]
+    '''plot res, rather than res/errors'''
+    residuals_1_pointing *= phase_data_pointing_err
 
+#    print 'phase_data_pointing_err',phase_data_pointing_err
     markersize = 3.0
 
     plt.subplot(2,1,1)
@@ -163,7 +168,7 @@ def make_save_plot_pointing(parameters, model, res, time, dBATdra, dBATddec, dat
     plt.ylabel('Max Phase Bins Number', fontsize=14)
     plt.subplot(2,1,2)
     plt.plot(time_range, residuals_1_pointing, 'bo', markersize=markersize)
-    plt.errorbar(time_range, residuals_1_pointing, yerr= phase_data_pointing_err, fmt=None, color='b')
+    plt.errorbar(time_range, residuals_1_pointing , yerr= phase_data_pointing_err, fmt=None, color='b')
     plt.xlabel('Bary diff (hours)', fontsize=14)
     plt.ylabel('Phase bin residuals', fontsize=14)
 
