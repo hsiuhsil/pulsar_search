@@ -22,7 +22,7 @@ def main():
 
 aligned_1bin = False 
 aligned_fft = True
-save_fit_pars = True
+save_fit_pars = False
 
 
 RA = pars.RA
@@ -120,9 +120,9 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
         amp_V0 = np.amax(phase_matrix_origin[index])/np.amax(V[0]) * 0.5
     else:
         amp_V0 = np.amax(phase_matrix_origin[index])/np.amax(V[0])
-    pars_init = [ model_phase_bin_wz[index], amp_V0, amp_V0/10, amp_V0/5000, amp_V0/500000]
+#   pars_init = [ model_phase_bin_1hr[index], amp_V0, amp_V0/10, amp_V0/5000, amp_V0/500000]
 
-#    pars_init = [ np.argmax(phase_matrix_origin[index]) % NPHASEBIN, amp_V0, amp_V0/10, amp_V0/5000, amp_V0/500000]
+    pars_init = [ np.argmax(phase_matrix_origin[index]) % NPHASEBIN, amp_V0, amp_V0/10, amp_V0/5000, amp_V0/500000]
     print 'pars_init', pars_init
 
 #    model_fft = fft(V[0])
@@ -156,7 +156,7 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
     print("perr = ", perr_leastsq)
 
     '''save the fitting amp and bin as [amp, bin, amp_err, bin_err]'''
-    npy_file = 'phase_amp_bin_wz_fft.npy'
+    npy_file = 'phase_amp_bin_57178_fft.npy'
 
     if (phase_matrix_origin.shape[1] == pars.phase_npy_1hr.shape[1]):
         phase_amp_bin = np.concatenate(([pfit_leastsq[0]*SCALE], pfit_leastsq[1:], [perr_leastsq[0]*SCALE], perr_leastsq[1:] ))
@@ -304,15 +304,15 @@ def plot_two_temps(this_file_wz, bin_number_wz, phase_amp_bin_wz, phase_npy_wz, 
     U_wz, s_wz, V_wz, phase_model_wz = svd(this_file_wz, bin_number_wz, phase_amp_bin_wz, phase_npy_wz, pars.NPHASEBIN_wz, RESCALE)
     U_1hr_origin, s_1hr_origin, V_1hr_origin, phase_model_1hr = svd(this_file_1hr, bin_number_1hr, phase_amp_bin_1hr, phase_npy_1hr, pars.NPHASEBIN_1hr, RESCALE)
     
-    V0_wz = V_wz[0]
-    '''resacle V0_1hr'''
-    V_1hr = np.zeros((V_1hr_origin.shape[0], int((V_1hr_origin.shape[1])*SCALE)))  
-    for ii in xrange(len(V_1hr)):
-        for jj in xrange(len(V_1hr[0])):
-            V_1hr[ii, jj] = np.average(V_1hr_origin[ii,int(jj/SCALE):int(jj/SCALE)+4])    
+#    V0_wz = V_wz[0]
+#    '''resacle V0_1hr'''
+#    V_1hr = np.zeros((V_1hr_origin.shape[0], int((V_1hr_origin.shape[1])*SCALE)))  
+#    for ii in xrange(len(V_1hr)):
+#        for jj in xrange(len(V_1hr[0])):
+#            V_1hr[ii, jj] = np.average(V_1hr_origin[ii,int(jj/SCALE):int(jj/SCALE)+4])    
 
-    phase_fit(0, V_wz, V_1hr, 'phase_wz_1hr_')
-    phase_fit(0, V_1hr, V_wz, 'phase_1hr_wz_')
+    phase_fit(0, V_wz, V_1hr_origin, 'phase_wz_1hr_')
+#    phase_fit(0, V_1hr_origin, V_wz, 'phase_1hr_wz_')
 
     plt.figure()
     plt.plot(np.arange(-100, 100), np.roll(V_wz[0]     , -100), 'r-',linewidth=2.5)

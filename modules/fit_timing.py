@@ -170,13 +170,14 @@ def time_pattern(this_file, bin_number, phase_amp_bin, NPHASEBIN = None):
         dBATdra[ii] = (this_file['dBATdra'][bin_number[ii][0]] + this_file['dBATdra'][bin_number[ii][1]])/2.
         dBATddec[ii] = (this_file['dBATddec'][bin_number[ii][0]] + this_file['dBATddec'][bin_number[ii][1]])/2.
 
+    '''As pointed data to be the template, need to add the difference between two templates. Note: The phase_data of 1hr has been rescaled to 200, rather than 800 in origin.'''
+
     if (NPHASEBIN == None) or (NPHASEBIN == NPHASEBIN_wz):
-        phase_data = phase_amp_bin[:,1]
-        phase_data_err = phase_amp_bin[:,3]
+        phase_data = phase_amp_bin[:,0] +  PHASE_DIFF_wz_1hr
+        phase_data_err = (np.sqrt(phase_amp_bin[:,phase_amp_bin.shape[1]/2]**2  + PHASE_DIFF_wz_1hr_err**2))
     elif NPHASEBIN == NPHASEBIN_1hr:
-        'As WZ to be the template, need to rescale the phase bin and then add the difference between two templates. Note: The phase_data of 1hr has been rescaled to 200, rather than 800 in origin.'
-        phase_data = phase_amp_bin[:,1] + PHASE_DIFF_wz_1hr
-        phase_data_err = (np.sqrt(phase_amp_bin[:,3]**2  + PHASE_DIFF_wz_1hr_err**2)) 
+        phase_data = phase_amp_bin[:,0] 
+        phase_data_err = phase_amp_bin[:,phase_amp_bin.shape[1]/2]
     else:
         print 'NPHASEBIN error'
 
