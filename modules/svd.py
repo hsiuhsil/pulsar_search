@@ -4,6 +4,7 @@ import os.path
 
 import h5py
 import numpy as np
+import random
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from scipy.optimize import curve_fit
@@ -23,7 +24,8 @@ def main():
 aligned_1bin = False 
 aligned_fft = True
 save_fit_pars = False
-
+random_res = True
+save_random_res = True
 
 RA = pars.RA
 DEC = pars.DEC
@@ -95,6 +97,23 @@ def residuals(parameters, model, data_fft, freq=None):
     res = np.concatenate((res_Re, res_Im))
     return res
 
+def random_residuals_data(parameters, model, data_fft, freq=None):
+    '''Only use positive frequencies for residuals'''
+    if freq is None:
+        freq = None
+    else:
+        freq = freq
+
+    fit_res = data_fft - fft_phase_curve(parameters, model, freq)
+    random_res = (fit_res * np.exp(1.0j * 2 * np.pi * np.random.random()))[:len(model)/2]
+    random_res_Re = random_res.real
+    random_res_Im = random_res.imag
+    random_res = np.concatenate((random_res_Re, random_res_Im))
+    # Take care here that the negative frequencies remain the conjugate of the positive ones.
+    random_res_data = random_res + fft_phase_curve(parameters, model, freq)
+
+    return random_res_data
+
 def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=None):
 
     if (NPHASEBIN == None) or (NPHASEBIN == NPHASEBIN_wz):
@@ -126,9 +145,9 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
     print 'pars_init', pars_init
 
 #    model_fft = fft(V[0])
-
     fit_pars_phase, pcov, infodict, errmsg, success = leastsq(residuals, pars_init,
                    args=( model, data_fft, freq), full_output=1)
+
 
     print "Fit parameters: ", fit_pars_phase
     print "sucess?:", success
@@ -163,12 +182,38 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
     else:
         phase_amp_bin = np.concatenate((pfit_leastsq, perr_leastsq ))
 
-    if save_fit_pars == True:
+    if save_fit_pars== True:
         if os.path.exists(npy_file):
             sequence = np.load(npy_file)
             np.save(npy_file, np.vstack((sequence, phase_amp_bin)))
         else:
             np.save(npy_file, phase_amp_bin)
+
+    '''Simulation test on random residuals phase'''
+    if random_res == True:
+        random_times = 100
+        '''save the random res fitting amp and bin as [amp, bin, amp_err, bin_err]'''
+        random_npy_file = 'random_phase_amp_bin_57178_fft.npy'
+        random_phase_amp_bin = np.zeros((phase_matrix_origin.shape[0], random_times, len(fit_pars_phase)))
+        for ii in xrange(random_times):
+            print 'ii', ii
+            random_res_data = random_residuals_data(fit_pars_phase, model, data_fft, freq)
+            random_fit_pars_phase, pcov, infodict, errmsg, success = leastsq(residuals, pars_init,
+                   args=( model, random_res_data, freq), full_output=1)
+            print 'random_fit_pars_phase', random_fit_pars_phase
+
+            if (phase_matrix_origin.shape[1] == pars.phase_npy_1hr.shape[1]):
+                random_phase_amp_bin[index, ii, ...] = np.concatenate(([random_fit_pars_phase[0]*SCALE], random_fit_pars_phase[1:] ))
+            else:
+                random_phase_amp_bin[index, ii, ...] = random_fit_pars_phase
+
+        if save_random_res == True:
+            np.save(random_npy_file, random_phase_amp_bin)
+            
+
+
+
+
     '''functions in Fourier space'''
     model_fft = fft_phase_curve(fit_pars_phase, model, freq)  
     init_fft = fft_phase_curve(pars_init, model, freq)
