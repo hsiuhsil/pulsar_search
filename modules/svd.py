@@ -26,6 +26,7 @@ aligned_fft = True
 save_fit_pars = False
 random_res = True
 save_random_res = True
+save_phase_plot = False
 
 RA = pars.RA
 DEC = pars.DEC
@@ -105,7 +106,7 @@ def random_residuals_data(parameters, model, data_fft, freq=None):
         freq = freq
 
     fit_res = data_fft - fft_phase_curve(parameters, model, freq)
-    random_res = (fit_res * np.exp(1.0j * 2 * np.pi * np.random.random()))[:len(model)/2]
+    random_res = (fit_res * np.exp(1.0j * 2 * np.pi * np.random.random()))[:len(fit_res)/2]
     random_res_Re = random_res.real
     random_res_Im = random_res.imag
     random_res = np.concatenate((random_res_Re, random_res_Im))
@@ -139,9 +140,15 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
         amp_V0 = np.amax(phase_matrix_origin[index])/np.amax(V[0]) * 0.5
     else:
         amp_V0 = np.amax(phase_matrix_origin[index])/np.amax(V[0])
-#   pars_init = [ model_phase_bin_1hr[index], amp_V0, amp_V0/10, amp_V0/5000, amp_V0/500000]
 
-    pars_init = [ np.argmax(phase_matrix_origin[index]) % NPHASEBIN, amp_V0, amp_V0/10, amp_V0/5000, amp_V0/500000]
+    if phase_matrix_origin.shape[1] == pars.NPHASEBIN_wz:
+        model_phase_bin = model_phase_bin_wz
+    elif phase_matrix_origin.shape[1] == pars.NPHASEBIN_1hr:   
+        model_phase_bin = model_phase_bin_1hr
+
+    pars_init = [ model_phase_bin[index], amp_V0, amp_V0/10, amp_V0/5000, amp_V0/500000]
+
+#    pars_init = [ np.argmax(phase_matrix_origin[index]) % NPHASEBIN, amp_V0, amp_V0/10, amp_V0/5000, amp_V0/500000]
     print 'pars_init', pars_init
 
 #    model_fft = fft(V[0])
@@ -193,13 +200,17 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
     if random_res == True:
         random_times = 100
         '''save the random res fitting amp and bin as [amp, bin, amp_err, bin_err]'''
-        random_npy_file = 'random_phase_amp_bin_57178_fft.npy'
-        random_phase_amp_bin = np.zeros((phase_matrix_origin.shape[0], random_times, len(fit_pars_phase)))
+        random_npy_file = 'random_'+ plot_name + '.npy'
+        if os.path.exists(random_npy_file) == False:
+            random_phase_amp_bin = np.zeros((phase_matrix_origin.shape[0], random_times, len(fit_pars_phase)))
+        else:
+            random_phase_amp_bin = np.load(random_npy_file)
+
         for ii in xrange(random_times):
             print 'ii', ii
             random_res_data = random_residuals_data(fit_pars_phase, model, data_fft, freq)
-            random_fit_pars_phase, pcov, infodict, errmsg, success = leastsq(residuals, pars_init,
-                   args=( model, random_res_data, freq), full_output=1)
+            random_fit_pars_phase, pcov, infodict, errmsg, success = leastsq(residuals, 
+                       pars_init, args=( model, random_res_data, freq), full_output=1)
             print 'random_fit_pars_phase', random_fit_pars_phase
 
             if (phase_matrix_origin.shape[1] == pars.phase_npy_1hr.shape[1]):
@@ -212,86 +223,86 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
             
 
 
+    if save_phase_plot == True:
 
+        '''functions in Fourier space'''
+        model_fft = fft_phase_curve(fit_pars_phase, model, freq)  
+        init_fft = fft_phase_curve(pars_init, model, freq)
 
-    '''functions in Fourier space'''
-    model_fft = fft_phase_curve(fit_pars_phase, model, freq)  
-    init_fft = fft_phase_curve(pars_init, model, freq)
+        '''Real part'''
+        model_fft_real = model_fft.real
+        data_fft_real = data_fft.real
+        init_fft_real = init_fft.real
+        res_fft_real = np.concatenate((res[:(len(res)/2)], res[:(len(res)/2)][::-1]))
 
-    '''Real part'''
-    model_fft_real = model_fft.real
-    data_fft_real = data_fft.real
-    init_fft_real = init_fft.real
-    res_fft_real = np.concatenate((res[:(len(res)/2)], res[:(len(res)/2)][::-1]))
+        '''Imag part'''
+        model_fft_imag = model_fft.imag
+        data_fft_imag = data_fft.imag
+        init_fft_imag = init_fft.imag
+        res_fft_imag = np.concatenate((res[(len(res)/2):], -res[(len(res)/2):][::-1]))
 
-    '''Imag part'''
-    model_fft_imag = model_fft.imag
-    data_fft_imag = data_fft.imag
-    init_fft_imag = init_fft.imag
-    res_fft_imag = np.concatenate((res[(len(res)/2):], -res[(len(res)/2):][::-1]))
+        '''functions in Real space (ifft)'''
+        model_ifft = np.fft.ifft(model_fft).real
+        data_ifft = np.fft.ifft(data_fft).real
+        res_ifft = np.fft.ifft(model_fft - data_fft).real
+        init_ifft = np.fft.ifft(init_fft).real
 
-    '''functions in Real space (ifft)'''
-    model_ifft = np.fft.ifft(model_fft).real
-    data_ifft = np.fft.ifft(data_fft).real
-    res_ifft = np.fft.ifft(model_fft - data_fft).real
-    init_ifft = np.fft.ifft(init_fft).real
+        freq_range = np.linspace(np.amin(np.fft.fftfreq(len(data_fft))), np.amax(np.fft.fftfreq(len(data_fft))), num = len(data_fft), endpoint=True)
+        freq_min = np.amin(freq_range)
+        freq_max = np.amax(freq_range)
 
-    freq_range = np.linspace(np.amin(np.fft.fftfreq(len(data_fft))), np.amax(np.fft.fftfreq(len(data_fft))), num = len(data_fft), endpoint=True)
-    freq_min = np.amin(freq_range)
-    freq_max = np.amax(freq_range)
+        phase_range = np.arange(-int(NPHASEBIN/2), int(NPHASEBIN/2))
 
-    phase_range = np.arange(-int(NPHASEBIN/2), int(NPHASEBIN/2))
+        plot_title = 'rescaled phase_bin = ' + str("%.3f" % phase_amp_bin[0]) + ' +/- ' + str("%.3f" % phase_amp_bin[len(phase_amp_bin)/2])
+        plot_name += str(index) + '_'
 
-    plot_title = 'rescaled phase_bin = ' + str("%.3f" % phase_amp_bin[0]) + ' +/- ' + str("%.3f" % phase_amp_bin[len(phase_amp_bin)/2])
-    plot_name += str(index) + '_'
-
-    '''Plot for real part in the Fourier space'''
-    plt.figure()
-    plt.subplot(2,1,1)
-    plt.title(plot_title)
-    plt.plot(freq_range, np.roll(model_fft_real, -int(NPHASEBIN/2)),'r-')
-    plt.plot(freq_range, np.roll(data_fft_real, -int(NPHASEBIN/2)),'b-')
-    plt.plot(freq_range, np.roll(init_fft_real, -int(NPHASEBIN/2)),'k--')
-    plt.xlabel('Frequency')
-    plt.xlim((freq_min,freq_max))
-    plt.subplot(2,1,2)
-    plt.plot(freq_range, np.roll(res_fft_real, -int(NPHASEBIN/2)),'bo')
-    plt.xlabel('Frequency')
-    plt.ylabel('Residuals')
-    plt.xlim((freq_min,freq_max))
-    plt.savefig(plot_name + 'fft_real.png')
+        '''Plot for real part in the Fourier space'''
+        plt.figure()
+        plt.subplot(2,1,1)
+        plt.title(plot_title)
+        plt.plot(freq_range, np.roll(model_fft_real, -int(NPHASEBIN/2)),'r-')
+        plt.plot(freq_range, np.roll(data_fft_real, -int(NPHASEBIN/2)),'b-')
+        plt.plot(freq_range, np.roll(init_fft_real, -int(NPHASEBIN/2)),'k--')
+        plt.xlabel('Frequency')
+        plt.xlim((freq_min,freq_max))
+        plt.subplot(2,1,2)
+        plt.plot(freq_range, np.roll(res_fft_real, -int(NPHASEBIN/2)),'bo')
+        plt.xlabel('Frequency')
+        plt.ylabel('Residuals')
+        plt.xlim((freq_min,freq_max))
+        plt.savefig(plot_name + 'fft_real.png')
   
-    '''Plot for imag part in the Fourier space'''
-    plt.figure()
-    plt.subplot(2,1,1)
-    plt.title(plot_title)
-    plt.plot(freq_range, np.roll(model_fft_imag, -int(NPHASEBIN/2)),'r-')
-    plt.plot(freq_range, np.roll(data_fft_imag, -int(NPHASEBIN/2)),'b-')
-    plt.plot(freq_range, np.roll(init_fft_imag, -int(NPHASEBIN/2)),'k--')
-    plt.xlabel('Frequency')
-    plt.xlim((freq_min,freq_max))
+        '''Plot for imag part in the Fourier space'''
+        plt.figure()
+        plt.subplot(2,1,1)
+        plt.title(plot_title)
+        plt.plot(freq_range, np.roll(model_fft_imag, -int(NPHASEBIN/2)),'r-')
+        plt.plot(freq_range, np.roll(data_fft_imag, -int(NPHASEBIN/2)),'b-')
+        plt.plot(freq_range, np.roll(init_fft_imag, -int(NPHASEBIN/2)),'k--')
+        plt.xlabel('Frequency')
+        plt.xlim((freq_min,freq_max))
 
-    plt.subplot(2,1,2)
-    plt.plot(freq_range, np.roll(res_fft_imag, -int(NPHASEBIN/2)),'bo')
-    plt.xlabel('Frequency')
-    plt.ylabel('Residuals')
-    plt.xlim((freq_min,freq_max))
-    plt.savefig(plot_name + 'fft_imag.png')
+        plt.subplot(2,1,2)
+        plt.plot(freq_range, np.roll(res_fft_imag, -int(NPHASEBIN/2)),'bo')
+        plt.xlabel('Frequency')
+        plt.ylabel('Residuals')
+        plt.xlim((freq_min,freq_max))
+        plt.savefig(plot_name + 'fft_imag.png')
 
-    '''Plot for real part in real space'''
-    plt.figure()
-    plt.subplot(2,1,1)
-    plt.title(plot_title)
-    plt.plot(phase_range, np.roll(model_ifft, -int(NPHASEBIN/2)),'r-')
-    plt.plot(phase_range, np.roll(data_ifft, -int(NPHASEBIN/2)),'b-')
-    plt.plot(phase_range, np.roll(init_ifft, -int(NPHASEBIN/2)),'k--')
-    plt.xlabel('Phase bin number')
+        '''Plot for real part in real space'''
+        plt.figure()
+        plt.subplot(2,1,1)
+        plt.title(plot_title)
+        plt.plot(phase_range, np.roll(model_ifft, -int(NPHASEBIN/2)),'r-')
+        plt.plot(phase_range, np.roll(data_ifft, -int(NPHASEBIN/2)),'b-')
+        plt.plot(phase_range, np.roll(init_ifft, -int(NPHASEBIN/2)),'k--')
+        plt.xlabel('Phase bin number')
 
-    plt.subplot(2,1,2)
-    plt.plot(phase_range, np.roll(res_ifft, -100),'bo')
-    plt.xlabel('Phase bin number')
-    plt.ylabel('Residuals')
-    plt.savefig(plot_name + 'ifft.png')
+        plt.subplot(2,1,2)
+        plt.plot(phase_range, np.roll(res_ifft, -100),'bo')
+        plt.xlabel('Phase bin number')
+        plt.ylabel('Residuals')
+        plt.savefig(plot_name + 'ifft.png')
 
 
 def scale_matrix(old_matrix, SCALE):
