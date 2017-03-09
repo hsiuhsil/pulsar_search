@@ -121,36 +121,42 @@ def make_save_plot(parameters, model, res, time, dBATdra, dBATddec, data, data_e
     model_time = np.linspace(time_range[0], time_range[1], num_points)
 
     model = timing_model_1(parameters, model_time, dBATdra, dBATddec)
-    res = residuals_1(parameters, time, dBATdra, dBATddec, data, data_err)
+    res = residuals_1(parameters, time, dBATdra, dBATddec, data, data_err) 
     '''plot res, rather than res/errors'''
-    res *= data_err    
+    res *= data_err 
+    '''plot in phase, rather than phase bin'''
+    res /= NPHASEBIN
+#    print 'res= ', res
+    yerr = data_err / NPHASEBIN
 
     markersize = 2.0
 
-    plt.subplot(2,1,1)
-    plt.plot(transform_time(time), data, 'bo', markersize=markersize)
-    plt.errorbar(transform_time(time), data, yerr= data_err, fmt=None, color='b')
-    plt.plot(transform_time(model_time), model, 'r--')
-    plt.xlabel('Bary diff (hours)', fontsize=14)
-    plt.ylabel('Max Phase Bins Number', fontsize=14)
-    plt.xlim(transform_time(time_range[0]), transform_time(time_range[1]))
+#    plt.subplot(2,1,1)
+#    plt.plot(transform_time(time), data, 'bo', markersize=markersize)
+#    plt.errorbar(transform_time(time), data, yerr= data_err, fmt=None, color='b')
+#    plt.plot(transform_time(model_time), model, 'r--')
+#    plt.xlabel('Bary diff (hours)', fontsize=14)
+#    plt.ylabel('Max Phase Bins Number', fontsize=14)
+#    plt.xlim(transform_time(time_range[0]), transform_time(time_range[1]))
 
-    plt.subplot(2,1,2)
-    plt.plot(transform_time(time), res, 'bo', markersize=markersize)
-    plt.errorbar(transform_time(time), res , yerr= data_err, fmt=None, ecolor='b')
+#    plt.subplot(2,1,2)
+    plt.plot(time, res, 'bo', markersize=markersize)
+    plt.errorbar(time, res , yerr= yerr, fmt=None, ecolor='b')
 #    plt.plot(transform_time(time), random_res_std, 'ks', markersize=markersize)
-    plt.errorbar(transform_time(time), res , yerr= random_res_std, fmt=None, ecolor='r')
-    plt.xlim(transform_time(time_range[0]), transform_time(time_range[1]))
+#    plt.errorbar(transform_time(time), res , yerr= random_res_std, fmt=None, ecolor='r')
+    plt.xlim(time_range[0], time_range[1])
     if len(time_range) > 2:
         plt.ylim(time_range[2], time_range[3])
-    plt.xlabel('Bary diff (hours)', fontsize=14)
-    plt.ylabel('Phase bin residuals', fontsize=14)
+    plt.xlabel('MJD ', fontsize=14)
+    plt.ylabel('Phase residuals', fontsize=14)
+    plt.ticklabel_format(useOffset=False)
 
     plt.savefig(filename)
 
 def make_save_plot_pointing(parameters, model, res, time, dBATdra, dBATddec, data, data_err, random_res_std, wz_range, filename, time_range=None):
 
     time_range = np.linspace(time[wz_range], time[-1], 64)
+#    print time_range
     timing_model_1_pointing = timing_model_1(parameters, time, dBATdra, dBATddec)[236:]
 
     phase_data_pointing =  data[236:]
@@ -160,23 +166,28 @@ def make_save_plot_pointing(parameters, model, res, time, dBATdra, dBATddec, dat
 
     '''plot res, rather than res/errors'''
     residuals_1_pointing *= phase_data_pointing_err
+    '''plot in phase, rather than phase bin'''
+    residuals_1_pointing /= NPHASEBIN
+    phase_data_pointing_err /= NPHASEBIN
 
 #    print 'phase_data_pointing_err',phase_data_pointing_err
     markersize = 3.0
 
-    plt.subplot(2,1,1)
-    plt.plot(time_range, phase_data_pointing, 'bo', markersize=markersize)
-    plt.errorbar(time_range, phase_data_pointing, yerr = phase_data_pointing_err)
-    plt.plot(time_range, timing_model_1_pointing, 'r--')
-    plt.xlabel('Bary diff (hours)', fontsize=14)
-    plt.ylabel('Max Phase Bins Number', fontsize=14)
-    plt.subplot(2,1,2)
+#    plt.subplot(2,1,1)
+#    plt.plot(time_range, phase_data_pointing, 'bo', markersize=markersize)
+#    plt.errorbar(time_range, phase_data_pointing, yerr = phase_data_pointing_err)
+#    plt.plot(time_range, timing_model_1_pointing, 'r--')
+#    plt.xlabel('Bary diff (hours)', fontsize=14)
+#    plt.ylabel('Max Phase Bins Number', fontsize=14)
+#    plt.subplot(2,1,2)
+
     plt.plot(time_range, residuals_1_pointing, 'bo', markersize=markersize)
     plt.errorbar(time_range, residuals_1_pointing , yerr= phase_data_pointing_err, fmt=None, ecolor='b')
 #    plt.plot(time_range, random_res_std, 'ks', markersize=markersize)
-    plt.errorbar(time_range, residuals_1_pointing , yerr= random_res_std, fmt=None, ecolor='r')
-    plt.xlabel('Bary diff (hours)', fontsize=14)
-    plt.ylabel('Phase bin residuals', fontsize=14)
+#    plt.errorbar(time_range, residuals_1_pointing , yerr= random_res_std, fmt=None, ecolor='r')
+    plt.xlabel('MJD ', fontsize=10)
+    plt.ylabel('Phase residuals', fontsize=10)
+    plt.ticklabel_format(useOffset=False)
 
     plt.savefig(filename)
 
@@ -246,15 +257,18 @@ def fitting(pars_init_1, time_mjd, dBATdra, dBATddec, phase_data, phase_data_err
     make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl], phase_data_err[sl], random_res_std[sl], len_time_mjd_wz, 'new_phase_fit_J2139.png')
     plt.figure()
     make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl], phase_data_err[sl], random_res_std[sl], len_time_mjd_wz, 'new_phase_fit_J2139_zoom.png',
-            (untrans_time(-500), untrans_time(1500)))
+           (untrans_time(-500), untrans_time(1500)))
     plt.figure()
     make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl], phase_data_err[sl], random_res_std[sl], len_time_mjd_wz, 'new_phase_fit_J2139_zoom2.png',
-            (untrans_time(33400), untrans_time(35000)))
+           (untrans_time(33400), untrans_time(35314)))
     plt.figure()
     make_save_plot_pointing(fit_pars_1, 'model_1', 'res_1', time_mjd, dBATdra, dBATddec, phase_data, phase_data_err, random_res_std, len_time_mjd_wz, 'new_phase_fit_J2139_zoom3.png')
 #            (untrans_time(35312), untrans_time(35314)))
     plt.figure()
     make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd, dBATdra, dBATddec,  phase_data, phase_data_err, random_res_std, len_time_mjd_wz, 'new_phase_fit_J2139_all.png')
+#    plt.figure()
+#    make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl], phase_data_err[sl], random_res_std[sl], len_time_mjd_wz, 'new_phase_fit_J2139_zoom_600.png',
+#            (untrans_time(570), untrans_time(600)))
 
 
 if __name__ == '__main__':

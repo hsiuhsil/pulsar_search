@@ -1,13 +1,22 @@
 import numpy as np
 import h5py
+import bary_time
 
 '''Physical parameters'''
 AU = 149597870700.0      # m
 C = 299792458.0    # m/s
 
+'''Parameters of pulsar J0051+0423'''
+#RA = bary_time.convHMS(str('00:51:30.1'))
+#DEC = bary_time.convDMS(str('+04:22:49'))
+#DM = 13.9
+#T = 0.35473179890 
+
+
 '''Parameters of pulsar J2139+00'''
 RA = 324.8428583333333  # deg
 DEC = 0.6959230555555556 # deg
+DM = 31.7262
 T = 0.312470
 
 '''Parameters of fitting'''

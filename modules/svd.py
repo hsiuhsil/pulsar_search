@@ -24,9 +24,9 @@ def main():
 aligned_1bin = False 
 aligned_fft = True
 save_fit_pars = False
-random_res = True
-save_random_res = True
-save_phase_plot = False
+random_res = False
+save_random_res = False
+save_phase_plot = True
 
 RA = pars.RA
 DEC = pars.DEC
@@ -251,9 +251,9 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
         freq_min = np.amin(freq_range)
         freq_max = np.amax(freq_range)
 
-        phase_range = np.arange(-int(NPHASEBIN/2), int(NPHASEBIN/2))
+        phase_range = np.arange(-int(NPHASEBIN/2), int(NPHASEBIN/2)) / np.float(NPHASEBIN)
 
-        plot_title = 'rescaled phase_bin = ' + str("%.3f" % phase_amp_bin[0]) + ' +/- ' + str("%.3f" % phase_amp_bin[len(phase_amp_bin)/2])
+        plot_title = 'rescaled phase_bin = ' + str("%.4f" % (phase_amp_bin[0]/np.float(NPHASEBIN))) + ' +/- ' + str("%.4f" % (phase_amp_bin[len(phase_amp_bin)/2]/np.float(NPHASEBIN)))
         plot_name += str(index) + '_'
 
         '''Plot for real part in the Fourier space'''
@@ -296,12 +296,14 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
         plt.plot(phase_range, np.roll(model_ifft, -int(NPHASEBIN/2)),'r-')
         plt.plot(phase_range, np.roll(data_ifft, -int(NPHASEBIN/2)),'b-')
         plt.plot(phase_range, np.roll(init_ifft, -int(NPHASEBIN/2)),'k--')
-        plt.xlabel('Phase bin number')
+        plt.xlim((-0.5, 0.5))
+        plt.xlabel('Phase')
 
         plt.subplot(2,1,2)
         plt.plot(phase_range, np.roll(res_ifft, -100),'bo')
-        plt.xlabel('Phase bin number')
+        plt.xlabel('Phase ')
         plt.ylabel('Residuals')
+        plt.xlim((-0.5, 0.5))
         plt.savefig(plot_name + 'ifft.png')
 
 
@@ -387,18 +389,19 @@ def plot_svd(this_file, bin_number, phase_amp_bin, phase_npy, plot_name, NPHASEB
     plt.figure()
     x_range = np.arange(0, len(s))
     plt.plot(x_range, s, 'ro-')
-    plt.xlabel('phase bin number')
+    plt.xlabel('Phase')
     plt.ylabel('s values')
     plot_name_s = plot_name + '_s.png'
     plt.savefig(plot_name_s)
 
     plt.figure()
     n_step = -0.3
-    x_range = np.arange(-len(V[0])/2, len(V[0])/2)
-    color = ['r', 'b', 'g', 'k', 'y', '0.9', '0.7', '0.5', '0.3', '0.1']
+    x_range = np.arange(-len(V[0])/2 , len(V[0])/2) / np.float(NPHASEBIN)
+    color = ['r', 'g', 'b', 'y', 'c', '0.0', '0.2', '0.4', '0.6', '0.8']
     for ii in xrange(len(color)):
         plt.plot(x_range, np.roll(V[ii] + ii *n_step, -len(V[0])/2), color[ii], linewidth=1.0)
-    plt.xlabel('phase bin number')
+    plt.xlim((-0.5, 0.5))
+    plt.xlabel('Phase')
     plt.ylabel('V values')
     plot_name_V = plot_name + '_V.png'
     plt.savefig(plot_name_V)

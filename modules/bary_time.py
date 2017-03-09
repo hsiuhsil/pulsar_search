@@ -6,6 +6,7 @@ import h5py
 import pyfits
 import numpy as np
 import subprocess
+import pars
 
 def main():
     args = sys.argv[1:]
@@ -113,14 +114,14 @@ def find_topo_bary(filename):
 #        RA = str("+21:39:46")
 #        DEC = str("+00:36:00")
         '''J2139+00, atnf + delta(ra, dec)'''
-        RA = convHMS(str("+21:39:46"))
+#        RA = convHMS(str("+21:39:46"))
         '''test new location with factor of -1'''
-        RA += -1 * 1.72450646e-03 * 180 / np.pi # convert rad to deg
-        RA = deg_to_HMS(RA)
-        DEC = convDMS(str("+00:36:00"))
+#        RA += -1 * 1.72450646e-03 * 180 / np.pi # convert rad to deg
+#        RA = deg_to_HMS(RA)
+#        DEC = convDMS(str("+00:36:00"))
         '''test new location with factor of -1'''
-        DEC += -1 * -1.67417143e-03 * 180 / np.pi # convert rad to deg
-        DEC = deg_to_DMS(DEC)
+#        DEC += -1 * -1.67417143e-03 * 180 / np.pi # convert rad to deg
+#        DEC = deg_to_DMS(DEC)
         '''J0030+0451'''
 #        RA = str('00:30:27.42823')
 #        DEC = str('+04:51:39.7112')
@@ -134,6 +135,10 @@ def find_topo_bary(filename):
 #        RA = str('10:46:43.23')
 #        DEC = str('+03:04:06.9')
 
+        '''RA and DEC need to be in the form of HMS and DMS, not degree!'''
+        RA = deg_to_HMS(pars.RA)
+        DEC = deg_to_DMS(pars.DEC)
+    
         RA1 = deg_to_HMS(convHMS(RA)+0.1)
         DEC1 = deg_to_DMS(convDMS(DEC)+0.1)
   
