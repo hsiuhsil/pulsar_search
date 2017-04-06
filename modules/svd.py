@@ -5,6 +5,8 @@ import os.path
 import h5py
 import numpy as np
 import random
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from scipy.optimize import curve_fit
@@ -182,7 +184,7 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
     print("perr = ", perr_leastsq)
 
     '''save the fitting amp and bin as [amp, bin, amp_err, bin_err]'''
-    npy_file = 'phase_amp_bin_57178_fft.npy'
+    npy_file = 'phase_amp_bin_wz_fft.npy'
 
     if (phase_matrix_origin.shape[1] == pars.phase_npy_1hr.shape[1]):
         phase_amp_bin = np.concatenate(([pfit_leastsq[0]*SCALE], pfit_leastsq[1:], [perr_leastsq[0]*SCALE], perr_leastsq[1:] ))
@@ -244,68 +246,83 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
         '''functions in Real space (ifft)'''
         model_ifft = np.fft.ifft(model_fft).real
         data_ifft = np.fft.ifft(data_fft).real
-        res_ifft = np.fft.ifft(model_fft - data_fft).real
+        res_ifft = np.fft.ifft(data_fft - model_fft).real
         init_ifft = np.fft.ifft(init_fft).real
 
-        freq_range = np.linspace(np.amin(np.fft.fftfreq(len(data_fft))), np.amax(np.fft.fftfreq(len(data_fft))), num = len(data_fft), endpoint=True)
+        freq_range = np.linspace(np.amin(np.fft.fftfreq(len(data_fft))), np.amax(np.fft.fftfreq(len(data_fft))), num=len(data_fft), endpoint=True)
         freq_min = np.amin(freq_range)
         freq_max = np.amax(freq_range)
 
-        phase_range = np.arange(-int(NPHASEBIN/2), int(NPHASEBIN/2)) / np.float(NPHASEBIN)
+#        phase_range = np.arange(-int(NPHASEBIN/2), int(NPHASEBIN/2)) / np.float(NPHASEBIN)
+        phase_range = np.linspace(-0.5, 0.5, num=NPHASEBIN, endpoint=True)
+    
+        title_phase = phase_amp_bin[0]/np.float(NPHASEBIN_wz)
+        if title_phase >= 0.5:
+            title_phase -= 1
+        title_phase_err = phase_amp_bin[len(phase_amp_bin)/2]/np.float(NPHASEBIN_wz)
 
-        plot_title = 'rescaled phase_bin = ' + str("%.4f" % (phase_amp_bin[0]/np.float(NPHASEBIN))) + ' +/- ' + str("%.4f" % (phase_amp_bin[len(phase_amp_bin)/2]/np.float(NPHASEBIN)))
+        plot_title = 'Phase: ' + str("%.5f" % (title_phase)) + ' +/- ' + str("%.5f" % (title_phase_err))
         plot_name += str(index) + '_'
+        fontsize = 16
 
-        '''Plot for real part in the Fourier space'''
-        plt.figure()
-        plt.subplot(2,1,1)
-        plt.title(plot_title)
-        plt.plot(freq_range, np.roll(model_fft_real, -int(NPHASEBIN/2)),'r-')
-        plt.plot(freq_range, np.roll(data_fft_real, -int(NPHASEBIN/2)),'b-')
-        plt.plot(freq_range, np.roll(init_fft_real, -int(NPHASEBIN/2)),'k--')
-        plt.xlabel('Frequency')
-        plt.xlim((freq_min,freq_max))
-        plt.subplot(2,1,2)
-        plt.plot(freq_range, np.roll(res_fft_real, -int(NPHASEBIN/2)),'bo')
-        plt.xlabel('Frequency')
-        plt.ylabel('Residuals')
-        plt.xlim((freq_min,freq_max))
-        plt.savefig(plot_name + 'fft_real.png')
-  
-        '''Plot for imag part in the Fourier space'''
-        plt.figure()
-        plt.subplot(2,1,1)
-        plt.title(plot_title)
-        plt.plot(freq_range, np.roll(model_fft_imag, -int(NPHASEBIN/2)),'r-')
-        plt.plot(freq_range, np.roll(data_fft_imag, -int(NPHASEBIN/2)),'b-')
-        plt.plot(freq_range, np.roll(init_fft_imag, -int(NPHASEBIN/2)),'k--')
-        plt.xlabel('Frequency')
-        plt.xlim((freq_min,freq_max))
+        '''Plot for real and imag parts in the Fourier space.'''
+        plt.close('all')
+        f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, sharex='col', sharey='row', figsize=(16,9))
+        f.subplots_adjust(wspace=0.09, hspace=0.07)
+        mode_range = np.linspace(-len(freq)/2, len(freq)/2, num=len(freq), endpoint=True)
+        xmax = np.amax(mode_range)
+        xmin = np.amin(mode_range)
+        ax1.plot(mode_range, np.roll(model_fft_real, -int(NPHASEBIN/2)),'r-')
+        ax1.plot(mode_range, np.roll(data_fft_real, -int(NPHASEBIN/2)),'b-')
+        ax1.set_title('Real', size=fontsize)
+        ax1.set_xlim([xmin,xmax])
+        ax1.tick_params(axis='both', which='major', labelsize=fontsize)
 
-        plt.subplot(2,1,2)
-        plt.plot(freq_range, np.roll(res_fft_imag, -int(NPHASEBIN/2)),'bo')
-        plt.xlabel('Frequency')
-        plt.ylabel('Residuals')
-        plt.xlim((freq_min,freq_max))
-        plt.savefig(plot_name + 'fft_imag.png')
+        ax2.plot(mode_range, np.roll(model_fft_imag, -int(NPHASEBIN/2)),'r-')
+        ax2.plot(mode_range, np.roll(data_fft_imag, -int(NPHASEBIN/2)),'b-')
+        ax2.set_title('Imag', size=fontsize)
+        ax2.set_xlim([xmin,xmax])
+        ax2.tick_params(axis='both', which='major', labelsize=fontsize)
+
+        ax3.plot(mode_range, np.roll(res_fft_real, -int(NPHASEBIN/2)),'bo')
+        ax3.set_xlabel('Harmonic modes', fontsize=fontsize)
+        ax3.set_ylabel('Residuals (T/Tsys)', fontsize=fontsize)
+        ax3.set_xlim([xmin,xmax])
+        ax3.tick_params(axis='both', which='major', labelsize=fontsize)
+
+        ax4.plot(mode_range, np.roll(res_fft_imag, -int(NPHASEBIN/2)),'bo')
+        ax4.set_xlabel('Harmonic modes', fontsize=fontsize)
+        ax4.set_xlim([xmin,xmax])
+        ax4.tick_params(axis='both', which='major', labelsize=fontsize)
+
+        plt.savefig(plot_name + 'fft.png', bbox_inches='tight')
 
         '''Plot for real part in real space'''
-        plt.figure()
-        plt.subplot(2,1,1)
-        plt.title(plot_title)
-        plt.plot(phase_range, np.roll(model_ifft, -int(NPHASEBIN/2)),'r-')
-        plt.plot(phase_range, np.roll(data_ifft, -int(NPHASEBIN/2)),'b-')
-        plt.plot(phase_range, np.roll(init_ifft, -int(NPHASEBIN/2)),'k--')
-        plt.xlim((-0.5, 0.5))
-        plt.xlabel('Phase')
+        plt.close('all')
+        f, ((ax1, ax2)) = plt.subplots(2, 1, sharex='col', figsize=(8,9))
+        f.subplots_adjust(hspace=0.07)
+        xmax = np.amax(phase_range)
+        xmin = np.amin(phase_range)
+        ax1.plot(phase_range, np.roll(model_ifft, -int(NPHASEBIN/2)),'r-')
+        ax1.plot(phase_range, np.roll(data_ifft, -int(NPHASEBIN/2)),'b-')
+        ax1.set_title(plot_title, size=fontsize)
+        ax1.set_xlim([xmin,xmax])
+        ax1.set_ylabel('T/Tsys', fontsize=fontsize)
+        ax1.tick_params(axis='both', which='major', labelsize=fontsize)
 
-        plt.subplot(2,1,2)
-        plt.plot(phase_range, np.roll(res_ifft, -100),'bo')
-        plt.xlabel('Phase ')
-        plt.ylabel('Residuals')
-        plt.xlim((-0.5, 0.5))
-        plt.savefig(plot_name + 'ifft.png')
+        ax2.plot(phase_range, np.roll(res_ifft, -int(NPHASEBIN/2)),'bo')
+        ax2.set_xlim([xmin,xmax])
+        ax2.set_xlabel('Phase ', fontsize=fontsize)
+        ax2.set_ylabel('Residuals (T/Tsys)', fontsize=fontsize)
+        ax2.tick_params(axis='both', which='major', labelsize=fontsize)
 
+        plt.savefig(plot_name + 'ifft.png', bbox_inches='tight')
+
+def scale_array(old_array, SCALE):
+    array = np.zeros(int(len(old_array)*SCALE))
+    for ii in xrange(len(array)):
+        array[ii] = np.average(old_array[int(ii/SCALE):int((ii+1)/SCALE)])
+    return array
 
 def scale_matrix(old_matrix, SCALE):
     matrix = np.zeros((old_matrix.shape[0], int((old_matrix.shape[1])*SCALE)))
@@ -372,6 +389,7 @@ def plot_two_temps(this_file_wz, bin_number_wz, phase_amp_bin_wz, phase_npy_wz, 
     phase_fit(0, V_wz, V_1hr_origin, 'phase_wz_1hr_')
 #    phase_fit(0, V_1hr_origin, V_wz, 'phase_1hr_wz_')
 
+
     plt.figure()
     plt.plot(np.arange(-100, 100), np.roll(V_wz[0]     , -100), 'r-',linewidth=2.5)
     plt.plot(np.arange(-100, 100), np.roll(V_1hr[0] -0.5, -100), 'b-',linewidth=2.5)
@@ -386,6 +404,8 @@ def plot_svd(this_file, bin_number, phase_amp_bin, phase_npy, plot_name, NPHASEB
     print 'len(V[0])', len(V[0])
     print 's.shape', s.shape
 
+    fontsize = 16
+
     plt.figure()
     x_range = np.arange(0, len(s))
     plt.plot(x_range, s, 'ro-')
@@ -397,16 +417,58 @@ def plot_svd(this_file, bin_number, phase_amp_bin, phase_npy, plot_name, NPHASEB
     plt.figure()
     n_step = -0.3
     x_range = np.arange(-len(V[0])/2 , len(V[0])/2) / np.float(NPHASEBIN)
-    color = ['r', 'g', 'b', 'y', 'c', '0.0', '0.2', '0.4', '0.6', '0.8']
+#    color = ['r', 'g', 'b', 'y', 'c', '0.0', '0.2', '0.4', '0.6', '0.8']
+    color = ['r', 'g', 'b']
     for ii in xrange(len(color)):
         plt.plot(x_range, np.roll(V[ii] + ii *n_step, -len(V[0])/2), color[ii], linewidth=1.0)
     plt.xlim((-0.5, 0.5))
-    plt.xlabel('Phase')
-    plt.ylabel('V values')
+    plt.xlabel('Phase', fontsize=fontsize)
+    plt.ylabel('V values', fontsize=fontsize)
+    plt.tick_params(axis='both', which='major', labelsize=fontsize)
     plot_name_V = plot_name + '_V.png'
-    plt.savefig(plot_name_V)
+    plt.savefig(plot_name_V, bbox_inches='tight')
 
+def fft_plot(npy_file):
+    data_fft = fft(npy_file)
+    data_fft_re = data_fft.real 
+    data_fft_im = data_fft.imag
+   
+    
+    SCALE_factor = T/(8.192e-5*4096*320*4)
+    scale_data_fft = scale_array(data_fft, SCALE_factor)
+    scale_data_fft_re = scale_data_fft.real
+    scale_data_fft_im = scale_data_fft.imag
 
+    freq = np.fft.fftfreq(len(data_fft))
+
+    freq_range = np.linspace(np.amin(np.fft.fftfreq(len(data_fft))), np.amax(np.fft.fftfreq(len(data_fft))), num=len(data_fft), endpoint=True)
+    freq_min = np.amin(freq_range)
+    freq_max = np.amax(freq_range)
+
+    mode_range = np.linspace(-len(freq)/2, len(freq)/2, num=len(freq), endpoint=True)
+    xmax = np.amax(mode_range)
+    xmin = np.amin(mode_range)
+
+    plt.close('all')
+    fontsize = 16
+    f, ((ax1, ax2)) = plt.subplots(2, 1, sharex='col', figsize=(8,9))
+    f.subplots_adjust(hspace=0.07)
+
+    ax1.plot(mode_range, np.roll(data_fft_re, -int(len(freq)/2)),'r-')
+    ax1.plot(mode_range, np.roll(scale_data_fft_re, -int(len(freq)/2)),'b-')
+    ax1.set_title('Real', size=fontsize)
+    ax1.set_xlim([xmin,xmax])
+    ax1.tick_params(axis='both', which='major', labelsize=fontsize)
+
+    ax2.plot(mode_range, np.roll(data_fft_im, -int(len(freq)/2)),'r-')
+    ax2.plot(mode_range, np.roll(scale_data_fft_im, -int(len(freq)/2)),'b-')
+    ax2.set_title('Imag', size=fontsize)
+    ax2.set_xlim([xmin,xmax])
+#    ax2.set_xlabel('Phase ', fontsize=fontsize)
+#    ax2.set_ylabel('Residuals (T/Tsys)', fontsize=fontsize)
+    ax2.tick_params(axis='both', which='major', labelsize=fontsize)
+
+    plt.savefig('pointed_33_36_fft.png', bbox_inches='tight')
 
 
   

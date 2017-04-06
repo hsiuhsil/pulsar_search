@@ -10,12 +10,12 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 import math
 
-initial = 160
-final = 162
+initial = 0
+final = 39
 interval = final - initial +1
 
 dedisperse = True
-dm = 4.33252 
+dm = 31.7262
 
 rebin = True
 rebin_time = 16
@@ -54,7 +54,7 @@ def dedisperse_index(freq1, freq2, tbin):
 def dedisperse_spec(input_data, tbin):
     '''note: input_data.shape should be (ntime, nfreq), and dedisperse with shape of (nfreq, ntime)'''
     freq_time = input_data.T
-    freq =  np.arange(900., 700., -200./freq_time.shape[0])
+    freq =  np.arange(920., 720., -200./freq_time.shape[0])
     time_move = dedisperse_index(np.amin(freq), freq, tbin)
     out_data = np.zeros((freq_time.shape[0], freq_time.shape[1]+np.max(time_move)))
     for ii in range(freq_time.shape[0]):
@@ -97,6 +97,9 @@ def plot_spec(filename):
     data_preprocessed = np.zeros((interval*ntime, 4, nfreq, 1))
 
     print this_file['DATA'].shape
+    print 'tbin', tbin
+#    print 'data_first.shape[0]*tbin', data_first.shape[0]*tbin
+
 
     for ii in range(0, interval):
 #    for ii in range(len(this_file['TOPO_TIME'])):
@@ -104,6 +107,7 @@ def plot_spec(filename):
         this_record_data = preprocessing(this_file['DATA'][ii+initial])
         data_preprocessed[ii*ntime:(ii+1)*ntime,:] = this_record_data
 
+    print 'get this_record_data'
     '''data is for the plot with shape of (nfreq, ntime)'''
 
     if rebin == True and dedisperse == True:
@@ -124,20 +128,26 @@ def plot_spec(filename):
 
     for ii in range(len(data2)):
         data2[ii] = np.mean(data[:,ii])
+
+    print 'generate plot'
+    print 'tbin', tbin
     
     fig = plt.figure()
     ax1 = fig.add_subplot(211)
     ax1.set_ylabel('Freq(MHz)', fontsize=20)
     ax1.set_xlabel('time (sec)', fontsize=20)
     ax1.tick_params(axis='both', which='major', labelsize=20)
-    cax1 = ax1.imshow(data, extent=[0, data_first.shape[0]*tbin, 700., 900.],aspect='auto', cmap=cm.Greys)
+    cax1 = ax1.imshow(data, extent=[0, data_first.shape[0]*tbin, 720., 920.],aspect='auto', cmap=cm.Greys)
     cbar = plt.colorbar(cax1)
     ax2 = fig.add_subplot(212)
     ax2.set_ylabel('Mean Amp', fontsize=20)
     ax2.tick_params(axis='both', which='major', labelsize=20)
     cax2 = plt.plot(data2)   
-    plt.xticks([0, 0.25*len(data2), 0.5*len(data2), 0.75*len(data2), len(data2)], [str(0), str(round(0.25*data_first.shape[0]*tbin, 4)), str(round(0.5*data_first.shape[0]*tbin, 4)), str(round(0.75*data_first.shape[0]*tbin,4)), str(round(data_first.shape[0]*tbin,4))])
-    plt.show()
+    plt.xticks([0, 0.25*len(data2), 0.5*len(data2), 0.75*len(data2), len(data2)], [str(0), str(round(0.25*ntime*tbin*interval, 4)), str(round(0.5*ntime*tbin*interval, 4)), str(round(0.75*ntime*tbin*interval,4)), str(round(ntime*tbin*interval,4))])
+#    plt.show()
+    plt.savefig('pointed_spec_0_79.png')   
+
+    np.save('pointed_0_79.npy', data2)
 
 if __name__ == '__main__':
     main()
