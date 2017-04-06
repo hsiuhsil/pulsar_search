@@ -11,7 +11,7 @@ from matplotlib import cm
 import math
 
 initial = 0
-final = 39
+final = 59
 interval = final - initial +1
 
 dedisperse = True
@@ -75,8 +75,10 @@ def time_slope(input_data):
 def preprocessing(input_data):
     '''note: preprocess need data.shape = (nfreq, ntime)'''
     output_data = np.zeros(input_data.shape)
-    data = input_data[:,0,:,0].T.astype(np.float64).copy()
+#    data = input_data[:,0,:,0].T.astype(np.float64).copy()
+    data = input_data.T.astype(np.float64).copy()
     preprocess.remove_periodic(data, remove_period)
+    print 'done remove periodic'
     m = np.mean(data[:],axis=1)
     m[m==0]=1
     data = data / m[:,None] - 1
@@ -84,8 +86,9 @@ def preprocessing(input_data):
     data = data-np.mean(data)
     data = time_slope(data)
     preprocess.remove_noisy_freq(data, sigma_threshold)
-    output_data[:,0,:,0] = data.T
-    output_data[:,1:4,:,0] = input_data[:,1:4,:,0]
+#    output_data[:,0,:,0] = data.T
+    output_data = data.T
+#    output_data[:,1:4,:,0] = input_data[:,1:4,:,0]
     return output_data
 
 def plot_spec(filename):
@@ -94,7 +97,9 @@ def plot_spec(filename):
     tbin = this_file['TBIN'][0]
     nfreq = this_file['DATA'].shape[3]
 
-    data_preprocessed = np.zeros((interval*ntime, 4, nfreq, 1))
+#    data_preprocessed = np.zeros((interval*ntime, 1, nfreq, 1))
+    data_preprocessed = np.zeros((interval*ntime, nfreq))
+    print 'data_preprocessed.shape', data_preprocessed.shape
 
     print this_file['DATA'].shape
     print 'tbin', tbin
@@ -104,14 +109,16 @@ def plot_spec(filename):
     for ii in range(0, interval):
 #    for ii in range(len(this_file['TOPO_TIME'])):
         print 'ii = ' + str(initial+ii)
-        this_record_data = preprocessing(this_file['DATA'][ii+initial])
+        this_record_data = preprocessing(this_file['DATA'][ii+initial][:, 0, :, 0])
+        print 'this_record_data.shape', this_record_data.shape
+        print 'done preprocessing'
         data_preprocessed[ii*ntime:(ii+1)*ntime,:] = this_record_data
 
     print 'get this_record_data'
     '''data is for the plot with shape of (nfreq, ntime)'''
 
     if rebin == True and dedisperse == True:
-        data_first = dedisperse_spec(data_preprocessed[:, 0, :, 0], tbin)
+        data_first = dedisperse_spec(data_preprocessed, tbin)
         data = rebin_spec(data_first).T
     elif rebin == True and dedisperse == False:
         data_first = data_preprocessed[:,0,:,0]
@@ -145,9 +152,9 @@ def plot_spec(filename):
     cax2 = plt.plot(data2)   
     plt.xticks([0, 0.25*len(data2), 0.5*len(data2), 0.75*len(data2), len(data2)], [str(0), str(round(0.25*ntime*tbin*interval, 4)), str(round(0.5*ntime*tbin*interval, 4)), str(round(0.75*ntime*tbin*interval,4)), str(round(ntime*tbin*interval,4))])
 #    plt.show()
-    plt.savefig('pointed_spec_0_79.png')   
+    plt.savefig('pointed_spec_0_119.png')   
 
-    np.save('pointed_0_79.npy', data2)
+    np.save('pointed_0_119.npy', data2)
 
 if __name__ == '__main__':
     main()
