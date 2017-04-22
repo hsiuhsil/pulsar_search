@@ -11,7 +11,7 @@ from matplotlib import cm
 import math
 
 initial = 0
-final = 59
+final = 319
 interval = final - initial +1
 
 dedisperse = True
@@ -119,6 +119,7 @@ def plot_spec(filename):
 
     if rebin == True and dedisperse == True:
         data_first = dedisperse_spec(data_preprocessed, tbin)
+        print 'done dedisperse'
         data = rebin_spec(data_first).T
     elif rebin == True and dedisperse == False:
         data_first = data_preprocessed[:,0,:,0]
@@ -135,6 +136,7 @@ def plot_spec(filename):
 
     for ii in range(len(data2)):
         data2[ii] = np.mean(data[:,ii])
+    print 'get data2'
 
     print 'generate plot'
     print 'tbin', tbin
@@ -152,9 +154,9 @@ def plot_spec(filename):
     cax2 = plt.plot(data2)   
     plt.xticks([0, 0.25*len(data2), 0.5*len(data2), 0.75*len(data2), len(data2)], [str(0), str(round(0.25*ntime*tbin*interval, 4)), str(round(0.5*ntime*tbin*interval, 4)), str(round(0.75*ntime*tbin*interval,4)), str(round(ntime*tbin*interval,4))])
 #    plt.show()
-    plt.savefig('pointed_spec_0_119.png')   
+    plt.savefig('pointed_spec_0_319.png')   
 
-    np.save('pointed_0_119.npy', data2)
+    np.save('pointed_0_319.npy', data2)
 
 if __name__ == '__main__':
     main()

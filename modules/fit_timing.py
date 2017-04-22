@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FormatStrFormatter
 from matplotlib import cm
 from scipy.optimize import curve_fit
 from scipy.optimize import minimize
@@ -137,20 +138,9 @@ def make_save_plot(parameters, model, res, time, dBATdra, dBATddec, data, data_e
     markersize = 2.0
     fontsize = 16
 
-#    plt.subplot(2,1,1)
-#    plt.plot(transform_time(time), data, 'bo', markersize=markersize)
-#    plt.errorbar(transform_time(time), data, yerr= data_err, fmt=None, color='b')
-#    plt.plot(transform_time(model_time), model, 'r--')
-#    plt.xlabel('Bary diff (hours)', fontsize=14)
-#    plt.ylabel('Max Phase Bins Number', fontsize=14)
-#    plt.xlim(transform_time(time_range[0]), transform_time(time_range[1]))
-
-#    plt.subplot(2,1,2)
     plt.plot(time, res, 'bo', markersize=markersize)
     plt.plot(time, zeros_line,'r--')
     plt.errorbar(time, res , yerr= yerr, fmt='none', ecolor='b')
-#    plt.plot(transform_time(time), random_res_std, 'ks', markersize=markersize)
-#    plt.errorbar(transform_time(time), res , yerr= random_res_std, fmt=None, ecolor='r')
     plt.xlim(time_range[0], time_range[1])
     if len(time_range) > 2:
         plt.ylim(time_range[2], time_range[3])
@@ -160,11 +150,11 @@ def make_save_plot(parameters, model, res, time, dBATdra, dBATddec, data, data_e
     plt.tick_params(axis='both', which='major', labelsize=fontsize)
     plt.ticklabel_format(useOffset=False)
 
-    plt.savefig(filename)
+    plt.savefig(filename, bbox_inches='tight')
 
 def make_save_plot_pointing(parameters, model, res, time, dBATdra, dBATddec, data, data_err, random_res_std, wz_range, filename, time_range=None):
 
-    time_range = np.linspace(time[wz_range], time[-1], 32)
+    time_range = np.linspace(time[wz_range], time[-1], 40)
 #    print time_range
     timing_model_1_pointing = timing_model_1(parameters, time, dBATdra, dBATddec)[236:]
 
@@ -180,35 +170,125 @@ def make_save_plot_pointing(parameters, model, res, time, dBATdra, dBATddec, dat
     phase_data_pointing_err /= NPHASEBIN
 
     '''Plot in time unit of ms, rather than phase'''
-    residuals_1_pointing *= (T*1000*1000)
-    phase_data_pointing_err *= (T*1000*1000)
+    residuals_1_pointing *= (T*1000)
+    phase_data_pointing_err *= (T*1000)
 
     zeros_line = np.zeros(len(residuals_1_pointing))
-#    print 'phase_data_pointing_err',phase_data_pointing_err
     markersize = 2.0
     fontsize = 16
 
-#    plt.subplot(2,1,1)
-#    plt.plot(time_range, phase_data_pointing, 'bo', markersize=markersize)
-#    plt.errorbar(time_range, phase_data_pointing, yerr = phase_data_pointing_err)
-#    plt.plot(time_range, timing_model_1_pointing, 'r--')
-#    plt.xlabel('Bary diff (hours)', fontsize=14)
-#    plt.ylabel('Max Phase Bins Number', fontsize=14)
-#    plt.subplot(2,1,2)
-
+    plt.close('all')
     plt.plot(time_range, residuals_1_pointing, 'bo', markersize=markersize)
     plt.plot(time_range, zeros_line,'r--')
     plt.errorbar(time_range, residuals_1_pointing , yerr= phase_data_pointing_err, fmt='none', ecolor='b')
-#    plt.plot(time_range, random_res_std, 'ks', markersize=markersize)
-#    plt.errorbar(time_range, residuals_1_pointing , yerr= random_res_std, fmt=None, ecolor='r')
     plt.xlabel('MJD ', fontsize=fontsize)
-    plt.ylabel('Timing residuals ($\mu$s)', fontsize=fontsize)
-#    plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+    plt.ylabel('Timing residuals (ms)', fontsize=fontsize)
     plt.tick_params(axis='both', which='major', labelsize=fontsize)
     plt.ticklabel_format(useOffset=False)
-    
-#    plt.show()
-    plt.savefig(filename)
+   
+    plt.savefig(filename, bbox_inches='tight')
+
+    plt.close('all')
+    plt.hist(residuals_1_pointing, bins='auto')
+    plt.xlabel('Timing residuals (ms)', fontsize=fontsize)
+    plt.ylabel('Number', fontsize=fontsize)
+    plt.tick_params(axis='both', which='major', labelsize=fontsize)
+    plt.savefig('hist_'+filename, bbox_inches='tight')
+
+def make_save_plot_panel(parameters, model, res, time, dBATdra, dBATddec, data, data_err, random_res_std, wz_range, filename, time_range=None):
+
+    if time_range is None:
+        time_range = (time[0], time[-1])
+
+    num_points = len(time)
+    model_time = np.linspace(time_range[0], time_range[1], num_points)
+
+    model = timing_model_1(parameters, model_time, dBATdra, dBATddec)
+    res = residuals_1(parameters, time, dBATdra, dBATddec, data, data_err)
+
+    '''plot res, rather than res/errors'''
+    res *= data_err
+    '''plot in phase, rather than phase bin'''
+    res /= NPHASEBIN
+    yerr = data_err / NPHASEBIN
+    '''Plot in time unit of ms, rather than phase'''
+    res *= (T*1000)
+    yerr *= (T*1000)
+
+    zeros_line = np.zeros(len(res))
+
+    markersize = 2.0
+    fontsize = 16
+
+    time_11wz = time[0:190]
+    res_11wz = res[0:190]
+    yerr_11wz = yerr[0:190]
+    zeros_line_11wz = zeros_line[0:190]
+
+    time_15wz = time[190:236]
+    res_15wz = res[190:236]
+    yerr_15wz = yerr[190:236]
+    zeros_line_15wz = zeros_line[190:236]
+
+    time_1hr = time[236:]
+    res_1hr = res[236:]
+    yerr_1hr = yerr[236:]
+    zeros_line_1hr = zeros_line[236:]
+
+    plt.figure(0, figsize=(16,9))
+    ax1 = plt.subplot2grid((2,3), (0,0), colspan=3)
+    ax2 = plt.subplot2grid((2,3), (1, 0))
+    ax3 = plt.subplot2grid((2,3), (1, 1), sharey=ax2)
+    ax4 = plt.subplot2grid((2,3), (1, 2))
+
+    ax1.plot(time, res, 'bo', markersize=markersize)
+    ax1.plot(time, zeros_line,'r--')
+    ax1.errorbar(time, res , yerr= yerr, fmt='none', ecolor='b')
+    ax1.set_xlim([np.amin(time),np.amax(time)])
+    ax1.tick_params(axis='both', which='major', labelsize=fontsize)
+    ax1.set_xlabel('MJD', fontsize=fontsize)
+    ax1.set_ylabel('Timing residuals (ms)', fontsize=fontsize)
+
+    ax2.plot(time_11wz, res_11wz, 'bo', markersize=markersize)
+    ax2.plot(time_11wz, zeros_line_11wz,'r--')
+    ax2.errorbar(time_11wz, res_11wz , yerr= yerr_11wz, fmt='none', ecolor='b')
+#    ax2.set_xlim([np.amin(time_11wz),np.amax(time_11wz)])
+    ax2.xaxis.set_ticks([np.percentile(time_11wz, 25), np.percentile(time_11wz, 75), np.percentile(time_11wz, 90)])
+    ax2.xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    ax2.yaxis.set_ticks(np.arange(-6,9,3))
+    ax2.set_ylim([-6,6])
+#    ax2.get_xaxis().get_major_formatter().set_useOffset(False)
+    ax2.tick_params(axis='both', which='major', labelsize=fontsize)
+    ax2.set_xlabel('MJD', fontsize=fontsize)
+    ax2.set_ylabel('Timing residuals (ms)', fontsize=fontsize)
+
+    ax3.plot(time_15wz, res_15wz, 'bo', markersize=markersize)
+    ax3.plot(time_15wz, zeros_line_15wz,'r--')
+    ax3.errorbar(time_15wz, res_15wz , yerr= yerr_15wz, fmt='none', ecolor='b')
+    ax3.set_xlim([np.amin(time_15wz),np.amax(time_15wz)])
+    ax3.xaxis.set_ticks([np.percentile(time_15wz, 25), np.percentile(time_15wz, 75), np.percentile(time_15wz, 90)])
+    ax3.xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    ax3.yaxis.set_ticks(np.arange(-6, 9, 3))
+    ax3.set_ylim([-6,6])
+#    ax3.get_xaxis().get_major_formatter().set_useOffset(False)
+    ax3.tick_params(axis='both', which='major', labelsize=fontsize)
+    ax3.set_xlabel('MJD', fontsize=fontsize)
+
+
+    ax4.plot(time_1hr, res_1hr, 'bo', markersize=markersize)
+    ax4.plot(time_1hr, zeros_line_1hr,'r--')
+    ax4.errorbar(time_1hr, res_1hr , yerr= yerr_1hr, fmt='none', ecolor='b')
+#    ax4.set_xlim([np.amin(time_1hr),np.amax(time_1hr)])
+    ax4.xaxis.set_ticks([np.percentile(time_1hr, 25), np.percentile(time_1hr, 75)])
+    ax4.xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    ax4.yaxis.set_ticks(np.arange(-0.16, 0.24, 0.08))
+#    ax4.get_xaxis().get_major_formatter().set_useOffset(False)
+    ax4.tick_params(axis='both', which='major', labelsize=fontsize)
+    ax4.set_xlabel('MJD', fontsize=fontsize)
+
+
+#    plt.ticklabel_format(useOffset=False)
+    plt.savefig(filename, bbox_inches='tight')
 
 def time_pattern(this_file, bin_number, phase_amp_bin, NPHASEBIN = None):
     time_mjd = np.zeros(len(bin_number))
@@ -285,11 +365,12 @@ def fitting(pars_init_1, time_mjd, dBATdra, dBATddec, phase_data, phase_data_err
            (untrans_time(33400), untrans_time(34300)))
     plt.figure()
 #    plt.close('all')
-    make_save_plot_pointing(fit_pars_1, 'model_1', 'res_1', time_mjd, dBATdra, dBATddec, phase_data, phase_data_err, random_res_std, len_time_mjd_wz, 'new_phase_fit_J2139_zoom3.png',
-            (untrans_time(35312.4), untrans_time(35313.4)))
+    make_save_plot_pointing(fit_pars_1, 'model_1', 'res_1', time_mjd, dBATdra, dBATddec, phase_data, phase_data_err, random_res_std, len_time_mjd_wz, 'new_phase_fit_J2139_zoom3.png',        (untrans_time(35312.4), untrans_time(35313.4)))
 #    plt.close('all')
     plt.figure()
     make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd, dBATdra, dBATddec,  phase_data, phase_data_err, random_res_std, len_time_mjd_wz, 'new_phase_fit_J2139_all.png')
+    plt.figure()
+    make_save_plot_panel(fit_pars_1, 'model_1', 'res_1', time_mjd, dBATdra, dBATddec,  phase_data, phase_data_err, random_res_std, len_time_mjd_wz, 'new_phase_fit_J2139_all_panel.png')
 
 
 if __name__ == '__main__':
