@@ -40,6 +40,7 @@ NPHASEBIN = pars.NPHASEBIN
 NPHASEBIN_1hr = pars.NPHASEBIN_1hr
 NCENTRALBINS = pars.NCENTRALBINS
 NHARMONIC = pars.NHARMONIC
+NCENTRALBINSMAIN = pars.NCENTRALBINSMAIN
 SCALE = pars.SCALE
 T = pars.T
 PHASE_DIFF_wz_1hr = pars.PHASE_DIFF_wz_1hr
@@ -139,8 +140,21 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
     model_phase_bin_1hr = fit_timing.timing_model_1(pars.fit_pars, time_mjd_1hr, dBATdra_1hr, dBATddec_1hr, pars.NPHASEBIN_1hr, RESCALE=None)
 
     model = V
+    n_phase_bins = V.shape[0]
+    V[1:,NCENTRALBINS//2:-NCENTRALBINS//2] = 0
+    if True:
+        spline = interpolate.splrep(
+                np.arange(n_phase_bins - NCENTRALBINSMAIN),
+                V[0,NCENTRALBINSMAIN//2:-NCENTRALBINSMAIN//2],
+                s=0.0015,
+                )
+        V[0,NCENTRALBINSMAIN//2:-NCENTRALBINSMAIN//2] = interpolate.splev(
+                np.arange(n_phase_bins - NCENTRALBINSMAIN),
+                spline,
+                )
+#        plt.plot(np.roll(V[0], n_phase_bins//2))
+
     data_fft = fft(phase_matrix_origin[index])
-    print 'len(data_fft)',len(data_fft)
     freq = np.fft.fftfreq(len(data_fft))    
 #    freq[abs(freq) > freq[NHARMONIC]] = 0
 
@@ -232,10 +246,7 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
         if save_random_res == True:
             np.save(random_npy_file, random_phase_amp_bin)
             
-
-
     if save_phase_plot == True:
-
         '''functions in Fourier space'''
         model_fft = fft_phase_curve(fit_pars_phase, model, freq)  
         init_fft = fft_phase_curve(pars_init, model, freq)
@@ -329,40 +340,52 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
 
     if phase_fit_lik == True:
         # fitting phase by likeli`hood
-        phase_diff_samples = np.arange(-50, 50, 0.3) * perr_leastsq[0]
+#        phase_diff_samples = np.arange(-50, 50, 0.3) * perr_leastsq[0]
+#        phase_diff_samples = np.arange(-20, 20, 0.01)
+        phase_diff_samples = [-20, 0, 20]
         chi2_samples = []
         for p in phase_diff_samples:
             this_phase = p + pars_init[0]
             if True:
-                    P = shift_trunc_modes(this_phase, model)
-                    print 'P',P
-                    d = pick_harmonics(data_fft)
-                    print 'd',d
-                    N = linalg.inv(np.dot(P, P.T))
-                    this_pars_fit = np.dot(N, np.sum(P * d, 1))
-                    print 'this_pars_fit', this_pars_fit
+                P = shift_trunc_modes(this_phase, model)
+#                print 'P',P
+                d = pick_harmonics(data_fft)
+#                print 'd',d
+                N = linalg.inv(np.dot(P, P.T))
+                this_pars_fit = np.dot(N, np.sum(P * d, 1))
+#                print 'this_pars_fit', this_pars_fit
 #            print '[this_phase] + list(this_pars_fit)', [this_phase] + list(this_pars_fit)
             chi2_sample = chi2(
                         [this_phase] + list(this_pars_fit),
-                        model, data_fft, freq,
+                        model, data_fft,
                         1. / red_chi2,
                         )
 #            print 'chi2_sample', chi2_sample
             chi2_samples.append(chi2_sample)
-        phase_diff_samples = np.array(phase_diff_samples)
-        print 'phase_diff_samples', phase_diff_samples
-        chi2_samples = np.array(chi2_samples)
-        print 'chi2_samples', chi2_samples
+        chi2_samples = np.asarray(chi2_samples)
+#        print 'chi2_samples', chi2_samples
+#        phase_diff_samples = np.array(phase_diff_samples[np.where(chi2_samples< 20*np.amin(chi2_samples))])
+#        print 'phase_diff_samples', phase_diff_samples
+#        chi2_samples = chi2_samples[np.where(chi2_samples< 20*np.amin(chi2_samples))]
+#        print 'chi2_samples', chi2_samples      
+
+        plt.close('all')
+        plt.plot(phase_diff_samples, chi2_samples)
+        plt.savefig('phase_chi2.png')
 
         # Integrate the full liklihood, taking first and second moments to
         # get mean phase and variance.
         likelihood = np.exp(-chi2_samples / 2)
+        
         print 'likelihood',likelihood
-        norm = np.sum(likelihood)
+#        norm = np.sum(likelihood)
+        norm = simpson_rule(phase_diff_samples, likelihood)
         print 'norm', norm
-        mean = np.sum(phase_diff_samples * likelihood) / norm
+#        mean = np.sum(phase_diff_samples * likelihood) / norm
+        mean = simpson_rule(phase_diff_samples, phase_diff_samples * likelihood) 
         print 'mean', mean
-        var = np.sum(phase_diff_samples**2 * likelihood) / norm - mean**2
+#        var = np.sum(phase_diff_samples**2 * likelihood) / norm - mean**2
+        var = simpson_rule(phase_diff_samples, np.array(phase_diff_samples)**2 * likelihood) / norm - mean**2
         std = np.sqrt(var)
         print 'std',std
         print "Integrated Liklihood:", pars_init[0] + mean, std
@@ -384,14 +407,29 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
             else:
                 np.save(npy_lik_file, phase_amp_bin_lik)
 
+def simpson_rule(interval, func):
+    return (interval[-1]-interval[0])/6 * (func[0] + 4*func[len(interval)/2] + func[-1])
+
 def shift_trunc_modes(phase_shift, model):
-    model_shift = apply_phase_shift(model, phase_shift)
+    model_fft = fftpack.fft(model, axis=1)
+#    model_fft = fft(model)
+#    print 'model_fft[0][0]', model_fft[0][0]
+    model_shift = apply_phase_shift(model_fft, phase_shift)
     V_harmonics = pick_harmonics(model_shift)
     return V_harmonics[:6]
 
 
-def chi2(parameters, model, data_fft, freq, norm=1):
-    return np.sum(residuals(parameters, model, data_fft, freq)**2) * norm
+def chi2(parameters, model, data_fft, norm=1):
+    return np.sum(residuals_lik(parameters, model, data_fft)**2) * norm
+
+def model_lik(parameters, V):
+    phase = parameters[0]
+    amplitudes = np.array(parameters[1:])
+    shifted_modes = shift_trunc_modes(phase, V)
+    return np.sum(amplitudes[:,None] * shifted_modes, 0)
+
+def residuals_lik(parameters, model, profile_fft):
+    return pick_harmonics(profile_fft) - model_lik(parameters, model)
 
 def pick_harmonics(profile_fft):
     harmonics = profile_fft[..., 1:NHARMONIC]
@@ -402,9 +440,11 @@ def apply_phase_shift(profile_fft, phase_shift):
     "Parameter *phase_shift* takes values [0 to 1)."
 
     n = profile_fft.shape[-1]
+#    print 'n', n
     freq = fftpack.fftfreq(n, 1./n)
-    phase = np.exp(-2j * np.pi * phase_shift * freq)
-    return profile_fft * phase
+    phase = np.exp(-2j * np.pi * phase_shift /200  * freq)
+#    print 'phase',phase
+    return profile_fft * phase 
 
 def scale_array(old_array, SCALE):
     array = np.zeros(int(len(old_array)*SCALE))
