@@ -341,8 +341,8 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
     if phase_fit_lik == True:
         # fitting phase by likeli`hood
 #        phase_diff_samples = np.arange(-50, 50, 0.3) * perr_leastsq[0]
-#        phase_diff_samples = np.arange(-20, 20, 0.01)
-        phase_diff_samples = [-20, 0, 20]
+        phase_diff_samples = np.arange(-50, 50, 1)
+#        phase_diff_samples = 
         chi2_samples = []
         for p in phase_diff_samples:
             this_phase = p + pars_init[0]
@@ -408,7 +408,7 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
                 np.save(npy_lik_file, phase_amp_bin_lik)
 
 def simpson_rule(interval, func):
-    return (interval[-1]-interval[0])/6 * (func[0] + 4*func[len(interval)/2] + func[-1])
+    return (interval[1]-interval[2])/6 * (2*np.sum(func[::2]) + 4*np.sum(func[1::2]))
 
 def shift_trunc_modes(phase_shift, model):
     model_fft = fftpack.fft(model, axis=1)
