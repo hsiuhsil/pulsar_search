@@ -9,7 +9,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib import cm
-from scipy import fftpack, optimize, interpolate, linalg
+from scipy import fftpack, optimize, interpolate, linalg, integrate
 from scipy.optimize import curve_fit, minimize, leastsq
 
 import pars
@@ -341,8 +341,8 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
     if phase_fit_lik == True:
         # fitting phase by likeli`hood
 #        phase_diff_samples = np.arange(-50, 50, 0.3) * perr_leastsq[0]
-        phase_diff_samples = np.arange(-50, 50, 1)
-#        phase_diff_samples = 
+#        phase_diff_samples = np.arange(-50, 50, 1)
+        phase_diff_samples = np.arange(-50, 50, 0.05)
         chi2_samples = []
         for p in phase_diff_samples:
             this_phase = p + pars_init[0]
@@ -378,14 +378,18 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
         likelihood = np.exp(-chi2_samples / 2)
         
         print 'likelihood',likelihood
-#        norm = np.sum(likelihood)
-        norm = simpson_rule(phase_diff_samples, likelihood)
-        print 'norm', norm
+#        norm1 = np.sum(likelihood)
+        norm = simpson(likelihood, 0, len(likelihood)-1)
+#        norm = integrate.simps(likelihood)
+#        print 'norm1', norm1
+        print 'norm',norm
 #        mean = np.sum(phase_diff_samples * likelihood) / norm
-        mean = simpson_rule(phase_diff_samples, phase_diff_samples * likelihood) 
+        mean = simpson(phase_diff_samples * likelihood, 0, len(likelihood)-1) / norm 
+#        mean = integrate.simps(phase_diff_samples * likelihood) / norm
         print 'mean', mean
 #        var = np.sum(phase_diff_samples**2 * likelihood) / norm - mean**2
-        var = simpson_rule(phase_diff_samples, np.array(phase_diff_samples)**2 * likelihood) / norm - mean**2
+        var = simpson(np.array(phase_diff_samples)**2 * likelihood, 0, len(likelihood)-1) / norm - mean**2
+#        var = integrate.simps(phase_diff_samples**2 * likelihood) / norm - mean**2
         std = np.sqrt(var)
         print 'std',std
         print "Integrated Liklihood:", pars_init[0] + mean, std
@@ -407,8 +411,15 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
             else:
                 np.save(npy_lik_file, phase_amp_bin_lik)
 
-def simpson_rule(interval, func):
-    return (interval[1]-interval[2])/6 * (2*np.sum(func[::2]) + 4*np.sum(func[1::2]))
+def simpson(func, a, b):
+    '''a is init, b is final, and n is number of steps.'''
+
+    s = func[a] + func[b]
+    n = len(func)
+    h = np.float((b - a)) / n
+    s += (2*np.sum(func[::2]) + 4*np.sum(func[1::2]))
+
+    return s * h / 3
 
 def shift_trunc_modes(phase_shift, model):
     model_fft = fftpack.fft(model, axis=1)
