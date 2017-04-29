@@ -29,7 +29,7 @@ random_res = False
 save_random_res = False
 save_phase_plot = False
 phase_fit_lik = True
-save_lik_pars = True
+save_lik_pars = False
 
 RA = pars.RA
 DEC = pars.DEC
@@ -48,9 +48,6 @@ PHASE_DIFF_wz_1hr_err = pars.PHASE_DIFF_wz_1hr_err
 
 TIME0 = pars.TIME0
 fit_pars =  pars.fit_pars
-
-phases_lik = []
-phase_errors_lik = []
 
 def fft(file):
     profile_fft = np.fft.fft(file)
@@ -142,7 +139,7 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
     model = V
     n_phase_bins = V.shape[0]
     V[1:,NCENTRALBINS//2:-NCENTRALBINS//2] = 0
-    if True:
+    if False:
         spline = interpolate.splrep(
                 np.arange(n_phase_bins - NCENTRALBINSMAIN),
                 V[0,NCENTRALBINSMAIN//2:-NCENTRALBINSMAIN//2],
@@ -182,6 +179,7 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
     print "sucess?:", success
     '''DOF -1, since we set fft_file[0] = 0.'''
     res = residuals(fit_pars_phase, model, data_fft, freq)
+    print 'len(res)',len(res)
     chi2_value = np.sum(np.abs(res)**2)
     dof = len(res)-len(pars_init)
     red_chi2 = chi2_value / dof
@@ -255,13 +253,15 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
         model_fft_real = model_fft.real
         data_fft_real = data_fft.real
         init_fft_real = init_fft.real
-        res_fft_real = np.concatenate((res[:(len(res)/2)], res[:(len(res)/2)][::-1]))
+        res_fft_real = data_fft_real - model_fft_real
+#        res_fft_real = np.concatenate((res[:(len(res)/2)], res[:(len(res)/2)][::-1]))
 
         '''Imag part'''
         model_fft_imag = model_fft.imag
         data_fft_imag = data_fft.imag
         init_fft_imag = init_fft.imag
-        res_fft_imag = np.concatenate((res[(len(res)/2):], -res[(len(res)/2):][::-1]))
+        res_fft_imag = data_fft_imag - model_fft_imag
+#        res_fft_imag = np.concatenate((res[(len(res)/2):], -res[(len(res)/2):][::-1]))
 
         '''functions in Real space (ifft)'''
         model_ifft = np.fft.ifft(model_fft).real
@@ -314,7 +314,7 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
         ax4.set_xlabel('Harmonic modes', fontsize=fontsize)
         ax4.set_xlim([xmin,xmax])
         ax4.tick_params(axis='both', which='major', labelsize=fontsize)
-
+        
         plt.savefig(plot_name + 'fft.png', bbox_inches='tight')
 
         '''Plot for real part in real space'''
@@ -342,12 +342,12 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
         # fitting phase by likeli`hood
 #        phase_diff_samples = np.arange(-50, 50, 0.3) * perr_leastsq[0]
 #        phase_diff_samples = np.arange(-50, 50, 1)
-        phase_diff_samples = np.arange(-50, 50, 0.05)
+        phase_diff_samples = np.arange(-20, 20, 0.02)
         chi2_samples = []
         for p in phase_diff_samples:
             this_phase = p + pars_init[0]
             if True:
-                P = shift_trunc_modes(this_phase, model)
+                P = shift_trunc_modes(this_phase, model, NPHASEBIN)
 #                print 'P',P
                 d = pick_harmonics(data_fft)
 #                print 'd',d
@@ -357,7 +357,7 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
 #            print '[this_phase] + list(this_pars_fit)', [this_phase] + list(this_pars_fit)
             chi2_sample = chi2(
                         [this_phase] + list(this_pars_fit),
-                        model, data_fft,
+                        model, data_fft, NPHASEBIN,
                         1. / red_chi2,
                         )
 #            print 'chi2_sample', chi2_sample
@@ -369,9 +369,12 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
 #        chi2_samples = chi2_samples[np.where(chi2_samples< 20*np.amin(chi2_samples))]
 #        print 'chi2_samples', chi2_samples      
 
+        plot_name += str(index) + '_'
         plt.close('all')
         plt.plot(phase_diff_samples, chi2_samples)
-        plt.savefig('phase_chi2.png')
+        plt.xlabel('Phase_diff')
+        plt.ylabel('Chi2')
+        plt.savefig(plot_name+'phase_chi2.png', bbox_inches='tight')
 
         # Integrate the full liklihood, taking first and second moments to
         # get mean phase and variance.
@@ -393,11 +396,13 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
         std = np.sqrt(var)
         print 'std',std
         print "Integrated Liklihood:", pars_init[0] + mean, std
+        phases_lik = []
+        phase_errors_lik = []
         phases_lik.append(pars_init[0] + mean)
         phase_errors_lik.append(std)
 
         '''save the fitting amp and bin as [amp, bin, amp_err, bin_err]'''
-        npy_lik_file = 'phase_amp_bin_wz_40epochs_6modes_90hars_lik.npy'
+        npy_lik_file = 'phase_amp_bin_57178_40epochs_6modes_90hars_lik.npy'
 
         if (phase_matrix_origin.shape[1] == pars.phase_npy_1hr.shape[1]):
             phase_amp_bin_lik = np.concatenate(([phases_lik[0]*SCALE], pfit_leastsq[1:], [phase_errors_lik[0]*SCALE], perr_leastsq[1:]))
@@ -421,39 +426,39 @@ def simpson(func, a, b):
 
     return s * h / 3
 
-def shift_trunc_modes(phase_shift, model):
+def shift_trunc_modes(phase_shift, model, NPHASEBIN):
     model_fft = fftpack.fft(model, axis=1)
 #    model_fft = fft(model)
 #    print 'model_fft[0][0]', model_fft[0][0]
-    model_shift = apply_phase_shift(model_fft, phase_shift)
+    model_shift = apply_phase_shift(model_fft, phase_shift, NPHASEBIN)
     V_harmonics = pick_harmonics(model_shift)
     return V_harmonics[:6]
 
 
-def chi2(parameters, model, data_fft, norm=1):
-    return np.sum(residuals_lik(parameters, model, data_fft)**2) * norm
+def chi2(parameters, model, data_fft, NPHASEBIN, norm=1):
+    return np.sum(residuals_lik(parameters, model, data_fft, NPHASEBIN)**2) * norm
 
-def model_lik(parameters, V):
+def model_lik(parameters, V, NPHASEBIN):
     phase = parameters[0]
     amplitudes = np.array(parameters[1:])
-    shifted_modes = shift_trunc_modes(phase, V)
+    shifted_modes = shift_trunc_modes(phase, V, NPHASEBIN)
     return np.sum(amplitudes[:,None] * shifted_modes, 0)
 
-def residuals_lik(parameters, model, profile_fft):
-    return pick_harmonics(profile_fft) - model_lik(parameters, model)
+def residuals_lik(parameters, model, profile_fft, NPHASEBIN):
+    return pick_harmonics(profile_fft) - model_lik(parameters, model, NPHASEBIN)
 
 def pick_harmonics(profile_fft):
     harmonics = profile_fft[..., 1:NHARMONIC]
     harmonics = np.concatenate((harmonics.real, harmonics.imag), -1)
     return harmonics
 
-def apply_phase_shift(profile_fft, phase_shift):
+def apply_phase_shift(profile_fft, phase_shift, NPHASEBIN):
     "Parameter *phase_shift* takes values [0 to 1)."
 
     n = profile_fft.shape[-1]
 #    print 'n', n
     freq = fftpack.fftfreq(n, 1./n)
-    phase = np.exp(-2j * np.pi * phase_shift /200  * freq)
+    phase = np.exp(-2j * np.pi * phase_shift /NPHASEBIN  * freq)
 #    print 'phase',phase
     return profile_fft * phase 
 
@@ -498,7 +503,24 @@ def svd(this_file, bin_number, phase_amp_bin, phase_npy, NPHASEBIN, RESCALE):
             phase_matrix_new[ii] = ifft(fft_phase_curve_inverse([phase_model[ii], 1], fft(phase_matrix_origin[ii]))).real
         else:
             print 'conflict setting of aligned_1bin and aligned_fft'
-#    print 'phase_matrix_new', phase_matrix_new
+    print 'phase_matrix_new.shape', phase_matrix_new.shape
+
+    if False:
+        fontsize = 14
+        plt.figure()
+        plt.close('all')
+        plt.figure()
+        n_step = -0.2
+        x_range = np.arange(-len(phase_matrix_new[0])/2 , len(phase_matrix_new[0])/2) / np.float(NPHASEBIN)
+        color = ['r', 'g', 'b', 'y', 'c', '0.0', '0.2', '0.4', '0.6', '0.8']
+#    color = ['r', 'g', 'b']
+        for ii in xrange(len(color)):
+            plt.plot(x_range, np.roll(phase_matrix_new[ii] + ii *n_step, -len(phase_matrix_new[0])/2), color[ii], linewidth=1.0)
+            plt.xlim((-0.5, 0.5))
+            plt.xlabel('Phase', fontsize=fontsize)
+            plt.ylabel('amp', fontsize=fontsize)
+            plt.tick_params(axis='both', which='major', labelsize=fontsize)
+            plt.savefig('phase_npy_1hr_5sec.png', bbox_inches='tight')
 
 #    print 'finish phase_matrix_new'
     U, s, V = np.linalg.svd(phase_matrix_new, full_matrices=True)
@@ -516,8 +538,18 @@ def svd(this_file, bin_number, phase_amp_bin, phase_npy, NPHASEBIN, RESCALE):
 #        nprof -= nprof % profile_stack
 #        V = V[:nprof].reshape(nprof // profile_stack, profile_stack, NPHASEBIN_1hr)
 #        V = np.mean(V, 1)
+        n_phase_bins = V.shape[0]
         V[1:,NCENTRALBINS//2:-NCENTRALBINS//2] = 0
-
+        if True:
+            spline = interpolate.splrep(
+                    np.arange(n_phase_bins - NCENTRALBINSMAIN),
+                    V[0,NCENTRALBINSMAIN//2:-NCENTRALBINSMAIN//2],
+                    s=0.0015,
+                    )
+            V[0,NCENTRALBINSMAIN//2:-NCENTRALBINSMAIN//2] = interpolate.splev(
+                    np.arange(n_phase_bins - NCENTRALBINSMAIN),
+                    spline,
+                    )
 
     return U, s, V, phase_model
 

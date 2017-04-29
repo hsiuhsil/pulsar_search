@@ -49,6 +49,9 @@ def timing_model_1(parameters, time_mjd, dBATdra, dBATddec, NPHASEBIN=None, RESC
     out1 = parameters[0] * time**2
     out1 += parameters[1] * time
     out1 += parameters[2]
+#    out1 = parameters[0] * time
+#    out1 += parameters[1]
+
 
     if (NPHASEBIN == None) or (NPHASEBIN == NPHASEBIN_wz):
         NPHASEBIN = NPHASEBIN_wz
@@ -56,6 +59,7 @@ def timing_model_1(parameters, time_mjd, dBATdra, dBATddec, NPHASEBIN=None, RESC
         NPHASEBIN = NPHASEBIN_wz
     
     out1 += (NPHASEBIN / T) * (-1) *(dBATdra * 86400 * 180 / np.pi * parameters[3] + dBATddec * 86400 * 180 / np.pi * parameters[4])
+#    out1 += (NPHASEBIN / T) * (-1) *(dBATdra * 86400 * 180 / np.pi * parameters[2] + dBATddec * 86400 * 180 / np.pi * parameters[3])
 
     out1 = out1 % NPHASEBIN 
 
@@ -153,6 +157,7 @@ def make_save_plot(parameters, model, res, time, dBATdra, dBATddec, data, data_e
     plt.savefig(filename, bbox_inches='tight')
 
 def make_save_plot_pointing(parameters, model, res, time, dBATdra, dBATddec, data, data_err, random_res_std, wz_range, filename, time_range=None):
+    print 'data_err[236:]',data_err[236:]
 
     time_range = np.linspace(time[wz_range], time[-1], 40)
 #    print time_range
@@ -163,24 +168,42 @@ def make_save_plot_pointing(parameters, model, res, time, dBATdra, dBATddec, dat
     residuals_1_pointing = residuals_1(parameters, time, dBATdra, dBATddec,  data, data_err)[236:]
     random_res_std = random_res_std[236:]
 
+    phase_data_old = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_all/data_file/phase_amp_bin_57178_40epochs_6modes_90hars.npy')
+    phase_data_pointing_old = phase_data_old[:,0]
+    phase_data_pointing_err_old = phase_data_old[:,phase_data_old.shape[1]/2]
+    data_old = np.concatenate((data[0:236], phase_data_pointing_old))
+    data_err_old = np.concatenate((data_err[0:236], phase_data_pointing_err_old))
+    residuals_old_pointing = residuals_1(parameters, time, dBATdra, dBATddec, data_old, data_err_old)[236:]
+
+
     '''plot res, rather than res/errors'''
     residuals_1_pointing *= phase_data_pointing_err
+    residuals_old_pointing *= phase_data_pointing_err_old
     '''plot in phase, rather than phase bin'''
     residuals_1_pointing /= NPHASEBIN
     phase_data_pointing_err /= NPHASEBIN
 
+    residuals_old_pointing /= NPHASEBIN
+    phase_data_pointing_err_old /= NPHASEBIN
+
     '''Plot in time unit of ms, rather than phase'''
     residuals_1_pointing *= (T*1000)
     phase_data_pointing_err *= (T*1000)
+    print 'phase_data_pointing_err', phase_data_pointing_err
+    residuals_old_pointing *= (T*1000)
+    phase_data_pointing_err_old *= (T*1000)
+
 
     zeros_line = np.zeros(len(residuals_1_pointing))
     markersize = 2.0
     fontsize = 16
 
     plt.close('all')
-    plt.plot(time_range, residuals_1_pointing, 'bo', markersize=markersize)
     plt.plot(time_range, zeros_line,'r--')
+    plt.plot(time_range, residuals_1_pointing, 'bo', markersize=markersize)
     plt.errorbar(time_range, residuals_1_pointing , yerr= phase_data_pointing_err, fmt='none', ecolor='b')
+    plt.plot(time_range, residuals_old_pointing, 'gs', markersize=markersize)
+    plt.errorbar(time_range, residuals_old_pointing , yerr= phase_data_pointing_err_old, fmt='none', ecolor='g')
     plt.xlabel('MJD ', fontsize=fontsize)
     plt.ylabel('Timing residuals (ms)', fontsize=fontsize)
     plt.tick_params(axis='both', which='major', labelsize=fontsize)
@@ -196,6 +219,7 @@ def make_save_plot_pointing(parameters, model, res, time, dBATdra, dBATddec, dat
     plt.savefig('hist_'+filename, bbox_inches='tight')
 
 def make_save_plot_panel(parameters, model, res, time, dBATdra, dBATddec, data, data_err, random_res_std, wz_range, filename, time_range=None):
+    print 'data_err[236:]', data_err[236:]
 
     if time_range is None:
         time_range = (time[0], time[-1])
@@ -208,9 +232,10 @@ def make_save_plot_panel(parameters, model, res, time, dBATdra, dBATddec, data, 
 
     '''plot res, rather than res/errors'''
     res *= data_err
+    yerr = data_err
     '''plot in phase, rather than phase bin'''
     res /= NPHASEBIN
-    yerr = data_err / NPHASEBIN
+    yerr /= NPHASEBIN
     '''Plot in time unit of ms, rather than phase'''
     res *= (T*1000)
     yerr *= (T*1000)
@@ -233,6 +258,7 @@ def make_save_plot_panel(parameters, model, res, time, dBATdra, dBATddec, data, 
     time_1hr = time[236:]
     res_1hr = res[236:]
     yerr_1hr = yerr[236:]
+    print 'yerr_1hr', yerr_1hr
     zeros_line_1hr = zeros_line[236:]
 
     plt.figure(0, figsize=(16,9))
@@ -274,14 +300,14 @@ def make_save_plot_panel(parameters, model, res, time, dBATdra, dBATddec, data, 
     ax3.tick_params(axis='both', which='major', labelsize=fontsize)
     ax3.set_xlabel('MJD', fontsize=fontsize)
 
-
     ax4.plot(time_1hr, res_1hr, 'bo', markersize=markersize)
     ax4.plot(time_1hr, zeros_line_1hr,'r--')
     ax4.errorbar(time_1hr, res_1hr , yerr= yerr_1hr, fmt='none', ecolor='b')
 #    ax4.set_xlim([np.amin(time_1hr),np.amax(time_1hr)])
     ax4.xaxis.set_ticks([np.percentile(time_1hr, 25), np.percentile(time_1hr, 75)])
     ax4.xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
-    ax4.yaxis.set_ticks(np.arange(-0.16, 0.24, 0.08))
+#    ax4.yaxis.set_ticks([-1.2, 0, 0.6])
+#    ax4.set_ylim([-1.2,0.6])
 #    ax4.get_xaxis().get_major_formatter().set_useOffset(False)
     ax4.tick_params(axis='both', which='major', labelsize=fontsize)
     ax4.set_xlabel('MJD', fontsize=fontsize)
@@ -313,6 +339,7 @@ def time_pattern(this_file, bin_number, phase_amp_bin, NPHASEBIN = None):
     return time_mjd, dBATdra, dBATddec, phase_data, phase_data_err
 
 def fitting(pars_init_1, time_mjd, dBATdra, dBATddec, phase_data, phase_data_err, random_res):
+    print 'phase_data_err[236:]',phase_data_err[236:]
 
     len_time_mjd_wz = len(pars.bin_number_wz) 
     fit_range = (untrans_time(pars.fit_time_start), untrans_time(pars.fit_time_end))
@@ -366,9 +393,10 @@ def fitting(pars_init_1, time_mjd, dBATdra, dBATddec, phase_data, phase_data_err
     plt.figure()
 #    plt.close('all')
     make_save_plot_pointing(fit_pars_1, 'model_1', 'res_1', time_mjd, dBATdra, dBATddec, phase_data, phase_data_err, random_res_std, len_time_mjd_wz, 'new_phase_fit_J2139_zoom3.png',        (untrans_time(35312.4), untrans_time(35313.4)))
-#    plt.close('all')
+    plt.close('all')
     plt.figure()
     make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd, dBATdra, dBATddec,  phase_data, phase_data_err, random_res_std, len_time_mjd_wz, 'new_phase_fit_J2139_all.png')
+    plt.close('all')
     plt.figure()
     make_save_plot_panel(fit_pars_1, 'model_1', 'res_1', time_mjd, dBATdra, dBATddec,  phase_data, phase_data_err, random_res_std, len_time_mjd_wz, 'new_phase_fit_J2139_all_panel.png')
 
