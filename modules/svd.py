@@ -27,7 +27,7 @@ aligned_fft = True
 save_fit_pars = False
 random_res = False
 save_random_res = False
-save_phase_plot = False
+save_phase_plot = True
 phase_fit_lik = True
 save_lik_pars = False
 
@@ -363,22 +363,24 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
 #            print 'chi2_sample', chi2_sample
             chi2_samples.append(chi2_sample)
         chi2_samples = np.asarray(chi2_samples)
+
+
 #        print 'chi2_samples', chi2_samples
 #        phase_diff_samples = np.array(phase_diff_samples[np.where(chi2_samples< 20*np.amin(chi2_samples))])
 #        print 'phase_diff_samples', phase_diff_samples
 #        chi2_samples = chi2_samples[np.where(chi2_samples< 20*np.amin(chi2_samples))]
 #        print 'chi2_samples', chi2_samples      
 
-        plot_name += str(index) + '_'
-        plt.close('all')
-        plt.plot(phase_diff_samples, chi2_samples)
-        plt.xlabel('Phase_diff')
-        plt.ylabel('Chi2')
-        plt.savefig(plot_name+'phase_chi2.png', bbox_inches='tight')
+#        plot_name += str(index) + '_'
+#        plt.close('all')
+#        plt.plot(phase_diff_samples, chi2_samples)
+#        plt.xlabel('Phase_diff')
+#        plt.ylabel('Chi2')
+#        plt.savefig(plot_name+'phase_chi2.png', bbox_inches='tight')
 
         # Integrate the full liklihood, taking first and second moments to
         # get mean phase and variance.
-        likelihood = np.exp(-chi2_samples / 2)
+        likelihood = np.exp(-chi2_samples / 2) 
         
         print 'likelihood',likelihood
 #        norm1 = np.sum(likelihood)
@@ -400,6 +402,23 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
         phase_errors_lik = []
         phases_lik.append(pars_init[0] + mean)
         phase_errors_lik.append(std)
+
+#        print np.where((likelihood / norm)>np.amax(likelihood / norm) * 10**-4)
+#        print np.where((likelihood / norm)>np.amax(likelihood / norm) * 10**-4)[0][0]
+#        print np.where((likelihood / norm)>np.amax(likelihood / norm) * 10**-4)[0][-1]
+
+        plot_name += str(index) + '_'
+        plt.close('all')
+        phase_diff_range = np.linspace(np.amin(phase_diff_samples)/NPHASEBIN, np.amax(phase_diff_samples)/NPHASEBIN, num=len(phase_diff_samples), endpoint=True)
+        plt.semilogy(phase_diff_range, likelihood / norm )
+        plt.xlabel('Phase', fontsize=fontsize)
+        plt.ylabel('log(Likelihood)', fontsize=fontsize)
+        plt.xlim((phase_diff_range[np.where((likelihood / norm)>np.amax(likelihood / norm) * 10**-4)[0][0]],phase_diff_range[np.where((likelihood / norm)>np.amax(likelihood / norm) * 10**-4)[0][-1]]))
+        plt.ylim((np.amax(likelihood / norm) * 10**-4, np.amax(likelihood / norm)))
+        plt.tick_params(axis='both', which='major', labelsize=fontsize)
+        plt.savefig(plot_name+'phase_chi2.png', bbox_inches='tight')
+
+
 
         '''save the fitting amp and bin as [amp, bin, amp_err, bin_err]'''
         npy_lik_file = 'phase_amp_bin_57178_40epochs_6modes_90hars_lik.npy'
@@ -486,6 +505,12 @@ def svd(this_file, bin_number, phase_amp_bin, phase_npy, NPHASEBIN, RESCALE):
     time_mjd, dBATdra, dBATddec, _ , _ = fit_timing.time_pattern(this_file, bin_number, phase_amp_bin, NPHASEBIN)
     
     phase_model = fit_timing.timing_model_1(fit_pars, time_mjd, dBATdra, dBATddec, NPHASEBIN, RESCALE)
+#    phase_model_old = fit_timing.timing_model_1(pars.old_fit_pars, time_mjd, dBATdra, dBATddec, NPHASEBIN, RESCALE)
+
+#    phase_diff = phase_model - phase_model_old
+#    print 'diff max',np.amax(phase_diff)
+#    print 'diff min',np.amin(phase_diff)
+
 #    print 'phase_model', phase_model
 
     if (phase_npy.shape[1] == pars.phase_npy_1hr.shape[1]) and (RESCALE == True):
@@ -551,6 +576,7 @@ def svd(this_file, bin_number, phase_amp_bin, phase_npy, NPHASEBIN, RESCALE):
                     spline,
                     )
 
+    np.save('V_1hr_5sec_liksol.npy', V)
     return U, s, V, phase_model
 
 def plot_two_temps(this_file_wz, bin_number_wz, phase_amp_bin_wz, phase_npy_wz, this_file_1hr, bin_number_1hr, phase_amp_bin_1hr, phase_npy_1hr, RESCALE=None):
@@ -595,7 +621,7 @@ def plot_svd(this_file, bin_number, phase_amp_bin, phase_npy, plot_name, NPHASEB
 
     plt.close('all')
     plt.figure()
-    n_step = -0.2
+    n_step = -0.3
     x_range = np.arange(-len(V[0])/2 , len(V[0])/2) / np.float(NPHASEBIN)
     color = ['r', 'g', 'b', 'y', 'c', '0.0', '0.2', '0.4', '0.6', '0.8']
 #    color = ['r', 'g', 'b']

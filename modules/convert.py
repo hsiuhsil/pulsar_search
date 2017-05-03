@@ -19,16 +19,20 @@ DEC = pars.DEC
 RA_HMS = str(bary_time.deg_to_HMS(RA))
 DEC_DMS = str(bary_time.deg_to_DMS(DEC))
 
-RA_cor = pars.fit_pars[3] * rad_to_arcmin
-RA_cor_err = pars.fit_pars_err[3] * rad_to_arcmin
+# The cor and cor_err of RA and DEC are in the unit of rad. 
 
-DEC_cor = pars.fit_pars[4] * rad_to_arcmin
-DEC_cor_err = pars.fit_pars_err[4] * rad_to_arcmin
+RA_cor = pars.fit_pars[3] * rad_to_deg
+RA_cor_HMS = str(bary_time.deg_to_HMS(RA_cor))
+#RA_cor_err = pars.fit_pars_err[3] * rad_to_arcmin
 
-print "New RA: ", RA_HMS
-print "New DEC: ", DEC_DMS
-print 'Delta RA: ', RA_cor, '\+-', RA_cor_err, '(arcmin)'
-print 'Delta DEC: ', DEC_cor, '\+-', DEC_cor_err, '(arcmin)'
+DEC_cor = pars.fit_pars[4] * rad_to_deg
+DEC_cor_DMS = str(bary_time.deg_to_DMS(DEC_cor))
+#DEC_cor_err = pars.fit_pars_err[4] * rad_to_arcmin
+
+print "New RA: ", RA_HMS, '\+-', RA_cor_HMS
+print "New DEC: ", DEC_DMS, '\+-', DEC_cor_DMS
+#print 'Delta RA: ', RA_cor, '\+-', RA_cor_err, '(arcmin)'
+#print 'Delta DEC: ', DEC_cor, '\+-', DEC_cor_err, '(arcmin)'
 
 '''Converts accelerations and period to sec. Show epoch and phase offset in Barycentric MJD.'''
 accel = pars.fit_pars[0] * bins / hr / hr

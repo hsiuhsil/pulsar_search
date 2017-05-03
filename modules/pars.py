@@ -39,13 +39,18 @@ TIME0 = 55707.   # MJD pivot
 
 '''fit_pars is in the sequence of acceleration, period correction, phase offset, correction of RA, correction of DEC. The units are [bins/hr/hr, bins/hr, bins, radians, radians]'''
 
-fit_pars = [1.03138228e-07, -3.34831607e+00, 3.23090695e+01, 2.11789545e-04, -4.06362698e-04]
-fit_pars_err = [3.82134432e-09, 1.35167094e-04, 4.76714143e-01, 1.27063424e-06, 1.44293425e-06]
+fit_pars = [1.03109306e-07,  -3.34831520e+00,   3.23012605e+01,
+         2.11843445e-04,  -4.06378828e-04]
+fit_pars_err = [3.81231775e-09,   1.34847651e-04,   4.75612907e-01,
+         1.26815054e-06,   1.43954560e-06]
+
+#fit_pars = [1.03138228e-07, -3.34831607e+00, 3.23090695e+01, 2.11789545e-04, -4.06362698e-04]
+#fit_pars_err = [3.82134432e-09, 1.35167094e-04, 4.76714143e-01, 1.27063424e-06, 1.44293425e-06]
 
 #fit_pars = [ 9.49517623e-08, -3.34803706e+00, 3.19152109e+01, 2.14696364e-04,-4.06802430e-04]
 #fit_pars_err = [ 4.16686453e-09, 1.47268785e-04, 5.06014988e-01, 1.35249739e-06, 1.55025727e-06]
 
-#fit_pars = [9.99185321e-08, -3.34821079e+00, 3.24597760e+01, 2.13575158e-04, -4.09169152e-04]
+old_fit_pars = [9.99185321e-08, -3.34821079e+00, 3.24597760e+01, 2.13575158e-04, -4.09169152e-04]
 #fit_pars_err =[2.75365010e-09, 9.73423789e-05, 3.31501320e-01, 8.87387431e-07,   1.03577324e-06]
 
 #fit_pars = [9.92822906e-08, -3.34819045e+00, 3.25195830e+01, 2.12595220e-04, -4.06821843e-04]
@@ -54,7 +59,7 @@ fit_pars_err = [3.82134432e-09, 1.35167094e-04, 4.76714143e-01, 1.27063424e-06, 
 #fit_pars_err = [2.98682646e-09, 1.05550057e-04, 3.68840062e-01, 9.70029049e-07,   1.10959147e-06]
 #fit_pars =  [  9.41132738e-08, -3.34801450e+00, 3.27048275e+01, 2.14716157e-04, -4.11270223e-04]
 #fit_pars = [9.37426903e-08,  -3.34800232e+00,   3.26992424e+01,   2.14807618e-04,  -4.11457078e-04]
-old_fit_pars =  [3.47609206e-07,  -3.37370520e+00,   4.74201487e+01,  -1.39689904e-05,  2.21425268e-05]
+#old_fit_pars =  [3.47609206e-07,  -3.37370520e+00,   4.74201487e+01,  -1.39689904e-05,  2.21425268e-05]
 fit_time_start = -1500
 fit_time_end = 36000
 
@@ -62,7 +67,8 @@ fit_time_end = 36000
 this_file_wz = h5py.File('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_all/data_file/J2139+00_wzonlyh5', "r")
 '''bin_number[0,1,2] = [initial, final, maximal phase bin number]'''
 bin_number_wz = np.loadtxt('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_all/data_file/bin_number_2139_delta_new2.txt')
-phase_amp_bin_wz = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_all/data_file/phase_amp_bin_wz_40epochs_6modes_90hars_lik.npy')
+phase_amp_bin_wz = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_all/data_file/phase_amp_bin_wz_0_2_full_lik.npy')
+#phase_amp_bin_wz = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_all/data_file/phase_amp_bin_wz_40epochs_6modes_90hars_lik.npy')
 phase_npy_wz = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_all/data_file/phase_wz.npy')
 random_res_wz = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_all/data_file/random_fitting_phase_fft_wz_.npy')
 
@@ -73,6 +79,7 @@ bin_number_1hr = np.loadtxt('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pu
 bin_number_1hr_5sec = np.loadtxt('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_all/data_file/bin_number_2139_57178_5sec.txt')
 #phase_amp_bin_1hr = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_1hr/phase_amp_bin_57178.npy')
 phase_amp_bin_1hr = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_all/data_file/phase_amp_bin_57178_40epochs_6modes_90hars_lik.npy')
+phase_amp_bin_1hr_5sec = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_all/data_file/phase_amp_bin_57178_fft_5sec.npy')
 phase_npy_1hr = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_all/data_file/phase_57178_40epochs.npy')
-random_res_1hr = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_all/data_file/random_fitting_phase_fft_57178_.npy')
 phase_npy_1hr_5sec = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_all/data_file/phase_57178_5sec.npy')
+random_res_1hr = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_all/data_file/random_fitting_phase_fft_57178_.npy')

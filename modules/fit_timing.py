@@ -157,14 +157,13 @@ def make_save_plot(parameters, model, res, time, dBATdra, dBATddec, data, data_e
     plt.savefig(filename, bbox_inches='tight')
 
 def make_save_plot_pointing(parameters, model, res, time, dBATdra, dBATddec, data, data_err, random_res_std, wz_range, filename, time_range=None):
-    print 'data_err[236:]',data_err[236:]
 
     time_range = np.linspace(time[wz_range], time[-1], 40)
-#    print time_range
     timing_model_1_pointing = timing_model_1(parameters, time, dBATdra, dBATddec)[236:]
 
     phase_data_pointing =  data[236:]
     phase_data_pointing_err =  data_err[236:]
+
     residuals_1_pointing = residuals_1(parameters, time, dBATdra, dBATddec,  data, data_err)[236:]
     random_res_std = random_res_std[236:]
 
@@ -181,7 +180,7 @@ def make_save_plot_pointing(parameters, model, res, time, dBATdra, dBATddec, dat
     residuals_old_pointing *= phase_data_pointing_err_old
     '''plot in phase, rather than phase bin'''
     residuals_1_pointing /= NPHASEBIN
-    phase_data_pointing_err /= NPHASEBIN
+    phase_data_pointing_err = data_err[236:] / NPHASEBIN
 
     residuals_old_pointing /= NPHASEBIN
     phase_data_pointing_err_old /= NPHASEBIN
@@ -189,7 +188,7 @@ def make_save_plot_pointing(parameters, model, res, time, dBATdra, dBATddec, dat
     '''Plot in time unit of ms, rather than phase'''
     residuals_1_pointing *= (T*1000)
     phase_data_pointing_err *= (T*1000)
-    print 'phase_data_pointing_err', phase_data_pointing_err
+
     residuals_old_pointing *= (T*1000)
     phase_data_pointing_err_old *= (T*1000)
 
@@ -219,7 +218,6 @@ def make_save_plot_pointing(parameters, model, res, time, dBATdra, dBATddec, dat
     plt.savefig('hist_'+filename, bbox_inches='tight')
 
 def make_save_plot_panel(parameters, model, res, time, dBATdra, dBATddec, data, data_err, random_res_std, wz_range, filename, time_range=None):
-    print 'data_err[236:]', data_err[236:]
 
     if time_range is None:
         time_range = (time[0], time[-1])
@@ -235,10 +233,15 @@ def make_save_plot_panel(parameters, model, res, time, dBATdra, dBATddec, data, 
     yerr = data_err
     '''plot in phase, rather than phase bin'''
     res /= NPHASEBIN
-    yerr /= NPHASEBIN
+    yerr = data_err / NPHASEBIN
     '''Plot in time unit of ms, rather than phase'''
     res *= (T*1000)
     yerr *= (T*1000)
+
+    print 'res and err in ms'
+    print 'res/yerr >3.0 index:', np.where( res/yerr >3)
+    print (res/yerr)[np.where( res/yerr >3)]
+    print 'res[2]/yerr[2]',res[2]/yerr[2]
 
     zeros_line = np.zeros(len(res))
 
@@ -258,7 +261,7 @@ def make_save_plot_panel(parameters, model, res, time, dBATdra, dBATddec, data, 
     time_1hr = time[236:]
     res_1hr = res[236:]
     yerr_1hr = yerr[236:]
-    print 'yerr_1hr', yerr_1hr
+
     zeros_line_1hr = zeros_line[236:]
 
     plt.figure(0, figsize=(16,9))
@@ -281,8 +284,8 @@ def make_save_plot_panel(parameters, model, res, time, dBATdra, dBATddec, data, 
 #    ax2.set_xlim([np.amin(time_11wz),np.amax(time_11wz)])
     ax2.xaxis.set_ticks([np.percentile(time_11wz, 25), np.percentile(time_11wz, 75), np.percentile(time_11wz, 90)])
     ax2.xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
-    ax2.yaxis.set_ticks(np.arange(-6,9,3))
-    ax2.set_ylim([-6,6])
+    ax2.yaxis.set_ticks([-8, -4, 0, 4, 8, 10])
+    ax2.set_ylim([-8,10])
 #    ax2.get_xaxis().get_major_formatter().set_useOffset(False)
     ax2.tick_params(axis='both', which='major', labelsize=fontsize)
     ax2.set_xlabel('MJD', fontsize=fontsize)
@@ -294,8 +297,8 @@ def make_save_plot_panel(parameters, model, res, time, dBATdra, dBATddec, data, 
     ax3.set_xlim([np.amin(time_15wz),np.amax(time_15wz)])
     ax3.xaxis.set_ticks([np.percentile(time_15wz, 25), np.percentile(time_15wz, 75), np.percentile(time_15wz, 90)])
     ax3.xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
-    ax3.yaxis.set_ticks(np.arange(-6, 9, 3))
-    ax3.set_ylim([-6,6])
+    ax3.yaxis.set_ticks([-8, -4, 0, 4, 8, 10])
+    ax3.set_ylim([-8,10])
 #    ax3.get_xaxis().get_major_formatter().set_useOffset(False)
     ax3.tick_params(axis='both', which='major', labelsize=fontsize)
     ax3.set_xlabel('MJD', fontsize=fontsize)
@@ -339,9 +342,8 @@ def time_pattern(this_file, bin_number, phase_amp_bin, NPHASEBIN = None):
     return time_mjd, dBATdra, dBATddec, phase_data, phase_data_err
 
 def fitting(pars_init_1, time_mjd, dBATdra, dBATddec, phase_data, phase_data_err, random_res):
-    print 'phase_data_err[236:]',phase_data_err[236:]
 
-    len_time_mjd_wz = len(pars.bin_number_wz) 
+    len_time_mjd_wz = 236
     fit_range = (untrans_time(pars.fit_time_start), untrans_time(pars.fit_time_end))
     sl = np.logical_and(time_mjd > fit_range[0], time_mjd < fit_range[1])
 
@@ -386,12 +388,12 @@ def fitting(pars_init_1, time_mjd, dBATdra, dBATddec, phase_data, phase_data_err
 
     plt.figure()
     make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl], phase_data_err[sl], random_res_std[sl], len_time_mjd_wz, 'new_phase_fit_J2139_zoom1.png',
-           (untrans_time(-300), untrans_time(1500)))
+           (untrans_time(-298), untrans_time(-296)))
     plt.figure()
     make_save_plot(fit_pars_1, 'model_1', 'res_1', time_mjd[sl], dBATdra[sl], dBATddec[sl], phase_data[sl], phase_data_err[sl], random_res_std[sl], len_time_mjd_wz, 'new_phase_fit_J2139_zoom2.png',
            (untrans_time(33400), untrans_time(34300)))
     plt.figure()
-#    plt.close('all')
+    plt.close('all')
     make_save_plot_pointing(fit_pars_1, 'model_1', 'res_1', time_mjd, dBATdra, dBATddec, phase_data, phase_data_err, random_res_std, len_time_mjd_wz, 'new_phase_fit_J2139_zoom3.png',        (untrans_time(35312.4), untrans_time(35313.4)))
     plt.close('all')
     plt.figure()
@@ -399,7 +401,6 @@ def fitting(pars_init_1, time_mjd, dBATdra, dBATddec, phase_data, phase_data_err
     plt.close('all')
     plt.figure()
     make_save_plot_panel(fit_pars_1, 'model_1', 'res_1', time_mjd, dBATdra, dBATddec,  phase_data, phase_data_err, random_res_std, len_time_mjd_wz, 'new_phase_fit_J2139_all_panel.png')
-
 
 if __name__ == '__main__':
     main()
