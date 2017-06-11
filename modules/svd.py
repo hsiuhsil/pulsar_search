@@ -287,27 +287,39 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
 
         '''Plot for real and imag parts in the Fourier space.'''
         plt.close('all')
-        f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, sharex='col', sharey='row', figsize=(16,9))
-        f.subplots_adjust(wspace=0.09, hspace=0.07)
+        f, ((ax1, ax2, ax3, ax4)) = plt.subplots(4, 1, sharex='col', figsize=(9, 16))
+        #sharex='col', sharey='row'
+        f.subplots_adjust(wspace=0.00, hspace=0.00)
+#        plt.figure(0, figsize=(9,16))
+#        ax1 = plt.subplot2grid((4,1), (0,0))
+#        ax2 = plt.subplot2grid((4,1), (1,0), sharex=ax1, hspace = 0.05)
+#        ax3 = plt.subplot2grid((4,1), (2,0), sharex=ax1)
+#        ax4 = plt.subplot2grid((4,1), (3,0), sharex=ax1, hspace = 0.05)
+
         mode_range = np.linspace(-len(freq)/2, len(freq)/2, num=len(freq), endpoint=True)
-        xmax = np.amax(mode_range)
-        xmin = np.amin(mode_range)
+        xmax = NHARMONIC  #np.amax(mode_range)
+        xmin = 1 #np.amin(mode_range)
         ax1.plot(mode_range, np.roll(model_fft_real, -int(NPHASEBIN/2)),'r-')
         ax1.plot(mode_range, np.roll(data_fft_real, -int(NPHASEBIN/2)),'b-')
         ax1.set_title('Real', size=fontsize)
+#        ax1.legend(['Real'], fontsize=fontsize)
         ax1.set_xlim([xmin,xmax])
+        ax1.set_ylim([-0.35, 0.2])
         ax1.tick_params(axis='both', which='major', labelsize=fontsize)
 
-        ax2.plot(mode_range, np.roll(model_fft_imag, -int(NPHASEBIN/2)),'r-')
-        ax2.plot(mode_range, np.roll(data_fft_imag, -int(NPHASEBIN/2)),'b-')
-        ax2.set_title('Imag', size=fontsize)
+        ax2.plot(mode_range, np.roll(res_fft_real, -int(NPHASEBIN/2)),'bo')
+        ax2.set_xlabel('Harmonic modes', fontsize=fontsize)
+        ax2.set_ylabel('Residuals (T/Tsys)', fontsize=fontsize)
         ax2.set_xlim([xmin,xmax])
+        ax2.set_ylim([-0.05, 0.04])
         ax2.tick_params(axis='both', which='major', labelsize=fontsize)
 
-        ax3.plot(mode_range, np.roll(res_fft_real, -int(NPHASEBIN/2)),'bo')
-        ax3.set_xlabel('Harmonic modes', fontsize=fontsize)
-        ax3.set_ylabel('Residuals (T/Tsys)', fontsize=fontsize)
+        ax3.plot(mode_range, np.roll(model_fft_imag, -int(NPHASEBIN/2)),'r-')
+        ax3.plot(mode_range, np.roll(data_fft_imag, -int(NPHASEBIN/2)),'b-')
+        ax3.set_title('Imag', size=fontsize)
+#        ax3.legend(['Imag'], fontsize=fontsize)
         ax3.set_xlim([xmin,xmax])
+        ax3.set_ylim([-0.35, 0.4])
         ax3.tick_params(axis='both', which='major', labelsize=fontsize)
 
         ax4.plot(mode_range, np.roll(res_fft_imag, -int(NPHASEBIN/2)),'bo')
@@ -406,15 +418,16 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
 #        print np.where((likelihood / norm)>np.amax(likelihood / norm) * 10**-4)
 #        print np.where((likelihood / norm)>np.amax(likelihood / norm) * 10**-4)[0][0]
 #        print np.where((likelihood / norm)>np.amax(likelihood / norm) * 10**-4)[0][-1]
+        print 'max:', np.amax(likelihood / norm / (0.02/NPHASEBIN))
 
         plot_name += str(index) + '_'
         plt.close('all')
         phase_diff_range = np.linspace(np.amin(phase_diff_samples)/NPHASEBIN, np.amax(phase_diff_samples)/NPHASEBIN, num=len(phase_diff_samples), endpoint=True)
-        plt.semilogy(phase_diff_range, likelihood / norm )
+        plt.semilogy(phase_diff_range, likelihood / norm  / (0.02/NPHASEBIN))
         plt.xlabel('Phase', fontsize=fontsize)
         plt.ylabel('log(Likelihood)', fontsize=fontsize)
-        plt.xlim((phase_diff_range[np.where((likelihood / norm)>np.amax(likelihood / norm) * 10**-4)[0][0]],phase_diff_range[np.where((likelihood / norm)>np.amax(likelihood / norm) * 10**-4)[0][-1]]))
-        plt.ylim((np.amax(likelihood / norm) * 10**-4, np.amax(likelihood / norm)))
+        plt.xlim((phase_diff_range[np.where((likelihood / norm  / (0.02/NPHASEBIN))>np.amax(likelihood / norm  / (0.02/NPHASEBIN)) * 10**-4)[0][0]],phase_diff_range[np.where((likelihood / norm  / (0.02/NPHASEBIN))>np.amax(likelihood / norm  / (0.02/NPHASEBIN)) * 10**-4)[0][-1]]))
+        plt.ylim((np.amax(likelihood / norm / (0.02/NPHASEBIN)) * 10**-4, np.amax(likelihood / norm / (0.02/NPHASEBIN))*4.5))
         plt.tick_params(axis='both', which='major', labelsize=fontsize)
         plt.savefig(plot_name+'phase_chi2.png', bbox_inches='tight')
 
@@ -577,7 +590,7 @@ def svd(this_file, bin_number, phase_amp_bin, phase_npy, NPHASEBIN, RESCALE):
                     )
 
     np.save('V_1hr_5sec_liksol.npy', V)
-    return U, s, V, phase_model
+    return U, s, V, time_mjd, phase_model
 
 def plot_two_temps(this_file_wz, bin_number_wz, phase_amp_bin_wz, phase_npy_wz, this_file_1hr, bin_number_1hr, phase_amp_bin_1hr, phase_npy_1hr, RESCALE=None):
 
@@ -604,7 +617,7 @@ def plot_two_temps(this_file_wz, bin_number_wz, phase_amp_bin_wz, phase_npy_wz, 
 
 def plot_svd(this_file, bin_number, phase_amp_bin, phase_npy, plot_name, NPHASEBIN=None, RESCALE=None):
 
-    U, s, V, _ = svd(this_file, bin_number, phase_amp_bin, phase_npy, NPHASEBIN, RESCALE)
+    U, s, V, time_mjd, _ = svd(this_file, bin_number, phase_amp_bin, phase_npy, NPHASEBIN, RESCALE)
 
     print 'len(V[0])', len(V[0])
     print 's.shape', s.shape
@@ -638,6 +651,7 @@ def plot_svd(this_file, bin_number, phase_amp_bin, phase_npy, plot_name, NPHASEB
     plt.figure()
     n_step = -0.2
     x_range = np.arange(-len(V[0])/2 , len(V[0])/2) / np.float(NPHASEBIN)
+#    color = ['r', 'g', 'b', 'y', 'c', '0.0', '0.2', '0.4', '0.6', '0.8']
     color = ['r', 'g', 'b']
     for ii in xrange(len(color)):
         plt.plot(x_range, np.roll(V[ii] + ii *n_step, -len(V[0])/2), color[ii], linewidth=1.0)
@@ -647,6 +661,30 @@ def plot_svd(this_file, bin_number, phase_amp_bin, phase_npy, plot_name, NPHASEB
     plt.tick_params(axis='both', which='major', labelsize=fontsize)
     plot_name_V = plot_name + '_V_zoom.png'
     plt.savefig(plot_name_V, bbox_inches='tight')
+
+    '''Plot U function'''
+    ut = U.T
+#    np.save('1hr_5sec_ut.npy', ut)
+    print 'ut.shape', ut.shape
+    print 'len(time_mjd)', len(time_mjd)
+    plt.close('all')
+    plt.figure()
+    n_step = -0.2
+#    x_range = np.arange(-len(ut[0])/2 , len(ut[0])/2) / np.float(len(ut[0]))
+    x_range = time_mjd
+    color = ['r', 'g', 'b', 'y', 'c', '0.0', '0.2', '0.4', '0.6', '0.8']
+#    color = ['r', 'g', 'b']
+    for ii in xrange(len(color)):
+        plt.plot(x_range, np.roll(ut[ii] + ii *n_step, 0), color[ii], linewidth=1.0)
+    plt.xlabel('Time (MJD)', fontsize=fontsize)
+    plt.ylabel('U values', fontsize=fontsize)
+    plt.xlim((time_mjd[0], time_mjd[639]))
+    plt.xticks([time_mjd[0], time_mjd[320], time_mjd[639]])
+    plt.tick_params(axis='both', which='major', labelsize=fontsize)
+    plot_name_U = plot_name + '_U.png'
+    plt.ticklabel_format(useOffset=False)
+    plt.savefig(plot_name_U, bbox_inches='tight')
+
 
 def fft_plot(npy_file):
     data_fft = fft(npy_file)
