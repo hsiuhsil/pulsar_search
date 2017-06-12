@@ -18,13 +18,18 @@ series = ['DATA_FOLDING_0_255', 'DATA_FOLDING_256_511', 'DATA_FOLDING_512_767', 
 
 model = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_1hr/pointed_phase_model.npy')
 
+plt.imshow(psr_svd.rebin_spec(this_file[series[1]][:,0,:,0], 1, 64))
+plt.savefig('profile_0.png')
+
 def shift_phase_bin(phase_bin_shift, profile):
     # profile is in the shape of (phase_bins, frequencies)
     profile_fft = fftpack.fft(profile, axis=0)
+    profile_shift = np.zeros(profile.shape)
     n = profile_fft.shape[0]
     freq = fftpack.fftfreq(n, 1./n)
     phase = np.exp(-2j * np.pi * phase_bin_shift / NPHASEBIN_1hr * freq)
-    profile_shift = fftpack.ifft(profile_fft * phase, axis=0)
+    for ii in xrange(len(phase)): 
+        profile_shift[ii] = fftpack.ifft(profile_fft[ii] * phase[ii])
     return profile_shift
 
 
@@ -32,5 +37,15 @@ shift_profiles = np.zeros((len(series), NPHASEBIN_1hr, this_file['DATA'].shape[3
 for ii in xrange(len(series)):
     shift_profiles[ii] = shift_phase_bin(model[ii], this_file[series[ii]][:,0,:,0])
 
-print shift_profiles.shape
+#stack profiles
+if False:
+    profile_stack = 1
+    nprof = len(shift_profiles)
+    nprof -= nprof % profile_stack
+    shift_profiles = shift_profiles[:nprof].reshape(nprof // profile_stack, profile_stack, NPHASEBIN_1hr, this_file['DATA'].shape[3])
+    shift_profiles = np.mean(shift_profiles, 1)
+    shift_profiles = np.mean(shift_profiles, 0)
+
+plt.imshow(psr_svd.rebin_spec(shift_profiles[1], 1, 64))
+plt.savefig('profiles.png')
 
