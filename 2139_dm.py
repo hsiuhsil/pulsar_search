@@ -18,24 +18,32 @@ series = ['DATA_FOLDING_0_255', 'DATA_FOLDING_256_511', 'DATA_FOLDING_512_767', 
 
 model = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_1hr/pointed_phase_model.npy')
 
-plt.imshow(psr_svd.rebin_spec(this_file[series[1]][:,0,:,0], 1, 64))
+plt.close('all')
+plt.imshow(psr_svd.rebin_spec(this_file[series[0]][:,0,:,0].T, 32, 1))
 plt.savefig('profile_0.png')
 
 def shift_phase_bin(phase_bin_shift, profile):
-    # profile is in the shape of (phase_bins, frequencies)
-    profile_fft = fftpack.fft(profile, axis=0)
+    # the input profile is required in the shape of (frequencies, phase_bins) 
     profile_shift = np.zeros(profile.shape)
-    n = profile_fft.shape[0]
-    freq = fftpack.fftfreq(n, 1./n)
-    phase = np.exp(-2j * np.pi * phase_bin_shift / NPHASEBIN_1hr * freq)
-    for ii in xrange(len(phase)): 
-        profile_shift[ii] = fftpack.ifft(profile_fft[ii] * phase[ii])
-    return profile_shift
+    profile_fft = np.zeros(profile.shape)
+    for ii in xrange(profile.shape[0]):   
+        profile_fft[ii] = fftpack.fft(profile[ii], axis=0)
+        n = profile_fft.shape[-1]
+        freq = fftpack.fftfreq(n, 1./n)
+        phase = np.exp(-2j * np.pi * phase_bin_shift / NPHASEBIN_1hr * freq)
+        profile_shift[ii] = fftpack.ifft(profile_fft[ii] * phase).real
+    return profile_shift 
 
 
-shift_profiles = np.zeros((len(series), NPHASEBIN_1hr, this_file['DATA'].shape[3]))
+shift_profiles = np.zeros((len(series), this_file['DATA'].shape[3], NPHASEBIN_1hr))
 for ii in xrange(len(series)):
-    shift_profiles[ii] = shift_phase_bin(model[ii], this_file[series[ii]][:,0,:,0])
+#    shift_profiles[ii] = shift_phase_bin(model[ii], this_file[series[ii]][:,0,:,0])
+    shift_profiles[ii] = shift_phase_bin(0, (this_file[series[ii]][:,0,:,0].T))
+
+plt.close('all')
+plt.imshow(psr_svd.rebin_spec(shift_profiles[0], 32, 1))
+plt.savefig('profile_0_shift.png')
+
 
 #stack profiles
 if False:
@@ -46,6 +54,6 @@ if False:
     shift_profiles = np.mean(shift_profiles, 1)
     shift_profiles = np.mean(shift_profiles, 0)
 
-plt.imshow(psr_svd.rebin_spec(shift_profiles[1], 1, 64))
-plt.savefig('profiles.png')
+#plt.imshow(psr_svd.rebin_spec(shift_profiles[1], 1, 64))
+#plt.savefig('profiles.png')
 
