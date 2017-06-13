@@ -26,13 +26,13 @@ dis_stack = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_sea
 V_1hr = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_all/data_file/V_1hr_5sec_liksol.npy')
 V0 = V_1hr[0]
 
-plt.close('all')
-plt.plot(dis_stack[1023])
-plt.savefig('dis_stack1023.png')
+#plt.close('all')
+#plt.plot(dis_stack[1023])
+#plt.savefig('dis_stack1023.png')
 
-plt.close('all')
-plt.imshow(dis_stack)
-plt.savefig('dis_stack0_all.png')
+#plt.close('all')
+#plt.imshow(dis_stack)
+#plt.savefig('dis_stack0_all.png')
 
 def main():
     if False:
@@ -58,46 +58,50 @@ def main():
     # fit DM
     V_fft = fftpack.fft(V0)
     # dis_stack is the stacking dispersion file, which is in the shpae of (frequencies, phase_bins)
-#    for ii in xrange(len(dis_stack)):
-    for ii in xrange(1023, 1024):
-        freq = this_file['DAT_FREQ'][0][ii]
-        print 'freq', freq
-        profile_fft = fftpack.fft(dis_stack[ii])
-        # pars_init: [Amplitude, factor of power law, random phase, DM]
-#        pars_init = [np.amax(profile_fft.real)/np.amax(V_fft.real), -2., np.argmax(dis_stack[ii])/NPHASEBIN_1hr, 31.726]
-        pars_init = [np.amax(profile_fft.real)/np.amax(V_fft.real), -2., 0.80, 31.726]
-        pars_fit, cov, infodict, mesg, ier = optimize.leastsq(
+    freq = this_file['DAT_FREQ'][0]
+#    profile_fft = np.zeros((dis_stack.shape), dtype=complex)
+    profile_fft = np.zeros((len(freq), 800), dtype=complex)
+    for ii in xrange(len(profile_fft)):
+        profile_fft[ii] = fftpack.fft(dis_stack[ii])
+
+    # pars_init: [Amplitude, factor of power law, random phase, DM]
+    pars_init = [0.3, -2., 0.80, 31.726]
+    pars_fit, cov, infodict, mesg, ier = optimize.leastsq(
                 residuals,
                 pars_init,
                 (freq, profile_fft, V_fft),
                 full_output=1,
                 )
-        fit_res = residuals(pars_fit, freq, profile_fft, V_fft)
-        chi2_fit = chi2(pars_fit, freq, profile_fft, V_fft)
-        dof = len(fit_res) - len(pars_init)
-        red_chi2 = chi2_fit / dof
-        print "chi1, dof, chi2/dof:", chi2_fit, dof, red_chi2
+    fit_res = residuals(pars_fit, freq, profile_fft, V_fft)
+    chi2_fit = chi2(pars_fit, freq, profile_fft, V_fft)
+    dof = len(fit_res) - len(pars_init)
+    red_chi2 = chi2_fit / dof
+    print "chi1, dof, chi2/dof:", chi2_fit, dof, red_chi2
+#    print 'cov', cov
+#    print 'red_chi2', red_chi2
+#    cov_norm = cov * red_chi2
 
-        cov_norm = cov * red_chi2
+#    errs = np.sqrt(cov_norm.flat[::len(pars_init) + 1])
+#    corr = cov_norm / errs[None,:] / errs[:,None]
 
-        errs = np.sqrt(cov_norm.flat[::len(pars_init) + 1])
-        corr = cov_norm / errs[None,:] / errs[:,None]
+    print "amp, factor, phase, DM:"
+    print pars_fit
+    print errs
+#    print "correlations:"
+#    print corr
 
-        print "amp, factor, phase, DM:"
-        print pars_fit
-        print errs
-        print "correlations:"
-        print corr
-
-        if True:
-            plot_name = 'DM_fit_'+str(ii)+'_'
-            fit_plot(pars_fit, pars_init, freq, profile_fft, V_fft, plot_name)
+    if False:
+        plot_name = 'DM_fit_'+str(ii)+'_'
+        fit_plot(pars_fit, pars_init, freq, profile_fft, V_fft, plot_name)
 
 def chi2(parameters, freq, profile_fft, V_fft, norm=1):
     return np.sum(residuals(parameters, freq, profile_fft, V_fft)**2) * norm
 
-def residuals(parameters, freq, profile_fft, V_fft):  
-    res = pick_harmonics(profile_fft) - pick_harmonics(model(parameters, freq, V_fft))
+def residuals(parameters, freq, profile_fft, V_fft): 
+    profile_fft_flatten = profile_fft.flatten()
+    temp_fft = model(parameters, freq, V_fft)
+    temp_fft_flatten = temp_fft.flatten()
+    res = pick_harmonics(profile_fft_flatten) - pick_harmonics(temp_fft_flatten)
     return res
 
 def pick_harmonics(profile_fft):
@@ -111,7 +115,11 @@ def model(parameters, freq, V_fft):
     phi_0 = parameters[2]
     DM = parameters [3]
     phi_f = (phi_0 + dedisperse_time(DM, freq)/T) 
-    template = amp * (freq/800.)**factor * shift_phase_bin_fft(phi_f * NPHASEBIN_1hr, V_fft)
+#    print 'phi_f.shape', phi_f.shape
+    template = np.zeros((len(freq), V_fft.shape[-1]), dtype=complex)
+    for ii in xrange(len(template)):
+        template[ii] = amp * (freq[ii]/800.)**factor * shift_phase_bin_fft(phi_f[ii] * NPHASEBIN_1hr, freq[ii], V_fft)
+#    print 'temp.shape', template.shape
     return template
 
 def dedisperse_time(DM, freq):
@@ -119,13 +127,13 @@ def dedisperse_time(DM, freq):
     time = DM_CONST * DM * (freq**-2 - REFERNCE_FREQ**-2)
     return time
 
-def shift_phase_bin_fft(phase_bin_shift, profile_fft):
+def shift_phase_bin_fft(phase_bin_shift, freq, profile_fft):
     # profile_fft is an 1D array with fft already
-    phase_bin_shift = phase_bin_shift % NPHASEBIN_1hr
-    profile_shift_fft = np.zeros((profile_fft.shape), dtype=complex)
+#   phase_bin_shift = phase_bin_shift % NPHASEBIN_1hr
+    profile_shift_fft = np.zeros((profile_fft.shape[-1]), dtype=complex)
     n = profile_shift_fft.shape[-1]
-    freq = fftpack.fftfreq(n, 1./n)
-    phase = np.exp(-2j * np.pi * (-phase_bin_shift) / NPHASEBIN_1hr * freq)
+    fftfreq = fftpack.fftfreq(n, 1./n)
+    phase = np.exp(-2j * np.pi * (-phase_bin_shift) / NPHASEBIN_1hr * fftfreq)
     profile_shift_fft = profile_fft * phase
     return profile_shift_fft
 
