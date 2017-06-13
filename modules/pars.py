@@ -20,6 +20,7 @@ DM = 31.7262
 T = 0.312470
 
 '''Parameters of fitting'''
+REFERNCE_FREQ = 900.
 NPHASEBIN_wz = 200
 NPHASEBIN = NPHASEBIN_wz
 NPHASEBIN_1hr = 800
