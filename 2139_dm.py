@@ -60,6 +60,7 @@ def main():
     V_fft = fftpack.fft(V0)
     # dis_stack is the stacking dispersion file, which is in the shpae of (frequencies, phase_bins)
     freq = this_file['DAT_FREQ'][0]
+#    print 'freq_all', freq
 #    profile_fft = np.zeros((dis_stack.shape), dtype=complex)
     profile_fft = np.zeros((len(freq), 800), dtype=complex)
     for ii in xrange(len(profile_fft)):
@@ -103,15 +104,14 @@ def main():
 
     if True:
         data_ifft = fftpack.ifft(profile_fft).real
-        print 'data_ifft.shape', data_ifft.shape
         model_init = fftpack.ifft(model(pars_init, freq, V_fft)).real
         model_fit = fftpack.ifft(model(pars_fit, freq, V_fft)).real
         diff_ifft = data_ifft - model_fit
-       
+   
         plt.close('all')
         fontsize=16
         f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
-        ax1.imshow(data_ifft, aspect='auto')#, vmin=vmin, vmax=vmax, cmap='jet', aspect='auto')
+        ax1.imshow(data_ifft, aspect='auto')
         ax1.set_title('data_ifft', size=fontsize)
         ax2.imshow(model_init, aspect='auto')
         ax2.set_title('model_init', size=fontsize)
@@ -120,6 +120,28 @@ def main():
         ax4.imshow(diff_ifft, aspect='auto')
         ax4.set_title('diff_ifft', size=fontsize)
         plt.savefig('Panels.png')
+
+        #test parameters work:
+        # pars: [amp, factor, phase_init, DM]
+        pars_init1 = [1e-02,  -3e-01, 0, 0]
+        pars_init2 = [1e-02,  -3e-01, 0.5, 0]
+        pars_init3 = [1e-02,  -3e-01, 0, 31.726]
+        model_init1 = fftpack.ifft(model(pars_init1, freq, V_fft)).real
+        model_init2 = fftpack.ifft(model(pars_init2, freq, V_fft)).real
+        model_init3 = fftpack.ifft(model(pars_init3, freq, V_fft)).real
+
+        plt.close('all')
+        fontsize=16
+        f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+        ax1.imshow(data_ifft, aspect='auto')#, vmin=vmin, vmax=vmax, cmap='jet', aspect='auto')
+        ax1.set_title('data_ifft', size=fontsize)
+        ax2.imshow(model_init1, aspect='auto')
+        ax2.set_title('model_init1', size=fontsize)
+        ax3.imshow(model_init2, aspect='auto')
+        ax3.set_title('model_init2', size=fontsize)
+        ax4.imshow(model_init3, aspect='auto')
+        ax4.set_title('model_init3', size=fontsize)
+        plt.savefig('Panels_test.png')
 
 def chi2(parameters, freq, profile_fft, V_fft, norm=1):
     return np.sum(residuals(parameters, freq, profile_fft, V_fft)**2) * norm
@@ -138,6 +160,7 @@ def pick_harmonics(profile_fft):
     return harmonics
 
 def model(parameters, freq, V_fft):
+#    print 'model_freq', freq
     amp = parameters[0]
     factor = parameters[1]
     phi_0 = parameters[2]
@@ -146,7 +169,7 @@ def model(parameters, freq, V_fft):
 #    print 'phi_f.shape', phi_f.shape
     template = np.zeros((len(freq), V_fft.shape[-1]), dtype=complex)
     for ii in xrange(len(template)):
-        template[ii] = amp * (freq[ii]/800.)**factor * shift_phase_bin_fft(phi_f[ii] * NPHASEBIN_1hr, freq[ii], V_fft)
+        template[ii] = amp * (freq[ii]/800.)**factor * shift_phase_bin_fft(phi_f[ii] * NPHASEBIN_1hr, V_fft)
 #    print 'temp.shape', template.shape
     return template
 
@@ -155,7 +178,7 @@ def dedisperse_time(DM, freq):
     time = DM_CONST * DM * (freq**-2 - REFERNCE_FREQ**-2)
     return time
 
-def shift_phase_bin_fft(phase_bin_shift, freq, profile_fft):
+def shift_phase_bin_fft(phase_bin_shift, profile_fft):
     # profile_fft is an 1D array with fft already
 #   phase_bin_shift = phase_bin_shift % NPHASEBIN_1hr
     profile_shift_fft = np.zeros((profile_fft.shape[-1]), dtype=complex)
