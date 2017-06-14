@@ -65,7 +65,7 @@ def main():
         profile_fft[ii] = fftpack.fft(dis_stack[ii])
 
     # pars_init: [Amplitude, factor of power law, random phase, DM]
-    pars_init = [0.3, -2., 0.80, 31.726]
+    pars_init = [4.56278288e-01,  -8.04684973e-01, 1e-4, 3.173e+1]
     pars_fit, cov, infodict, mesg, ier = optimize.leastsq(
                 residuals,
                 pars_init,
@@ -77,8 +77,8 @@ def main():
     dof = len(fit_res) - len(pars_init)
     red_chi2 = chi2_fit / dof
     print "chi1, dof, chi2/dof:", chi2_fit, dof, red_chi2
-#    print 'cov', cov
-#    print 'red_chi2', red_chi2
+    print 'cov', cov
+    print 'red_chi2', red_chi2
 #    cov_norm = cov * red_chi2
 
 #    errs = np.sqrt(cov_norm.flat[::len(pars_init) + 1])
@@ -86,13 +86,33 @@ def main():
 
     print "amp, factor, phase, DM:"
     print pars_fit
-    print errs
+#    print errs
 #    print "correlations:"
 #    print corr
 
     if False:
         plot_name = 'DM_fit_'+str(ii)+'_'
         fit_plot(pars_fit, pars_init, freq, profile_fft, V_fft, plot_name)
+
+    if True:
+        data_ifft = fftpack.ifft(profile_fft).real
+        print 'data_ifft.shape', data_ifft.shape
+        model_init = fftpack.ifft(model(pars_init, freq, V_fft)).real
+        model_fit = fftpack.ifft(model(pars_fit, freq, V_fft)).real
+        diff_ifft = data_ifft - model_fit
+       
+        plt.close('all')
+        fontsize=16
+        f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+        ax1.imshow(data_ifft)#, vmin=vmin, vmax=vmax, cmap='jet', aspect='auto')
+        ax1.set_title('data_ifft', size=fontsize)
+        ax2.imshow(model_init)
+        ax2.set_title('model_init', size=fontsize)
+        ax3.imshow(model_fit)
+        ax3.set_title('model_fit', size=fontsize)
+        ax4.imshow(diff_ifft)
+        ax4.set_title('diff_ifft', size=fontsize)
+        plt.savefig('Panels.png')
 
 def chi2(parameters, freq, profile_fft, V_fft, norm=1):
     return np.sum(residuals(parameters, freq, profile_fft, V_fft)**2) * norm
@@ -133,7 +153,7 @@ def shift_phase_bin_fft(phase_bin_shift, freq, profile_fft):
     profile_shift_fft = np.zeros((profile_fft.shape[-1]), dtype=complex)
     n = profile_shift_fft.shape[-1]
     fftfreq = fftpack.fftfreq(n, 1./n)
-    phase = np.exp(-2j * np.pi * (-phase_bin_shift) / NPHASEBIN_1hr * fftfreq)
+    phase = np.exp(-2j * np.pi * (phase_bin_shift) / NPHASEBIN_1hr * fftfreq)
     profile_shift_fft = profile_fft * phase
     return profile_shift_fft
 
