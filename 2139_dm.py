@@ -14,6 +14,7 @@ from scipy import fftpack, optimize, interpolate, linalg, integrate
 REFERNCE_FREQ = pars.REFERNCE_FREQ
 T = pars.T
 
+NHARMONIC = pars.NHARMONIC
 NPHASEBIN_1hr = pars.NPHASEBIN_1hr
 NPHASEBIN = NPHASEBIN_1hr #for pointed data
 this_file = h5py.File('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_1hr/J2139+00_1hr_foldingh5','r')
@@ -65,7 +66,7 @@ def main():
         profile_fft[ii] = fftpack.fft(dis_stack[ii])
 
     # pars_init: [Amplitude, factor of power law, random phase, DM]
-    pars_init = [4.56278288e-01,  -8.04684973e-01, 1e-4, 3.173e+1]
+    pars_init = [1e-02,  -3e-01, 1e-4, 3.173e+1]
     pars_fit, cov, infodict, mesg, ier = optimize.leastsq(
                 residuals,
                 pars_init,
@@ -76,6 +77,12 @@ def main():
     chi2_fit = chi2(pars_fit, freq, profile_fft, V_fft)
     dof = len(fit_res) - len(pars_init)
     red_chi2 = chi2_fit / dof
+    print 'pars_fit', pars_fit
+    print 'cov', cov
+    print 'infodict', infodict
+    print 'mesg', mesg
+    print 'ier', ier
+
     print "chi1, dof, chi2/dof:", chi2_fit, dof, red_chi2
     print 'cov', cov
     print 'red_chi2', red_chi2
@@ -104,13 +111,13 @@ def main():
         plt.close('all')
         fontsize=16
         f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
-        ax1.imshow(data_ifft)#, vmin=vmin, vmax=vmax, cmap='jet', aspect='auto')
+        ax1.imshow(data_ifft, aspect='auto')#, vmin=vmin, vmax=vmax, cmap='jet', aspect='auto')
         ax1.set_title('data_ifft', size=fontsize)
-        ax2.imshow(model_init)
+        ax2.imshow(model_init, aspect='auto')
         ax2.set_title('model_init', size=fontsize)
-        ax3.imshow(model_fit)
+        ax3.imshow(model_fit, aspect='auto')
         ax3.set_title('model_fit', size=fontsize)
-        ax4.imshow(diff_ifft)
+        ax4.imshow(diff_ifft, aspect='auto')
         ax4.set_title('diff_ifft', size=fontsize)
         plt.savefig('Panels.png')
 
@@ -118,15 +125,16 @@ def chi2(parameters, freq, profile_fft, V_fft, norm=1):
     return np.sum(residuals(parameters, freq, profile_fft, V_fft)**2) * norm
 
 def residuals(parameters, freq, profile_fft, V_fft): 
-    profile_fft_flatten = profile_fft.flatten()
     temp_fft = model(parameters, freq, V_fft)
-    temp_fft_flatten = temp_fft.flatten()
-    res = pick_harmonics(profile_fft_flatten) - pick_harmonics(temp_fft_flatten)
-    return res
+#    print 'pick_harmonics(profile_fft).flatten().shape', pick_harmonics(profile_fft).flatten().shape
+    return pick_harmonics(profile_fft).flatten() - pick_harmonics(temp_fft).flatten()
 
 def pick_harmonics(profile_fft):
-#    harmonics = profile_fft[..., 1:NHARMONIC]
-    harmonics = np.concatenate((profile_fft.real, profile_fft.imag), -1)
+    profile_harmonics = np.zeros((len(profile_fft), (NHARMONIC-1)), dtype=complex)
+    harmonics = np.zeros((len(profile_fft), 2*(NHARMONIC-1)), dtype=np.float64)
+    for ii in xrange(len(profile_fft)):
+        profile_harmonics[ii] = profile_fft[ii][..., 1:NHARMONIC]
+        harmonics[ii] = np.concatenate((profile_harmonics[ii].real, profile_harmonics[ii].imag), -1)
     return harmonics
 
 def model(parameters, freq, V_fft):
