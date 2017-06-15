@@ -15,6 +15,7 @@ REFERNCE_FREQ = pars.REFERNCE_FREQ
 T = pars.T
 
 NHARMONIC = pars.NHARMONIC
+#NHARMONIC = 20
 NPHASEBIN_1hr = pars.NPHASEBIN_1hr
 NPHASEBIN = NPHASEBIN_1hr #for pointed data
 this_file = h5py.File('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_1hr/J2139+00_1hr_foldingh5','r')
@@ -67,7 +68,7 @@ def main():
         profile_fft[ii] = fftpack.fft(dis_stack[ii])
 
     # pars_init: [Amplitude, factor of power law, random phase, DM]
-    pars_init = [1e-02,  -3e-01, 1e-4, 3.173e+1]
+    pars_init = [1e-02,  -3e-01, 1e-4, 3.172e+1]
     pars_fit, cov, infodict, mesg, ier = optimize.leastsq(
                 residuals,
                 pars_init,
@@ -106,7 +107,7 @@ def main():
         data_ifft = fftpack.ifft(profile_fft).real
         model_init = fftpack.ifft(model(pars_init, freq, V_fft)).real
         model_fit = fftpack.ifft(model(pars_fit, freq, V_fft)).real
-        diff_ifft = data_ifft - model_fit
+        diff_ifft = data_ifft - model_fit        
    
         plt.close('all')
         fontsize=16
@@ -143,6 +144,43 @@ def main():
         ax4.set_title('model_init3', size=fontsize)
         plt.savefig('Panels_test.png')
 
+        # residuals in the Fourier space
+        res_init = residuals(pars_init, freq, profile_fft, V_fft).reshape((len(freq), 2*(NHARMONIC-1)))
+        res_fit = residuals(pars_fit, freq, profile_fft, V_fft).reshape((len(freq), 2*(NHARMONIC-1)))
+        res_init1 = residuals(pars_init1, freq, profile_fft, V_fft).reshape((len(freq), 2*(NHARMONIC-1)))
+        res_init2 = residuals(pars_init2, freq, profile_fft, V_fft).reshape((len(freq), 2*(NHARMONIC-1)))
+        res_init3 = residuals(pars_init3, freq, profile_fft, V_fft).reshape((len(freq), 2*(NHARMONIC-1)))
+
+        plt.close('all')
+        fontsize=16
+        f, ((ax1, ax2, ax3)) = plt.subplots(1, 3)
+        ax1.imshow(res_init1, aspect='auto')
+        ax1.set_title('Res_init1', size=fontsize)
+        ax2.imshow(res_init2, aspect='auto')
+        ax2.set_title('Res_init2', size=fontsize)
+        ax3.imshow(res_init3, aspect='auto')
+        ax3.set_title('Res_init3', size=fontsize)
+        plt.savefig('Panel_res_init.png')
+
+        plt.close('all')
+        fontsize=16
+        f, ((ax1, ax2)) = plt.subplots(1, 2)
+        ax1.imshow(res_init, aspect='auto')
+        ax1.set_title('Res_init', size=fontsize)
+        ax2.imshow(res_fit, aspect='auto')
+        ax2.set_title('Res_fit', size=fontsize)
+        plt.savefig('Panel_res_fit.png')
+
+
+def chi2(parameters, freq, profile_fft, V_fft, norm=1):
+    return np.sum(residuals(parameters, freq, profile_fft, V_fft)**2) * norm
+
+def residuals(parameters, freq, profile_fft, V_fft): 
+        ax1.set_title('Res_init', size=fontsize)
+        ax2.imshow(res_fit, aspect='auto')
+        ax2.set_title('Res_fit', size=fontsize)
+        plt.savefig('Panel_res.png')
+
 def chi2(parameters, freq, profile_fft, V_fft, norm=1):
     return np.sum(residuals(parameters, freq, profile_fft, V_fft)**2) * norm
 
@@ -160,17 +198,14 @@ def pick_harmonics(profile_fft):
     return harmonics
 
 def model(parameters, freq, V_fft):
-#    print 'model_freq', freq
     amp = parameters[0]
     factor = parameters[1]
     phi_0 = parameters[2]
     DM = parameters [3]
     phi_f = (phi_0 + dedisperse_time(DM, freq)/T) 
-#    print 'phi_f.shape', phi_f.shape
     template = np.zeros((len(freq), V_fft.shape[-1]), dtype=complex)
     for ii in xrange(len(template)):
         template[ii] = amp * (freq[ii]/800.)**factor * shift_phase_bin_fft(phi_f[ii] * NPHASEBIN_1hr, V_fft)
-#    print 'temp.shape', template.shape
     return template
 
 def dedisperse_time(DM, freq):
@@ -180,7 +215,7 @@ def dedisperse_time(DM, freq):
 
 def shift_phase_bin_fft(phase_bin_shift, profile_fft):
     # profile_fft is an 1D array with fft already
-#   phase_bin_shift = phase_bin_shift % NPHASEBIN_1hr
+    # phase_bin_shift = phase_bin_shift % NPHASEBIN_1hr
     profile_shift_fft = np.zeros((profile_fft.shape[-1]), dtype=complex)
     n = profile_shift_fft.shape[-1]
     fftfreq = fftpack.fftfreq(n, 1./n)
@@ -226,15 +261,6 @@ def fit_plot(pars_fit, pars_init, freq, profile_fft, V_fft, plot_name):
     freq_range = np.linspace(np.amin(np.fft.fftfreq(len(data_fft))), np.amax(np.fft.fftfreq(len(data_fft))), num=len(data_fft), endpoint=True)
     freq_min = np.amin(freq_range)
     freq_max = np.amax(freq_range)
-
-#        phase_range = np.arange(-int(NPHASEBIN/2), int(NPHASEBIN/2)) / np.float(NPHASEBIN)
-    phase_range = np.linspace(-0.5, 0.5, num=NPHASEBIN_1hr, endpoint=True)
-    
-#    title_phase = phase_amp_bin[0]/np.float(NPHASEBIN_wz)
-#    if title_phase >= 0.5:
-#        title_phase -= 1
-#        title_phase_err = phase_amp_bin[len(phase_amp_bin)/2]/np.float(NPHASEBIN_wz)
-
 #        plot_title = 'Phase: ' + str("%.5f" % (title_phase)) + ' +/- ' + str("%.5f" % (title_phase_err))
 #    plot_name += str(index) + '_'
     fontsize = 16
