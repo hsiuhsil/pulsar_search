@@ -60,7 +60,7 @@ def main():
     # fit DM
     V_fft = fftpack.fft(V0)
     # dis_stack is the stacking dispersion file, which is in the shpae of (frequencies, phase_bins)
-    freq = this_file['DAT_FREQ'][0]
+    freq = this_file['DAT_FREQ'][0].astype(float)
 #    print 'freq_all', freq
 #    profile_fft = np.zeros((dis_stack.shape), dtype=complex)
     profile_fft = np.zeros((len(freq), 800), dtype=complex)
@@ -68,7 +68,7 @@ def main():
         profile_fft[ii] = fftpack.fft(dis_stack[ii])
 
     # pars_init: [Amplitude, factor of power law, random phase, DM]
-    pars_init = [1e-02,  -3e-01, 1e-4, 3.172e+1]
+    pars_init = [1e-02,  -3e-01, 1e-4, 3.1726e+1]
     pars_fit, cov, infodict, mesg, ier = optimize.leastsq(
                 residuals,
                 pars_init,
@@ -79,25 +79,24 @@ def main():
     chi2_fit = chi2(pars_fit, freq, profile_fft, V_fft)
     dof = len(fit_res) - len(pars_init)
     red_chi2 = chi2_fit / dof
-    print 'pars_fit', pars_fit
-    print 'cov', cov
-    print 'infodict', infodict
-    print 'mesg', mesg
-    print 'ier', ier
+#    print 'pars_fit', pars_fit
+#    print 'cov', cov
+#    print 'infodict', infodict
+#    print 'mesg', mesg
+#    print 'ier', ier
+    cov_norm = cov * red_chi2
 
+    errs = np.sqrt(cov_norm.flat[::len(pars_init) + 1])
+    corr = cov_norm / errs[None,:] / errs[:,None]
+
+    print "Fitting amp, factor, phase, DM:"
+    print pars_fit
+    print errs
     print "chi1, dof, chi2/dof:", chi2_fit, dof, red_chi2
     print 'cov', cov
     print 'red_chi2', red_chi2
-#    cov_norm = cov * red_chi2
-
-#    errs = np.sqrt(cov_norm.flat[::len(pars_init) + 1])
-#    corr = cov_norm / errs[None,:] / errs[:,None]
-
-    print "amp, factor, phase, DM:"
-    print pars_fit
-#    print errs
-#    print "correlations:"
-#    print corr
+    print "correlations:"
+    print corr
 
     if False:
         plot_name = 'DM_fit_'+str(ii)+'_'
@@ -170,6 +169,17 @@ def main():
         ax2.imshow(res_fit, aspect='auto')
         ax2.set_title('Res_fit', size=fontsize)
         plt.savefig('Panel_res_fit.png')
+
+        # residual difference
+        pars_fit2 = [0.]*len(pars_fit)
+        pars_fit2[0:3] = pars_fit[0:3]
+        pars_fit2[3] = pars_fit[3] + 0.00001
+        res_fit2 = residuals(pars_fit2, freq, profile_fft, V_fft).reshape((len(freq), 2*(NHARMONIC-1)))
+        res_diff = res_fit2 - res_fit
+        plt.close('all')
+        plt.imshow(res_diff, aspect='auto')
+        plt.savefig('res_diff.png')
+
 
 
 def chi2(parameters, freq, profile_fft, V_fft, norm=1):
