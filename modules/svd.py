@@ -204,7 +204,7 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
     print("pfit = ", pfit_leastsq)
     print("perr = ", perr_leastsq)
 
-    '''save the fitting amp and bin as [amp, bin, amp_err, bin_err]'''
+    '''save the fitting amp and bin as [bin, amps, bin_err, amp_errs]'''
     npy_file = 'phase_amp_bin_wz_40epochs_6modes_90hars.npy'
 
     if (phase_matrix_origin.shape[1] == pars.phase_npy_1hr.shape[1]):
@@ -222,7 +222,7 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
     '''Simulation test on random residuals phase'''
     if random_res == True:
         random_times = 100
-        '''save the random res fitting amp and bin as [amp, bin, amp_err, bin_err]'''
+        '''save the random res fitting amp and bin as [bin, amps, bin_err, amp_errs]'''
         random_npy_file = 'random_'+ plot_name + '.npy'
         if os.path.exists(random_npy_file) == False:
             random_phase_amp_bin = np.zeros((phase_matrix_origin.shape[0], random_times, len(fit_pars_phase)))
@@ -433,7 +433,7 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
 
 
 
-        '''save the fitting amp and bin as [amp, bin, amp_err, bin_err]'''
+        '''save the fitting amp and bin as [bin, amps, bin_err, amp_errs]'''
         npy_lik_file = 'phase_amp_bin_57178_40epochs_6modes_90hars_lik.npy'
 
         if (phase_matrix_origin.shape[1] == pars.phase_npy_1hr.shape[1]):
