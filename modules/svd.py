@@ -9,6 +9,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib import cm
+from matplotlib import colors as mcolors
 from scipy import fftpack, optimize, interpolate, linalg, integrate
 from scipy.optimize import curve_fit, minimize, leastsq
 
@@ -284,6 +285,8 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
         plot_title = 'Phase: ' + str("%.5f" % (title_phase)) + ' +/- ' + str("%.5f" % (title_phase_err))
         plot_name += str(index) + '_'
         fontsize = 16
+        markersize = 5.0
+        markersize_dot = 8.0
 
         '''Plot for real and imag parts in the Fourier space.'''
         plt.close('all')
@@ -300,14 +303,14 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
         xmax = NHARMONIC  #np.amax(mode_range)
         xmin = 1 #np.amin(mode_range)
         ax1.plot(mode_range, np.roll(model_fft_real, -int(NPHASEBIN/2)),'r-')
-        ax1.plot(mode_range, np.roll(data_fft_real, -int(NPHASEBIN/2)),'b-')
+        ax1.plot(mode_range, np.roll(data_fft_real, -int(NPHASEBIN/2)),'b.', markersize=markersize_dot)
         ax1.set_title('Real', size=fontsize)
 #        ax1.legend(['Real'], fontsize=fontsize)
         ax1.set_xlim([xmin,xmax])
         ax1.set_ylim([-0.35, 0.2])
         ax1.tick_params(axis='both', which='major', labelsize=fontsize)
 
-        ax2.plot(mode_range, np.roll(res_fft_real, -int(NPHASEBIN/2)),'bo')
+        ax2.plot(mode_range, np.roll(res_fft_real, -int(NPHASEBIN/2)),'gs', markersize=markersize)
         ax2.set_xlabel('Harmonic modes', fontsize=fontsize)
         ax2.set_ylabel('Residuals (T/Tsys)', fontsize=fontsize)
         ax2.set_xlim([xmin,xmax])
@@ -315,14 +318,14 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
         ax2.tick_params(axis='both', which='major', labelsize=fontsize)
 
         ax3.plot(mode_range, np.roll(model_fft_imag, -int(NPHASEBIN/2)),'r-')
-        ax3.plot(mode_range, np.roll(data_fft_imag, -int(NPHASEBIN/2)),'b-')
+        ax3.plot(mode_range, np.roll(data_fft_imag, -int(NPHASEBIN/2)),'b.', markersize=markersize_dot)
         ax3.set_title('Imag', size=fontsize)
 #        ax3.legend(['Imag'], fontsize=fontsize)
         ax3.set_xlim([xmin,xmax])
         ax3.set_ylim([-0.35, 0.4])
         ax3.tick_params(axis='both', which='major', labelsize=fontsize)
 
-        ax4.plot(mode_range, np.roll(res_fft_imag, -int(NPHASEBIN/2)),'bo')
+        ax4.plot(mode_range, np.roll(res_fft_imag, -int(NPHASEBIN/2)),'gs', markersize=markersize)
         ax4.set_xlabel('Harmonic modes', fontsize=fontsize)
         ax4.set_xlim([xmin,xmax])
         ax4.tick_params(axis='both', which='major', labelsize=fontsize)
@@ -336,13 +339,13 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
         xmax = np.amax(phase_range)
         xmin = np.amin(phase_range)
         ax1.plot(phase_range, np.roll(model_ifft, -int(NPHASEBIN/2)),'r-')
-        ax1.plot(phase_range, np.roll(data_ifft, -int(NPHASEBIN/2)),'b-')
+        ax1.plot(phase_range, np.roll(data_ifft, -int(NPHASEBIN/2)),'b.', markersize=markersize_dot)
         ax1.set_title(plot_title, size=fontsize)
         ax1.set_xlim([xmin,xmax])
         ax1.set_ylabel('T/Tsys', fontsize=fontsize)
         ax1.tick_params(axis='both', which='major', labelsize=fontsize)
 
-        ax2.plot(phase_range, np.roll(res_ifft, -int(NPHASEBIN/2)),'bo')
+        ax2.plot(phase_range, np.roll(res_ifft, -int(NPHASEBIN/2)),'gs', markersize=markersize)
         ax2.set_xlim([xmin,xmax])
         ax2.set_xlabel('Phase ', fontsize=fontsize)
         ax2.set_ylabel('Residuals (T/Tsys)', fontsize=fontsize)
