@@ -1,7 +1,9 @@
 import numpy as np
 import h5py
+import subprocess
 import fit_timing
 import pars
+import bary_time
 
 TIME0 = pars.TIME0
 T = pars.T
@@ -138,12 +140,31 @@ def main():
     
     '''Check timing solution with TEMPO'''
     #TOA = reference_time + [(time - reference_time) // T + phase] * T
+    TOAs_topo = np.zeros(len(time_mjd))
     TOAs_bary = np.zeros(len(time_mjd))
+    RA = bary_time.deg_to_HMS(pars.RA)
+    DEC = bary_time.deg_to_DMS(pars.DEC)
+
     for ii in xrange(len(TOAs_bary)):
+#        print 'ii: ', ii
         TOAs_bary[ii] =  TIME0 + ((time_mjd[ii] - TIME0) // pars.T + model_phase[ii]) * pars.T
-    print TOAs_bary
+        topo_time = repr(TOAs_bary[ii])
+#        print 'topo_time', topo_time
+        p = subprocess.Popen(["bary", "GBT", RA, DEC], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        bary_in = np.float64(p.communicate(input=topo_time)[0].split()[1])
+#        print 'bary_in', bary_in
+        TOAs_topo[ii] = TOAs_bary[ii] - (bary_in - TOAs_bary[ii])
+    
+    diff = np.zeros(len(time_mjd))
+    for ii in xrange(len(diff)):
+        topo_time = repr(TOAs_topo[ii])
+        p = subprocess.Popen(["bary", "GBT", RA, DEC], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        bary_TOAs_topo = np.float64(p.communicate(input=topo_time)[0].split()[1])
+        diff[ii] = (bary_TOAs_topo - TOAs_bary[ii])*86400*1000 #change unit from day to ms
 
-
-
+    print 'diff', diff
+    print 'diff_min', np.amin(diff)
+    print 'diff_max', np.amax(diff)
 if __name__ == '__main__':
     main()
+
