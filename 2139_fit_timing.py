@@ -146,15 +146,19 @@ def main():
     DEC = bary_time.deg_to_DMS(pars.DEC)
 
     for ii in xrange(len(TOAs_bary)):
-#        print 'ii: ', ii
+        print 'ii:',ii
         TOAs_bary[ii] =  TIME0 + ((time_mjd[ii] - TIME0) // pars.T + model_phase[ii]) * pars.T
-        topo_time = repr(TOAs_bary[ii])
-#        print 'topo_time', topo_time
-        p = subprocess.Popen(["bary", "GBT", RA, DEC], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        bary_in = np.float64(p.communicate(input=topo_time)[0].split()[1])
-#        print 'bary_in', bary_in
-        TOAs_topo[ii] = TOAs_bary[ii] - (bary_in - TOAs_bary[ii])
-    
+        bary_in = repr(TOAs_bary[ii])
+        topo_guess = bary_in
+        error = 1.
+        while np.abs(error) *3600 * 24 > 1e-4:
+            p = subprocess.Popen(["bary", "GBT", RA, DEC], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            bary_guess = np.float64(p.communicate(input=topo_guess)[0].split()[1])
+            error = bary_guess - np.float64(bary_in)
+            topo_guess = repr(np.float64(topo_guess) - error)
+        TOAs_topo[ii] = topo_guess
+   
+
     diff = np.zeros(len(time_mjd))
     for ii in xrange(len(diff)):
         topo_time = repr(TOAs_topo[ii])
