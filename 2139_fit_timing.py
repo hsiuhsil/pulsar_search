@@ -164,21 +164,10 @@ def main():
             topo_guess = repr(np.float64(topo_guess) - error)
         TOAs_topo[ii] = topo_guess
 
-    np.save('TOAs_topo.npy', TOAs_topo)   
+#    np.save('TOAs_topo.npy', TOAs_topo)   
 
-    for ii in xrange(len(TOAs_bary_err)):
-        print 'ii:',ii
-        TOAs_bary_err[ii] =  TIME0 + ((time_mjd[ii] - TIME0)*86400 // pars.T + measured_phase[ii] + measured_phase_err[ii]) * pars.T / 86400
-        bary_in = repr(TOAs_bary_err[ii])
-        topo_guess = bary_in
-        error = 1. / 86400
-        while np.abs(error) > (1e-4 / 86400):
-            p = subprocess.Popen(["bary", "GBT", RA, DEC], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            bary_guess = np.float64(p.communicate(input=topo_guess)[0].split()[1])
-            error = bary_guess - np.float64(bary_in)
-            topo_guess = repr(np.float64(topo_guess) - error)
-        TOAs_topo_err[ii] = repr(np.float64(topo_guess) - np.float64(TOAs_topo[ii])) # TOAs_topo_err is in the unit of MJD
-
+    TOAs_topo_err = measured_phase_err * pars.T / 86400 #in the unit of MJD
+     
     np.save('TOAs_topo_err.npy', TOAs_topo_err)
 #    print TOAs_topo_err
     print 'max of TOAs_topo_err in sec', np.amax(TOAs_topo_err) * 86400
