@@ -26,11 +26,11 @@ def main():
     time_mjd_wz, dBATdra_wz, dBATddec_wz, phase_data_wz, phase_data_err_wz = fit_timing.time_pattern(this_file_wz, bin_number_wz, phase_amp_bin_wz)
     time_mjd_1hr, dBATdra_1hr, dBATddec_1hr, phase_data_1hr, phase_data_err_1hr = fit_timing.time_pattern(this_file_1hr, bin_number_1hr, phase_amp_bin_1hr, pars.NPHASEBIN_1hr)
 
-    model_phase_bin_wz = fit_timing.timing_model_1(pars.fit_pars, time_mjd_wz, dBATdra_wz, dBATddec_wz, pars.NPHASEBIN_wz, RESCALE=None)
-    model_phase_bin_1hr = fit_timing.timing_model_1(pars.fit_pars, time_mjd_1hr, dBATdra_1hr, dBATddec_1hr, pars.NPHASEBIN_1hr, RESCALE=None)
+    model_phase_wz = fit_timing.timing_model_1(pars.fit_pars, time_mjd_wz, dBATdra_wz, dBATddec_wz, pars.NPHASEBIN_wz, RESCALE=None)
+    model_phase_1hr = fit_timing.timing_model_1(pars.fit_pars, time_mjd_1hr, dBATdra_1hr, dBATddec_1hr, pars.NPHASEBIN_1hr, RESCALE=None)
 
-    model_phase_wz = model_phase_bin_wz / pars.NPHASEBIN_wz
-    model_phase_1hr = model_phase_bin_1hr / pars.NPHASEBIN_1hr
+    model_phase_wz = model_phase_wz / pars.NPHASEBIN_wz
+    model_phase_1hr = model_phase_1hr / pars.NPHASEBIN_1hr
 
     b = np.loadtxt('./data_file/bin_number_2139_57178_5sec.txt')
     time_mjd_1hr_stack = np.zeros(40)
@@ -73,7 +73,7 @@ def main():
 
     '''data of 2011 wz'''
     time_mjd_11w = np.delete(time_mjd[0:190], rev_index)
-    print 'mean of mjd_11w', np.mean(time_mjd_11w)
+#    print 'mean of mjd_11w', np.mean(time_mjd_11w)
     dBATdra_11w = np.delete(dBATdra[0:190], rev_index)
     dBATddec_11w = np.delete(dBATddec[0:190], rev_index)
     phase_data_11w = np.delete(phase_data[0:190], rev_index)
@@ -82,7 +82,7 @@ def main():
 
     '''data of 2015 wz'''
     time_mjd_15wp = time_mjd[190:276]
-    print 'mean of mjd_15wp', np.mean(time_mjd_15wp)
+#    print 'mean of mjd_15wp', np.mean(time_mjd_15wp)
     dBATdra_15wp = dBATdra[190:276]
     dBATddec_15wp = dBATddec[190:276]
     phase_data_15wp = phase_data[190:276]
@@ -93,8 +93,12 @@ def main():
     time_mjd = np.delete(time_mjd, rev_index)
     dBATdra = np.delete(dBATdra, rev_index)
     dBATddec = np.delete(dBATddec, rev_index)
-    phase_data = np.delete(phase_data, rev_index)
-    phase_data_err = np.delete(phase_data_err, rev_index)
+    phase_data = np.delete(phase_data, rev_index) # in the unit of NPHASEBIN
+    measured_phase = phase_data / pars.NPHASEBIN
+    print 'measured_phase', measured_phase
+    phase_data_err = np.delete(phase_data_err, rev_index) # in the unit of NPHASEBIN
+    measured_phase_err = phase_data_err / pars.NPHASEBIN
+    print 'measured_phase_err', measured_phase_err
     random_res = np.zeros((len(time_mjd),100,5))
     model_phase = np.delete(model_phase, rev_index)
 
@@ -108,8 +112,8 @@ def main():
     print 'phase_data.shape',phase_data.shape
     print 'phase_data_err.shape',phase_data_err.shape
     print 'random_res.shape', random_res.shape
-    print 'model_phase.shape', model_phase.shape 
-    print 'model_phase', model_phase
+#    print 'model_phase.shape', model_phase.shape 
+#    print 'model_phase', model_phase
 
     '''generates TOAs and errors'''
 #    TOAs = time_mjd + pars.T * phase_data / 86400 
@@ -141,23 +145,44 @@ def main():
     '''Check timing solution with TEMPO'''
     #TOA = reference_time + [(time - reference_time) // T + phase] * T
     TOAs_topo = np.zeros(len(time_mjd))
+    TOAs_topo_err = np.zeros(len(time_mjd))
     TOAs_bary = np.zeros(len(time_mjd))
+    TOAs_bary_err = np.zeros(len(time_mjd))
     RA = bary_time.deg_to_HMS(pars.RA)
     DEC = bary_time.deg_to_DMS(pars.DEC)
 
     for ii in xrange(len(TOAs_bary)):
         print 'ii:',ii
-        TOAs_bary[ii] =  TIME0 + ((time_mjd[ii] - TIME0) // pars.T + model_phase[ii]) * pars.T
+        TOAs_bary[ii] =  TIME0 + ((time_mjd[ii] - TIME0) * 86400 // pars.T + measured_phase[ii]) * pars.T / 86400 # in the unit of MJD
         bary_in = repr(TOAs_bary[ii])
         topo_guess = bary_in
-        error = 1.
-        while np.abs(error) *3600 * 24 > 1e-4:
+        error = 1. / 86400 # in the unit of MJD
+        while np.abs(error) > (1e-4/86400):
+            p = subprocess.Popen(["bary", "GBT", RA, DEC], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            bary_guess = np.float64(p.communicate(input=topo_guess)[0].split()[1])
+            error = bary_guess - np.float64(bary_in) # in the unit of MJD
+            topo_guess = repr(np.float64(topo_guess) - error)
+        TOAs_topo[ii] = topo_guess
+
+    np.save('TOAs_topo.npy', TOAs_topo)   
+
+    for ii in xrange(len(TOAs_bary_err)):
+        print 'ii:',ii
+        TOAs_bary_err[ii] =  TIME0 + ((time_mjd[ii] - TIME0)*86400 // pars.T + measured_phase[ii] + measured_phase_err[ii]) * pars.T / 86400
+        bary_in = repr(TOAs_bary_err[ii])
+        topo_guess = bary_in
+        error = 1. / 86400
+        while np.abs(error) > (1e-4 / 86400):
             p = subprocess.Popen(["bary", "GBT", RA, DEC], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             bary_guess = np.float64(p.communicate(input=topo_guess)[0].split()[1])
             error = bary_guess - np.float64(bary_in)
             topo_guess = repr(np.float64(topo_guess) - error)
-        TOAs_topo[ii] = topo_guess
-   
+        TOAs_topo_err[ii] = repr(np.float64(topo_guess) - np.float64(TOAs_topo[ii])) # TOAs_topo_err is in the unit of MJD
+
+    np.save('TOAs_topo_err.npy', TOAs_topo_err)
+#    print TOAs_topo_err
+    print 'max of TOAs_topo_err in sec', np.amax(TOAs_topo_err) * 86400
+    print 'min of TOAs_topo_err in sec', np.amin(TOAs_topo_err) * 86400
 
     diff = np.zeros(len(time_mjd))
     for ii in xrange(len(diff)):
@@ -166,7 +191,7 @@ def main():
         bary_TOAs_topo = np.float64(p.communicate(input=topo_time)[0].split()[1])
         diff[ii] = (bary_TOAs_topo - TOAs_bary[ii])*86400*1000 #change unit from day to ms
 
-    print 'diff', diff
+#    print 'diff', diff
     print 'diff_min', np.amin(diff)
     print 'diff_max', np.amax(diff)
 if __name__ == '__main__':
