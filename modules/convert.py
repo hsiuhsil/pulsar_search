@@ -5,7 +5,7 @@ import bary_time
 '''fit_pars in the module of pars is in the sequence of acceleration, period correction, phase offset, correction of RA, correction of DEC. The units are [bins/hr/hr, bins/hr, bins, radians, radians]'''
 
 '''converts units of bins and hr to second'''
-bins = pars.T / pars.NPHASEBIN
+bins = 1. / pars.NPHASEBIN
 hr = 3600
 
 '''converts radian to degree and arcsec'''
@@ -32,8 +32,8 @@ print "New DEC: ", DEC_DMS, '(DMS)', '\+-', DEC_cor_DMS, '(DMS)'
 #print 'Delta DEC: ', DEC_cor, '\+-', DEC_cor_err, '(arcmin)'
 
 '''Converts accelerations and period to sec. Show epoch and phase offset in Barycentric MJD.'''
-accel = pars.fit_pars[0] * (bins / hr / hr) * 2 * (pars.T)**1
-accel_err = pars.fit_pars_err[0] * (bins / hr / hr) * (pars.T)**1
+accel = pars.fit_pars[0] * (bins / hr / hr) * 2 * (pars.T)**2
+accel_err = pars.fit_pars_err[0] * (bins / hr / hr) * (pars.T)**2
 
 period_cor = pars.fit_pars[1] * (bins / hr) * pars.T
 period_cor_err = pars.fit_pars_err[1] * (bins / hr) * pars.T
