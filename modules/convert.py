@@ -35,8 +35,8 @@ print "New DEC: ", DEC_DMS, '(DMS)', '\+-', DEC_cor_DMS, '(DMS)'
 accel = pars.fit_pars[0] * (bins / hr / hr) * 2 * (pars.T)**2
 accel_err = pars.fit_pars_err[0] * (bins / hr / hr) * (pars.T)**2
 
-period_cor = pars.fit_pars[1] * (bins / hr) * pars.T
-period_cor_err = pars.fit_pars_err[1] * (bins / hr) * pars.T
+period_cor = pars.fit_pars[1] * (bins / hr) * pars.T**2
+period_cor_err = pars.fit_pars_err[1] * (bins / hr) * pars.T**2
 
 period_new = pars.T + period_cor
 period_new_err =  period_cor_err
