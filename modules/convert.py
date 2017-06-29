@@ -32,18 +32,18 @@ print "New DEC: ", DEC_DMS, '(DMS)', '\+-', DEC_cor_DMS, '(DMS)'
 #print 'Delta DEC: ', DEC_cor, '\+-', DEC_cor_err, '(arcmin)'
 
 '''Converts accelerations and period to sec. Show epoch and phase offset in Barycentric MJD.'''
-accel = pars.fit_pars[0] * bins / hr / hr
-accel_err = pars.fit_pars_err[0] * bins / hr / hr
+accel = pars.fit_pars[0] * (bins / hr / hr) * 2 * (pars.T)**1
+accel_err = pars.fit_pars_err[0] * (bins / hr / hr) * (pars.T)**1
 
-period_cor = pars.fit_pars[1] * bins / hr
-period_cor_err = pars.fit_pars_err[1] * bins / hr
+period_cor = pars.fit_pars[1] * (bins / hr) * pars.T
+period_cor_err = pars.fit_pars_err[1] * (bins / hr) * pars.T
 
 period_new = pars.T + period_cor
 period_new_err =  period_cor_err
 
 epoch = pars.TIME0
 
-phase_offset = pars.fit_pars[2] 
+phase_offset = pars.fit_pars[2]/ pars.NPHASEBIN 
 BAT_phase_offset = epoch + (pars.T * phase_offset)/86400
 
 print 'Period derivative: ', accel, '\+-', accel_err, '(sec 1/sec)'
