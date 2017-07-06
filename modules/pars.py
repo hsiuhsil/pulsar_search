@@ -12,6 +12,9 @@ C = 299792458.0    # m/s
 #DM = 13.9
 #T = 0.35473179890 
 
+'''GBT parameters'''
+Tsys = 25 # K
+G = 2 # telescope gain, in the unit of K/Jy
 
 '''Parameters of pulsar J2139+00'''
 RA = 324.8428583333333  # deg
@@ -87,6 +90,7 @@ random_res_wz = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar
 
 
 this_file_1hr = h5py.File('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_all/data_file/J2139+00_57178h5', "r")
+this_file_1hr_folding = h5py.File('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_1hr/J2139+00_1hr_foldingh5', "r")
 '''bin_number[0,1,2] = [initial, final, maximal phase bin number]'''
 bin_number_1hr = np.loadtxt('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_all/data_file/bin_number_2139_57178_40epochs.txt')
 bin_number_1hr_5sec = np.loadtxt('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_all/data_file/bin_number_2139_57178_5sec.txt')

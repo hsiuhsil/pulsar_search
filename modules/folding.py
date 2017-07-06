@@ -131,8 +131,8 @@ def folding(filename):
         if same_modulo_num[mm] != 0:
             data_folding[mm,...] = data_folding[mm,...]/same_modulo_num[mm]
 
-    this_file.create_dataset('DATA_FOLDING', data_folding.shape, maxshape = data_folding.shape, dtype=data_folding.dtype, chunks=True)
-    this_file['DATA_FOLDING'][...]=data_folding[...]
+    this_file.create_dataset('DATA_FOLDING'+'_'+str(initial)+'_'+str(final), data_folding.shape, maxshape = data_folding.shape, dtype=data_folding.dtype, chunks=True)
+    this_file['DATA_FOLDING'+'_'+str(initial)+'_'+str(final)][...]=data_folding[...]
 
     '''Data folding for topocentric time'''
 
@@ -167,8 +167,8 @@ def folding(filename):
         if same_modulo_num_topo[mm] != 0:
             data_folding_topo[mm,...] = data_folding_topo[mm,...]/same_modulo_num_topo[mm]
 
-    this_file.create_dataset('DATA_FOLDING_TOPO', data_folding_topo.shape, maxshape = data_folding_topo.shape, dtype=data_folding_topo.dtype, chunks=True)
-    this_file['DATA_FOLDING_TOPO'][...]=data_folding_topo[...]
+    this_file.create_dataset('DATA_FOLDING_TOPO'+'_'+str(initial)+'_'+str(final), data_folding_topo.shape, maxshape = data_folding_topo.shape, dtype=data_folding_topo.dtype, chunks=True)
+    this_file['DATA_FOLDING_TOPO'+'_'+str(initial)+'_'+str(final)][...]=data_folding_topo[...]
 
 
 
