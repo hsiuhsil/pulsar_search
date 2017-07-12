@@ -45,7 +45,9 @@ period_new_err =  period_cor_err
 epoch = pars.TIME0
 
 phase_offset = pars.fit_pars[2]/ pars.NPHASEBIN 
+phase_offset_err = pars.fit_pars_err[2]/ pars.NPHASEBIN
 BAT_phase_offset = epoch + (pars.T * phase_offset)/86400
+BAT_phase_offset_err = (pars.T * phase_offset_err)/86400
 
 '''Calculate strength of B field, the characteristic age, and Edot.'''
 B_s = 10**12 * np.sqrt(pdot/10**-15) * period_new # unit: G
@@ -57,6 +59,7 @@ print 'Period correction: ', period_cor, '\+-', period_cor_err, '(sec)'
 print 'Period correction step: ', period_cor_step, '(sec)'
 print 'New Period: ', period_new, '\+-', period_new_err, '(sec)'
 print 'Epoch: ', epoch, '(MJD)'
+print 'Reference arrival time', ('%.15f' % BAT_phase_offset), '\+-', BAT_phase_offset_err, '(MJD)'
 print 'Phase offset: ', BAT_phase_offset, '(MJD)'
 print 'log(B field strength)', np.log10(B_s), '(log G)'
 print 'log(t_c)', np.log10(t_c), '(log yr)'
