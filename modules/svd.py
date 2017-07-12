@@ -646,7 +646,7 @@ def plot_svd(this_file, bin_number, phase_amp_bin, phase_npy, plot_name, NPHASEB
 #    color = ['r', 'g', 'b']
     for ii in xrange(len(color)):
         plt.plot(x_range, np.roll(V[ii] + ii *n_step, -len(V[0])/2), color[ii], linewidth=1.0)
-    plt.xlim((-0.5, 0.5))
+    plt.xlim((-0.2, 0.2))
     plt.xlabel('Phase', fontsize=fontsize)
     plt.ylabel('V values', fontsize=fontsize)
     plt.tick_params(axis='both', which='major', labelsize=fontsize)

@@ -31,12 +31,13 @@ print "New DEC: ", DEC_DMS, '(DMS)', '\+-', DEC_cor_DMS, '(DMS)'
 #print 'Delta RA: ', RA_cor, '\+-', RA_cor_err, '(arcmin)'
 #print 'Delta DEC: ', DEC_cor, '\+-', DEC_cor_err, '(arcmin)'
 
-'''Converts accelerations and period to sec. Show epoch and phase offset in Barycentric MJD.'''
-accel = pars.fit_pars[0] * (bins / hr / hr) * 2 * (pars.T)**2
-accel_err = pars.fit_pars_err[0] * (bins / hr / hr) * (pars.T)**2
+'''Converts pdot to (sec 1/sec) and period to sec. Show epoch and phase offset in Barycentric MJD.'''
+pdot = pars.fit_pars[0] * (bins / hr / hr) * 2 * (pars.T)**2
+pdot_err = pars.fit_pars_err[0] * (bins / hr / hr) * (pars.T)**2
 
 period_cor = pars.fit_pars[1] * (bins / hr) * pars.T**2
 period_cor_err = pars.fit_pars_err[1] * (bins / hr) * pars.T**2
+period_cor_step = 6e-3 * (bins / hr) * pars.T**2
 
 period_new = pars.T + period_cor
 period_new_err =  period_cor_err
@@ -46,11 +47,20 @@ epoch = pars.TIME0
 phase_offset = pars.fit_pars[2]/ pars.NPHASEBIN 
 BAT_phase_offset = epoch + (pars.T * phase_offset)/86400
 
-print 'Period derivative: ', accel, '\+-', accel_err, '(sec 1/sec)'
+'''Calculate strength of B field, the characteristic age, and Edot.'''
+B_s = 10**12 * np.sqrt(pdot/10**-15) * period_new # unit: G
+t_c = 15.8 * 10**6 * period_new * (pdot/10**-15)** -1 # unit: yr
+Edot = 3.95 * 10**31 * (pdot/10**-15) * period_new**-3 # unit erg/s
+
+print 'Period derivative: ', pdot, '\+-', pdot_err, '(sec 1/sec)'
 print 'Period correction: ', period_cor, '\+-', period_cor_err, '(sec)' 
+print 'Period correction step: ', period_cor_step, '(sec)'
 print 'New Period: ', period_new, '\+-', period_new_err, '(sec)'
 print 'Epoch: ', epoch, '(MJD)'
 print 'Phase offset: ', BAT_phase_offset, '(MJD)'
+print 'log(B field strength)', np.log10(B_s), '(log G)'
+print 'log(t_c)', np.log10(t_c), '(log yr)'
+print 'log(Edot)', np.log10(Edot), '(log erg/s)'
 
 '''Calculate proper motion'''
 '''array in the sequence of [delta_ra, delta_dec, delta_ra_err, delta_dec_err]'''
