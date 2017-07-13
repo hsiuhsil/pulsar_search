@@ -360,10 +360,14 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
         # fitting phase by likeli`hood
 #        phase_diff_samples = np.arange(-50, 50, 0.3) * perr_leastsq[0]
 #        phase_diff_samples = np.arange(-50, 50, 1)
+        if True:
+            phase_bin_center = 531
+        else:
+            phase_bin_center = pars_init[0]        
         phase_diff_samples = np.arange(-20, 20, 0.02)
         chi2_samples = []
         for p in phase_diff_samples:
-            this_phase = p + pars_init[0]
+            this_phase = p + phase_bin_center
             if True:
                 P = shift_trunc_modes(this_phase, model, NPHASEBIN)
 #                print 'P',P
@@ -399,34 +403,29 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
         # Integrate the full liklihood, taking first and second moments to
         # get mean phase and variance.
         likelihood = np.exp(-chi2_samples / 2) 
-        
         print 'likelihood',likelihood
-#        norm1 = np.sum(likelihood)
-        norm = simpson(likelihood, 0, len(likelihood)-1)
-#        norm = integrate.simps(likelihood)
-#        print 'norm1', norm1
-        print 'norm',norm
-#        mean = np.sum(phase_diff_samples * likelihood) / norm
-        mean = simpson(phase_diff_samples * likelihood, 0, len(likelihood)-1) / norm 
-#        mean = integrate.simps(phase_diff_samples * likelihood) / norm
-        print 'mean', mean
-#        var = np.sum(phase_diff_samples**2 * likelihood) / norm - mean**2
-        var = simpson(np.array(phase_diff_samples)**2 * likelihood, 0, len(likelihood)-1) / norm - mean**2
-#        var = integrate.simps(phase_diff_samples**2 * likelihood) / norm - mean**2
-        std = np.sqrt(var)
-        print 'std',std
-        print "Integrated Liklihood:", pars_init[0] + mean, std
+        
+        if False:
+            np.save('lik_57178_5sec_stack0.npy', likelihood)
+
+        if False:
+            sum_lik_file = 'sum_lik_57178_5sec_16.npy'
+            if os.path.exists(sum_lik_file):
+                sequence = np.load(sum_lik_file)
+                np.save(sum_lik_file, np.vstack((sequence, likelihood)))
+            else:
+                np.save(sum_lik_file, likelihood)
+
+        # plot likelihood
+        plot_name += str(index) + '_'
+        norm, mean, std = lik_norm_mean_std(likelihood, phase_diff_samples)
+        print "Integrated Liklihood:", phase_bin_center + mean, std
         phases_lik = []
         phase_errors_lik = []
         phases_lik.append(pars_init[0] + mean)
         phase_errors_lik.append(std)
-
-#        print np.where((likelihood / norm)>np.amax(likelihood / norm) * 10**-4)
-#        print np.where((likelihood / norm)>np.amax(likelihood / norm) * 10**-4)[0][0]
-#        print np.where((likelihood / norm)>np.amax(likelihood / norm) * 10**-4)[0][-1]
         print 'max:', np.amax(likelihood / norm / (0.02/NPHASEBIN))
 
-        plot_name += str(index) + '_'
         plt.close('all')
         phase_diff_range = np.linspace(np.amin(phase_diff_samples)/NPHASEBIN, np.amax(phase_diff_samples)/NPHASEBIN, num=len(phase_diff_samples), endpoint=True)
         plt.semilogy(phase_diff_range, likelihood / norm  / (0.02/NPHASEBIN))
@@ -436,7 +435,6 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
         plt.ylim((np.amax(likelihood / norm / (0.02/NPHASEBIN)) * 10**-4, np.amax(likelihood / norm / (0.02/NPHASEBIN))*4.5))
         plt.tick_params(axis='both', which='major', labelsize=fontsize)
         plt.savefig(plot_name+'phase_chi2.png', bbox_inches='tight')
-
 
 
         '''save the fitting amp and bin as [bin, amps, bin_err, amp_errs]'''
@@ -453,6 +451,16 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
                 np.save(npy_lik_file, np.vstack((sequence, phase_amp_bin_lik)))
             else:
                 np.save(npy_lik_file, phase_amp_bin_lik)
+
+def lik_norm_mean_std(likelihood, phase_diff_samples):
+    norm = simpson(likelihood, 0, len(likelihood)-1)
+    print 'norm',norm
+    mean = simpson(phase_diff_samples * likelihood, 0, len(likelihood)-1) / norm 
+    print 'mean', mean
+    var = simpson(np.array(phase_diff_samples)**2 * likelihood, 0, len(likelihood)-1) / norm - mean**2
+    std = np.sqrt(var)
+    print 'std', std
+    return norm, mean, std
 
 def simpson(func, a, b):
     '''a is init, b is final, and n is number of steps.'''
