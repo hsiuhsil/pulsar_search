@@ -11,7 +11,7 @@ import matplotlib.colors as colors
 
 def main():
     try:
-        generate_funcitons()
+        justify_svd()
 #         two_pulses(32, 25)
     except (IOError, ValueError):
         print IOError
@@ -81,29 +81,38 @@ def generate_funcitons():
    
 #    svd.fft_plot(pointed_0_319_npy)
 
+def justify_svd():
     '''Justify SVD is a better way'''
-    profiles = pars.phase_npy_1hr_5sec # in the shape of (640, 800), (# of profiles, bin numbers)
-    '''Firstly, average 16 5sec profiles and fit'''
-    profile_stack = 16
-    nprof = 16
-    nprof -= nprof % profile_stack
-    profile = profiles[:nprof].reshape(nprof // profile_stack, profile_stack, pars.NPHASEBIN_1hr)
-    profile = np.mean(profile, 1)
-#    svd.phase_fit(0, profile, V_1hr, 'fitting_phase_fft_57178_stack0', pars.NPHASEBIN_1hr)
-    '''Secondly, individually fit the 16 profiles, and add the chi-squared curves.'''
-#    for ii in xrange(16):
-#        svd.phase_fit(ii, profiles, V_1hr, 'fitting_phase_fft_57178_5sec_', pars.NPHASEBIN_1hr)
-    '''lik1 is the first way, and lik2 is the second way'''
-    lik1 = pars.lik_57178_5sec_stack0
-    lik2_origin = pars.sum_lik_57178_5sec_16 
-    lik2 = np.ones(lik2_origin.shape[1], dtype=np.float128)
-    for ii in xrange(len(lik2_origin)):
-        lik2 *= lik2_origin[ii]
+    all_profiles = pars.phase_npy_1hr_5sec # in the shape of (640, 800), (# of profiles, bin numbers)
+    stack_profiles = pars.phase_npy_1hr_5sec_stack_40 # in the shape of (40, 800), (# of profiles, bin numbers)
+#    for ii in xrange(2):
+    for ii in [15, 23 ,31, 39]:
+        init = ii*16 
+        final = (ii+1)*16
+        '''Firstly, average 16 5sec profiles and fit'''
+#        profile_stack = 16
+#        nprof = 640
+#        nprof -= nprof % profile_stack
+#        profile = profiles[int(init) : int(final)].reshape(nprof // profile_stack, profile_stack, pars.NPHASEBIN_1hr)
+#        profile = np.mean(profile, 1)
+        svd.phase_fit(ii, stack_profiles, V_1hr, 'fitting_phase_fft_57178_stack_', pars.NPHASEBIN_1hr)
+        '''Secondly, individually fit the 16 profiles, and add the chi-squared curves.'''
+        for jj in xrange(init, final):
+            svd.phase_fit(jj, all_profiles, V_1hr, 'fitting_phase_fft_57178_5sec_', pars.NPHASEBIN_1hr)
+        '''lik1 is the first way, and lik2 is the second way'''
+        lik_npy_file = 'lik_57178_5sec_stack_' + str(ii) + '.npy'
+        sum_lik_file = 'sum_lik_57178_5sec_seg_' + str(ii) + '.npy'
+        lik1 = np.load(lik_npy_file) #pars.lik_57178_5sec_stack0
+        lik2_origin = np.load(sum_lik_file) #pars.sum_lik_57178_5sec_16 
+        lik2 = np.ones(lik2_origin.shape[1], dtype=np.float128)
+        for kk in xrange(len(lik2_origin)):
+            lik2 *= lik2_origin[kk]
 
-    print 'lik2', lik2
-    plot_two_likelihoods(lik1, lik2, pars.NPHASEBIN_1hr)
+        print 'lik2', lik2
+        plot_name = 'two_lik_phase_chi2_' + str(ii) + '.png'
+        plot_two_likelihoods(lik1, lik2, pars.NPHASEBIN_1hr, plot_name)
 
-def plot_two_likelihoods(lik1, lik2, NPHASEBIN):
+def plot_two_likelihoods(lik1, lik2, NPHASEBIN, plot_name):
 
     phase_diff_samples = np.arange(-20, 20, 0.02)
     norm1, mean1, std1 = svd.lik_norm_mean_std(lik1, phase_diff_samples)
@@ -117,11 +126,14 @@ def plot_two_likelihoods(lik1, lik2, NPHASEBIN):
     plt.semilogy(phase_diff_range, lik2 / norm2  / (0.02/NPHASEBIN), c=colors.cnames['orange'], linestyle='--', linewidth=linewidth, label='Likelihood 2')
     plt.xlabel('Phase', fontsize=fontsize)
     plt.ylabel('log(Likelihood)', fontsize=fontsize) 
-    plt.xlim((phase_diff_range[np.where((lik1 / norm1  / (0.02/NPHASEBIN))>np.amax(lik1 / norm1  / (0.02/NPHASEBIN)) * 10**-4)[0][0]],phase_diff_range[np.where((lik2 / norm2  / (0.02/NPHASEBIN))>np.amax(lik2 / norm2  / (0.02/NPHASEBIN)) * 10**-4)[0][-1]]))
+    phase_min = min(phase_diff_range[np.where((lik1 / norm1  / (0.02/NPHASEBIN))>np.amax(lik1 / norm1  / (0.02/NPHASEBIN)) * 10**-4)[0][0]], phase_diff_range[np.where((lik2 / norm2  / (0.02/NPHASEBIN))>np.amax(lik2 / norm2 / (0.02/NPHASEBIN)) * 10**-4)[0][0]])
+    phase_max = max(phase_diff_range[np.where((lik1 / norm1  / (0.02/NPHASEBIN))>np.amax(lik1 / norm1  / (0.02/NPHASEBIN)) * 10**-4)[0][-1]], phase_diff_range[np.where((lik2 / norm2  / (0.02/NPHASEBIN))>np.amax(lik2 / norm2 / (0.02/NPHASEBIN)) * 10**-4)[0][-1]])
+#    plt.xlim((phase_diff_range[np.where((lik1 / norm1  / (0.02/NPHASEBIN))>np.amax(lik1 / norm1  / (0.02/NPHASEBIN)) * 10**-4)[0][0]],phase_diff_range[np.where((lik2 / norm2  / (0.02/NPHASEBIN))>np.amax(lik2 / norm2  / (0.02/NPHASEBIN)) * 10**-4)[0][-1]]))
+    plt.xlim((phase_min, phase_max))
     plt.ylim((np.amax(lik1 / norm1 / (0.02/NPHASEBIN)) * 10**-4, np.amax(lik1 / norm1 / (0.02/NPHASEBIN))*4.5))
     plt.legend(loc='upper left', fontsize=fontsize)
     plt.tick_params(axis='both', which='major', labelsize=fontsize)
-    plt.savefig('two_lik_phase_chi2.png', bbox_inches='tight')
+    plt.savefig(plot_name, bbox_inches='tight')
 
 
    

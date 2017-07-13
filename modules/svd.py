@@ -166,7 +166,12 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
     elif phase_matrix_origin.shape[1] == pars.NPHASEBIN_1hr:   
         model_phase_bin = model_phase_bin_1hr
 
-    pars_init = [ model_phase_bin[index], amp_V0, amp_V0/10, amp_V0/50000, amp_V0/500000, amp_V0/500000, amp_V0/500000]
+    if phase_matrix_origin.shape[0] == 40:
+        guess_index = index
+    elif phase_matrix_origin.shape[0] == 640:
+        guess_index = index / 16
+
+    pars_init = [ model_phase_bin[guess_index], amp_V0, amp_V0/10, amp_V0/50000, amp_V0/500000, amp_V0/500000, amp_V0/500000]
 
 #    pars_init = [ np.argmax(phase_matrix_origin[index]) % NPHASEBIN, amp_V0, amp_V0/10, amp_V0/5000, amp_V0/500000]
     print 'pars_init', pars_init
@@ -405,11 +410,12 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
         likelihood = np.exp(-chi2_samples / 2) 
         print 'likelihood',likelihood
         
-        if False:
-            np.save('lik_57178_5sec_stack0.npy', likelihood)
-
-        if False:
-            sum_lik_file = 'sum_lik_57178_5sec_16.npy'
+        if len(phase_matrix_origin) == pars.len_5sec_stack: 
+            lik_npy_file = 'lik_57178_5sec_stack_' + str(index) + '.npy'
+            np.save(lik_npy_file, likelihood)
+        elif len(phase_matrix_origin) == pars.len_5sec_all:
+            sum_ind = (index / 16)
+            sum_lik_file = 'sum_lik_57178_5sec_seg_' + str(sum_ind) + '.npy'
             if os.path.exists(sum_lik_file):
                 sequence = np.load(sum_lik_file)
                 np.save(sum_lik_file, np.vstack((sequence, likelihood)))
@@ -417,7 +423,7 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
                 np.save(sum_lik_file, likelihood)
 
         # plot likelihood
-        plot_name += str(index) + '_'
+#        plot_name += str(index) + '_'
         norm, mean, std = lik_norm_mean_std(likelihood, phase_diff_samples)
         print "Integrated Liklihood:", phase_bin_center + mean, std
         phases_lik = []

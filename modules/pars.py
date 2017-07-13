@@ -28,9 +28,12 @@ NPHASEBIN_wz = 200
 NPHASEBIN = NPHASEBIN_wz
 NPHASEBIN_1hr = 800
 NCENTRALBINS = 100
-NHARMONIC =90
+NHARMONIC = 90
 NCENTRALBINSMAIN = 160
 SCALE = np.float(NPHASEBIN_wz) / np.float(NPHASEBIN_1hr)
+
+len_5sec_stack = 40
+len_5sec_all = 640
 
 PHASE_DIFF_wz_1hr = -0.37306754
 PHASE_DIFF_wz_1hr_err = 0.02899884
@@ -99,6 +102,7 @@ phase_amp_bin_1hr = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pu
 phase_amp_bin_1hr_5sec = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_all/data_file/phase_amp_bin_57178_fft_5sec.npy')
 phase_npy_1hr = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_all/data_file/phase_57178_40epochs.npy')
 phase_npy_1hr_5sec = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_all/data_file/phase_57178_5sec.npy')
+phase_npy_1hr_5sec_stack_40 = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_all/data_file/phase_57178_5sec_stack_40.npy')
 random_res_1hr = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_all/data_file/random_fitting_phase_fft_57178_.npy')
 lik_57178_5sec_stack0 =  np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_all/data_file/lik_57178_5sec_stack0.npy')
 sum_lik_57178_5sec_16 = np.load('/scratch2/p/pen/hsiuhsil/gbt_data/pulsar_folding/pulsar_search/J2139+00_all/data_file/sum_lik_57178_5sec_16.npy')
