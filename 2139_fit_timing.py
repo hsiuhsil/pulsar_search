@@ -95,14 +95,12 @@ def main():
     dBATddec = np.delete(dBATddec, rev_index)
     phase_data = np.delete(phase_data, rev_index) # in the unit of NPHASEBIN
     measured_phase = phase_data / pars.NPHASEBIN
-    print 'measured_phase', measured_phase
+#    print 'measured_phase', measured_phase
     phase_data_err = np.delete(phase_data_err, rev_index) # in the unit of NPHASEBIN
     measured_phase_err = phase_data_err / pars.NPHASEBIN
-    print 'measured_phase_err', measured_phase_err
+#    print 'measured_phase_err', measured_phase_err
     random_res = np.zeros((len(time_mjd),100,5))
     model_phase = np.delete(model_phase, rev_index)
-
-
 
 
 #    np.save('mjd.npy', time_mjd)
@@ -132,11 +130,18 @@ def main():
         pars_15wp = [1e-04, 1e-04]
         fit_timing.fitting(pars_15wp, time_mjd_15wp, dBATdra_15wp, dBATddec_15wp, phase_data_15wp, phase_data_err_15wp, random_res_15wp)
 
-    if False:
+    if True:
         '''For all data'''
+        mid_mjd = np.average((time_mjd[0], time_mjd[-1]))
+        print 'mid_mjd: ', mid_mjd
         fit_timing.fitting(pars.fit_pars, time_mjd, dBATdra, dBATddec, phase_data, phase_data_err, random_res)
         print 'pars.fit_pars', pars.fit_pars
+        if False: # check phase rotations
+            for ii in xrange(-10,10):
+                print 'ii: ', ii
+                fit_timing.fitting([pars.fit_pars[0], pars.fit_pars[1]+ii*6e-3, pars.fit_pars[2], pars.fit_pars[3], pars.fit_pars[4]], time_mjd, dBATdra, dBATddec, phase_data, phase_data_err, random_res)
 
+def not_main():
     '''Check timing model'''
 #    model = fit_timing.timing_model_1(pars.fit_pars, time_mjd, dBATdra, dBATddec)
 #    np.save('pointed_phase_model.npy',model[231:]*4)
