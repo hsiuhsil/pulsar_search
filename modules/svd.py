@@ -444,7 +444,7 @@ def phase_fit(index, phase_matrix_origin, V, plot_name, NPHASEBIN=None, RESCALE=
 
 
         '''save the fitting amp and bin as [bin, amps, bin_err, amp_errs]'''
-        npy_lik_file = 'phase_amp_bin_57178_40epochs_6modes_90hars_lik.npy'
+        npy_lik_file = 'phase_amp_bin_57178_40epochs_two_lik_ave_ind.npy'
 
         if (phase_matrix_origin.shape[1] == pars.phase_npy_1hr.shape[1]):
             phase_amp_bin_lik = np.concatenate(([phases_lik[0]*SCALE], pfit_leastsq[1:], [phase_errors_lik[0]*SCALE], perr_leastsq[1:]))

@@ -43,7 +43,7 @@ PHASE_DIFF_wz_1hr_err = 0.02899884
 
 
 mid_mjd = 56436.5067837 # the average of the first and last MJD.
-TIME0 = 55707   # MJD pivot
+TIME0 = mid_mjd   # MJD pivot 55707
 
 
 '''fit_pars is in the sequence of period derivative, period correction, phase offset, correction of RA, correction of DEC. The units are [bins/hr/hr, bins/hr, bins, radians, radians]'''
@@ -62,6 +62,12 @@ elif TIME0 == mid_mjd:
          2.12230505e-04,  -4.05747569e-04]
     fit_pars_err = [  3.40364206e-09,   1.55647377e-06,   6.93423948e-01,
          1.13113145e-06,   1.28516943e-06]
+elif TIME0 == 57139: #using 2015WZ and pointed data only.
+    fit_time_start = -1000 
+    fit_time_end = 1000
+    fit_pars = [  1.01407539e-07,  --3.344703700423273,   4.13937006e+01,
+         2.12230505e-04,  -4.05747569e-04]
+    fit_pars_err = []
 
 
 '''fixed fit_pars[0:3] and get delta_ra and delta_dec for 2011 and 2015'''
