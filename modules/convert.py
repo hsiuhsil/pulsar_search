@@ -43,18 +43,18 @@ def main():
     period_new = pars.T + period_cor
     period_new_err =  period_cor_err
 
-    epoch = pars.TIME0
+    epoch = pars.TIME0 # in the unit of MJD
 
-    phase_offset = pars.fit_pars[2]/ pars.NPHASEBIN 
-    phase_offset_err = pars.fit_pars_err[2]/ pars.NPHASEBIN
-    BAT_phase_offset = epoch + (pars.T * phase_offset)/86400
-    BAT_phase_offset_err = (pars.T * phase_offset_err)/86400
+    phase_offset = pars.fit_pars[2] / pars.NPHASEBIN 
+    phase_offset_err = pars.fit_pars_err[2] / pars.NPHASEBIN
+    BAT_phase_offset = (epoch * 86400 // pars.T + phase_offset) * pars.T / 86400
+    BAT_phase_offset_err = (pars.T * phase_offset_err) / 86400
 
 
     print 'Period derivative: ', pdot, '\+-', pdot_err, '(sec 1/sec)'
     print 'Period correction: ', period_cor, '\+-', period_cor_err, '(sec)' 
     print 'Period correction step: ', period_cor_step, '(sec)'
-    print 'New Period: ', period_new, '\+-', period_new_err, '(sec)'
+    print 'New Period: ', ('%.15f' % period_new), '\+-', period_new_err, '(sec)'
     print 'Epoch: ', epoch, '(MJD)'
     print 'Reference arrival time', ('%.15f' % BAT_phase_offset), '\+-', BAT_phase_offset_err, '(MJD)'
     print 'Phase offset: ', BAT_phase_offset, '(MJD)'
