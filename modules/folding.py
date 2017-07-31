@@ -10,12 +10,8 @@ import math
 import pars
 
 '''Define variables'''
-
 initial, final = np.int(np.float(sys.argv[1])), np.int(np.float(sys.argv[2]))
 assert initial <= final
-
-#initial = 0
-#final = 29
 
 do_preprocess = True
 sigma_threshold = 5
@@ -23,38 +19,6 @@ remove_period = 64
 phase_bins = pars.NPHASEBIN_wz
 pulsar_period = pars.T
 
-
-#'''J2139 wz from folding'''
-#delta_t = -5.8068471774736951e-06 -2.5301321417973068e-07 -4.2596495836139012e-07 + 2.9914132482230684e-07 
-#delta_t = 0
-#pulsar_period = 0.312470 + delta_t
-#p_dot = 4.8408891115682e-11
-#p0_ind = np.int(0)
-
-#'''J2139 57178 from folding'''
-#delta_t = 6.2703317271681677e-06 - 5.7005305828936162e-07
-#pulsar_period = 0.312470 -5.8068471774736951e-06 -2.5301321417973068e-07 -4.2596495836139012e-07 + 2.9914132482230684e-07 + delta_t
-
-#'''J2139 57178 from tempo2'''
-#delta_t = 0.0
-#pulsar_period = 0.3124680322895416 + delta_t
-
-#'''J0051'''
-#delta_t = -3.2083428581595565e-07 +1.4583350248377532e-08 -7.0619503654410745e-09 +5.1170668232711475e-10 
-#delta_t = 0
-#pulsar_period = 0.35473179890 + delta_t
-
-# J1046: 
-#delta_t = 0.0
-#pulsar_period = 0.326271446035 + delta_t
-
-# J1038: 
-#delta_t = 0.0
-#pulsar_period = 0.02885155795131 + delta_t
-
-# J0030: 
-#delta_t = 0.0
-#pulsar_period = 0.0048654532073692 + delta_t
 
 
 def main():

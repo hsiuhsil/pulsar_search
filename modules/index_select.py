@@ -5,10 +5,9 @@ import os.path
 import h5py
 import numpy as np
 from numpy import array
-
 import pars
 
-mins = 5.0
+mins = pars.block_mins
 
 def main():
     args = sys.argv[1:]
@@ -54,8 +53,8 @@ def index_select(filename):
         if previous_final[ii] != previous_final[ii+1]:
             list.append([previous_initial[ii+1],previous_final[ii+1]])
     scan = np.array(list) 
-    filename = str(index_) + str(pars.psr_selected) + '.txt'
-    np.savetxt(filename, scan, fmt='%4d')    
+    filename = 'index_' + sys.argv[1] + '.txt'
+    np.savetxt(filename, scan, fmt='%4d')
 
 if __name__ == '__main__':
     main()

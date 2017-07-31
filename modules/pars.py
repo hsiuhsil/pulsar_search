@@ -17,10 +17,34 @@ Tsys = 25 # K
 G = 2 # telescope gain, in the unit of K/Jy
 
 '''Parameters of pulsar J2139+00'''
-RA = 324.8428583333333  # deg
-DEC = 0.6959230555555556 # deg
-DM = 31.7262
-T = 0.312470
+#RA = 324.8428583333333  # deg
+#DEC = 0.6959230555555556 # deg
+#DM = 31.7262
+#T = 0.312470
+
+'''Parameters of known pulsars, [RA(deg), DEC(deg), DM(pc cm*-3), folding period(s)]'''
+J2139_0040 = [324.8428583333333, 0.6959230555555556, 31.7262, 0.312470]
+J0030_0451 = [bary_time.convHMS(str("00:30:27.42823")), 
+                   bary_time.convDMS(str("+04:51:39.7112")), 
+                   4.33252, 0.0048654532109097]
+J0051_0423 = [bary_time.convHMS(str("00:51:30.1")),
+                   bary_time.convDMS(str("+04:22:49")),
+                   13.9, 0.35473179890]
+J1038_0032 = [bary_time.convHMS(str("10:38:26.933")),
+                   bary_time.convDMS(str("+00:32:43.6")),
+                   26.59, 0.02885155795131]
+J1046_0304 = [bary_time.convHMS(str("10:46:43.23")),
+                   bary_time.convDMS(str("+03:04:06.9")),
+                   25.3, 0.326271446035]
+'''pulsar selected''' 
+psr_selected = J0051_0423
+RA = psr_selected[0]
+DEC = psr_selected[1]
+DM = psr_selected[2]
+T = psr_selected[3]
+
+'''Parameter of block mins in index select'''
+block_mins = 5. #unit: mins
 
 '''Parameters of fitting'''
 REFERNCE_FREQ = 900.
