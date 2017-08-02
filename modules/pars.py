@@ -22,26 +22,28 @@ G = 2 # telescope gain, in the unit of K/Jy
 #DM = 31.7262
 #T = 0.312470
 
-'''Parameters of known pulsars, [RA(deg), DEC(deg), DM(pc cm*-3), folding period(s)]'''
+'''Parameters of known pulsars from ATNF catalog, [RA(deg), DEC(deg), DM(pc cm*-3), folding period(s), folding period derivative, and PEPOCH.]'''
 J2139_0040 = [324.8428583333333, 0.6959230555555556, 31.7262, 0.312470]
 J0030_0451 = [bary_time.convHMS(str("00:30:27.42823")), 
                    bary_time.convDMS(str("+04:51:39.7112")), 
-                   4.33252, 0.0048654532109097]
+                   4.33252, 0.0048654532109097, 1.0174E-20, 54997.00]
 J0051_0423 = [bary_time.convHMS(str("00:51:30.1")),
                    bary_time.convDMS(str("+04:22:49")),
                    13.9, 0.35473179890]
 J1038_0032 = [bary_time.convHMS(str("10:38:26.933")),
                    bary_time.convDMS(str("+00:32:43.6")),
-                   26.59, 0.02885155795131]
+                   26.59, 0.02885155795131, 0.000067E-15, 53000]
 J1046_0304 = [bary_time.convHMS(str("10:46:43.23")),
                    bary_time.convDMS(str("+03:04:06.9")),
-                   25.3, 0.326271446035]
+                   25.3, 0.326271446035, 0.1242E-15, 53065.00]
 '''pulsar selected''' 
-psr_selected = J0051_0423
+psr_selected = J1046_0304
 RA = psr_selected[0]
 DEC = psr_selected[1]
 DM = psr_selected[2]
-T = psr_selected[3]
+T = psr_selected[3] # folding period
+T1 = psr_selected[4] # period derivative
+PEPOCH = psr_selected[5]
 
 '''Parameter of block mins in index select'''
 block_mins = 5. #unit: mins
@@ -67,7 +69,7 @@ PHASE_DIFF_wz_1hr_err = 0.02899884
 
 
 mid_mjd = 56436.5067837 # the average of the first and last MJD.
-TIME0 = mid_mjd   # MJD pivot 55707
+TIME0 = PEPOCH   # MJD pivot 55707
 
 
 '''fit_pars is in the sequence of period derivative, period correction, phase offset, correction of RA, correction of DEC. The units are [bins/hr/hr, bins/hr, bins, radians, radians]'''
@@ -92,7 +94,9 @@ elif TIME0 == 57139: #using 2015WZ and pointed data only.
     fit_pars = [  1.01407539e-07,  --3.344703700423273,   4.13937006e+01,
          2.12230505e-04,  -4.05747569e-04]
     fit_pars_err = []
-
+else:
+    fit_pars = [0.]*5
+    print 'Warning: fit_pars not defined.' 
 
 '''fixed fit_pars[0:3] and get delta_ra and delta_dec for 2011 and 2015'''
 '''array in the sequence of [delta_ra, delta_dec, delta_ra_err, delta_dec_err]'''

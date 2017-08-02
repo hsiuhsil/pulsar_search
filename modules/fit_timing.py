@@ -346,7 +346,7 @@ def make_save_plot_panel(parameters, model, res, time, dBATdra, dBATddec, data, 
 #    plt.ticklabel_format(useOffset=False)
     plt.savefig(filename, bbox_inches='tight')
 
-def time_pattern(this_file, bin_number, phase_amp_bin, NPHASEBIN = None):
+def time_pattern(this_file, bin_number, phase_amp_bin = None, NPHASEBIN = None):
     time_mjd = np.zeros(len(bin_number))
     dBATdra = np.zeros(len(bin_number))
     dBATddec = np.zeros(len(bin_number))
@@ -357,16 +357,18 @@ def time_pattern(this_file, bin_number, phase_amp_bin, NPHASEBIN = None):
 
     '''As pointed data to be the template, need to add the difference between two templates. Note: The phase_data of 1hr has been rescaled to 200, rather than 800 in origin.'''
 
-    if (NPHASEBIN == None) or (NPHASEBIN == NPHASEBIN_wz):
-        phase_data = phase_amp_bin[:,0] 
-        phase_data_err = phase_amp_bin[:,phase_amp_bin.shape[1]/2]
-    elif NPHASEBIN == NPHASEBIN_1hr:
-        phase_data = phase_amp_bin[:,0] 
-        phase_data_err = phase_amp_bin[:,phase_amp_bin.shape[1]/2]
-    else:
-        print 'NPHASEBIN error'
-
-    return time_mjd, dBATdra, dBATddec, phase_data, phase_data_err
+    if phase_amp_bin == None:
+        return time_mjd, dBATdra, dBATddec
+    elif phase_amp_bin != None:
+        if (NPHASEBIN == None) or (NPHASEBIN == NPHASEBIN_wz):
+            phase_data = phase_amp_bin[:,0] 
+            phase_data_err = phase_amp_bin[:,phase_amp_bin.shape[1]/2]
+        elif NPHASEBIN == NPHASEBIN_1hr:
+            phase_data = phase_amp_bin[:,0] 
+            phase_data_err = phase_amp_bin[:,phase_amp_bin.shape[1]/2]
+        else:
+            print 'NPHASEBIN error'
+        return time_mjd, dBATdra, dBATddec, phase_data, phase_data_err
 
 def fitting(pars_init_1, time_mjd, dBATdra, dBATddec, phase_data, phase_data_err, random_res):
 

@@ -78,7 +78,7 @@ def ploting(filename):
         data3 = this_file['DATA_FOLDING_TOPO'][:, 0, :, 0]
 
     '''remove folding data'''
-    this_file.__delitem__('DATA_FOLDING'+'_'+str(initial)+'_'+str(final))
+#    this_file.__delitem__('DATA_FOLDING'+'_'+str(initial)+'_'+str(final))
     this_file.__delitem__('DATA_FOLDING_TOPO'+'_'+str(initial)+'_'+str(final))
 
     '''get mean over phase_bins'''

@@ -91,6 +91,12 @@ def psr_bs_tc_edot(period_new, pdot):
     print 'log(t_c)', np.log10(t_c), '(log yr)'
     print 'log(Edot)', np.log10(Edot), '(log erg/s)'
 
+def pdot_to_fit_pars0(pdot):
+    '''convert pdot(s s^-1) to fit_pars[0] for the timing model'''
+    fit_pars0 = pdot / ((bins / hr / hr) * 2 * (pars.T)**2)
+    return fit_pars0
+
+
 if __name__ == '__main__':
     main()
 
