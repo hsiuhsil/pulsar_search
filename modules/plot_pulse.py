@@ -19,8 +19,11 @@ pulsar_period = pars.T
 rebin = True
 rebin_factor = 128
 
-initial, final = np.int(np.float(sys.argv[1])), np.int(np.float(sys.argv[2]))
-assert initial <= final
+try:
+    initial, final = np.int(np.float(sys.argv[1])), np.int(np.float(sys.argv[2]))
+    assert initial <= final
+except(RuntimeError, TypeError, NameError, ValueError):
+    pass
 
 def main():
     args = sys.argv[3:]

@@ -29,7 +29,7 @@ J0030_0451 = [bary_time.convHMS(str("00:30:27.42823")),
                    4.33252, 0.0048654532109097, 1.0174E-20, 54997.00]
 J0051_0423 = [bary_time.convHMS(str("00:51:30.1")),
                    bary_time.convDMS(str("+04:22:49")),
-                   13.9, 0.35473179890]
+                   13.9, 0.35473179890, 7.0E-18, 49800.0]
 J1038_0032 = [bary_time.convHMS(str("10:38:26.933")),
                    bary_time.convDMS(str("+00:32:43.6")),
                    26.59, 0.02885155795131, 0.000067E-15, 53000]
@@ -37,7 +37,7 @@ J1046_0304 = [bary_time.convHMS(str("10:46:43.23")),
                    bary_time.convDMS(str("+03:04:06.9")),
                    25.3, 0.326271446035, 0.1242E-15, 53065.00]
 '''pulsar selected''' 
-psr_selected = J1046_0304
+psr_selected = J0051_0423
 RA = psr_selected[0]
 DEC = psr_selected[1]
 DM = psr_selected[2]
@@ -96,7 +96,7 @@ elif TIME0 == 57139: #using 2015WZ and pointed data only.
     fit_pars_err = []
 else:
     fit_pars = [0.]*5
-    print 'Warning: fit_pars not defined.' 
+#    print 'Warning: fit_pars not defined.' 
 
 '''fixed fit_pars[0:3] and get delta_ra and delta_dec for 2011 and 2015'''
 '''array in the sequence of [delta_ra, delta_dec, delta_ra_err, delta_dec_err]'''

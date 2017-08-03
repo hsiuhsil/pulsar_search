@@ -505,7 +505,8 @@ def pick_harmonics(profile_fft):
     return harmonics
 
 def apply_phase_shift(profile_fft, phase_shift, NPHASEBIN):
-    "Parameter *phase_shift* takes values [0 to 1)."
+    "Kiyo's version: Parameter *phase_shift* takes values [0 to 1)."
+    "HL's version, input is in phase bins, not in phase." 
 
     n = profile_fft.shape[-1]
 #    print 'n', n
