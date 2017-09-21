@@ -178,23 +178,39 @@ def compare_integration_lik():
     lik2_mean_phase = two_lik_mean_std_file[:,4] / pars.NPHASEBIN_1hr
     lik2_std_phase = two_lik_mean_std_file[:,5] / pars.NPHASEBIN_1hr
 
+    '''Exclude the outlier case'''
+    if True:
+        outlier_index = [10]
+        time_mjd_1hr = np.delete(time_mjd_1hr, outlier_index)
+        lik1_mean_phase = np.delete(lik1_mean_phase, outlier_index) 
+        lik1_std_phase = np.delete(lik1_std_phase, outlier_index)
+        lik2_mean_phase = np.delete(lik2_mean_phase, outlier_index)
+        lik2_std_phase = np.delete(lik2_std_phase, outlier_index)
+
     '''Least squares polynomial fit'''
-    poly1 = np.polyfit(time_mjd_1hr, lik1_mean_phase, 1, w=(1/lik1_std_phase), cov=True) 
-    poly2 = np.polyfit(time_mjd_1hr, lik2_mean_phase, 1, w=(1/lik2_std_phase), cov=True)
-    poly_fit1 = np.poly1d(poly1[0])
-    poly_fit2 = np.poly1d(poly2[0])  
+    poly1, cov1 = np.polyfit(time_mjd_1hr, lik1_mean_phase, 1, w=(1/lik1_std_phase), cov=True) 
+    poly2, cov2 = np.polyfit(time_mjd_1hr, lik2_mean_phase, 1, w=(1/lik2_std_phase), cov=True)
+    poly_fit1 = np.poly1d(poly1)
+    poly_fit2 = np.poly1d(poly2)  
     lik1_fit = poly_fit1(time_mjd_1hr)
     lik2_fit = poly_fit2(time_mjd_1hr) 
-    chi_squared1 = np.sum((np.polyval(poly1[0], time_mjd_1hr) - lik1_mean_phase) ** 2)
-    chi_squared2 = np.sum((np.polyval(poly2[0], time_mjd_1hr) - lik2_mean_phase) ** 2)
 
-    print 'chi_squared1: ',chi_squared1
-    print 'chi_squared2: ',chi_squared2
+    print 'poly1', poly1
+    print 'cov1', cov1
+    print 'poly2', poly2
+    print 'cov2', cov2
+
+    dof = len(lik1_mean_phase) - len(poly_fit1)
+    red_chi_squared1 = np.sum((np.polyval(poly1, time_mjd_1hr) - lik1_mean_phase) ** 2) / dof
+    red_chi_squared2 = np.sum((np.polyval(poly2, time_mjd_1hr) - lik2_mean_phase) ** 2) / dof
+
+    print 'reduced chi_squared1: ', red_chi_squared1
+    print 'reduced chi_squared2: ', red_chi_squared2
 
 
     '''Print the phase rate of change. Change the unit from 1/MJD to 1/sec'''
-    print 'the phase rate of change of lik1 is:' + str(poly1[0][0]/86400) + '\+-' + str(poly1[1][0][0]/86400) + '(1/sec)'
-    print 'the phase rate of change of lik2 is:' + str(poly2[0][0]/86400) + '\+-' + str(poly2[1][0][0]/86400) + '(1/sec)'
+    print 'the phase rate of change of lik1 is:' + str(poly1[0]/86400) + '\+-' + str(np.sqrt(cov1[0][0]/86400)) + '(1/sec)'
+    print 'the phase rate of change of lik2 is:' + str(poly2[0]/86400) + '\+-' + str(np.sqrt(cov2[0][0]/86400)) + '(1/sec)'
     
 
     zeros_line = np.zeros(len(lik1_mean))
