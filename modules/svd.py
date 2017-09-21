@@ -693,10 +693,11 @@ def plot_svd(this_file, bin_number, phase_amp_bin, phase_npy, plot_name, NPHASEB
     n_step = -0.2
 #    x_range = np.arange(-len(ut[0])/2 , len(ut[0])/2) / np.float(len(ut[0]))
     x_range = time_mjd
-    color = ['r', 'g', 'b', 'y', 'c', '0.0', '0.2', '0.4', '0.6', '0.8']
+    color = ['ro', 'go', 'bo', 'yo', 'co', '0.0', '0.2', '0.4', '0.6', '0.8']
 #    color = ['r', 'g', 'b']
-    for ii in xrange(len(color)):
-        plt.plot(x_range, np.roll(ut[ii] + ii *n_step, 0), color[ii], linewidth=1.0)
+#    for ii in xrange(len(color)):
+    for ii in xrange(5):
+        plt.plot(x_range, np.roll(ut[ii] + ii *n_step, 0), color[ii], markersize=0.5)
     plt.xlabel('Time (MJD)', fontsize=fontsize)
     plt.ylabel('U values', fontsize=fontsize)
     plt.xlim((time_mjd[0], time_mjd[639]))
@@ -705,6 +706,14 @@ def plot_svd(this_file, bin_number, phase_amp_bin, phase_npy, plot_name, NPHASEB
     plot_name_U = plot_name + '_U.png'
     plt.ticklabel_format(useOffset=False)
     plt.savefig(plot_name_U, bbox_inches='tight')
+
+    '''Plot the second U mode in a histogram'''
+    plt.close('all')
+    plt.figure()
+    plt.hist(ut[1], 50)
+    plt.xlabel('The second U mode')
+    plot_name_U_hist = plot_name + '_U2_hist.png'
+    plt.savefig(plot_name_U_hist, bbox_inches='tight')
 
 
 def fft_plot(npy_file):

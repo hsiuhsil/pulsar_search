@@ -22,7 +22,7 @@ rebin_factor = 128
 try:
     initial, final = np.int(np.float(sys.argv[1])), np.int(np.float(sys.argv[2]))
     assert initial <= final
-except(RuntimeError, TypeError, NameError, ValueError):
+except(RuntimeError, TypeError, NameError, ValueError, IndexError):
     pass
 
 def main():
@@ -112,7 +112,7 @@ def ploting(filename):
     ax1 = fig.add_subplot(411)
     ax1.set_ylabel('Freq(MHz)', fontsize=12)
     ax1.tick_params(axis='both', which='major', labelsize=12)
-    cax1 = ax1.imshow(data, extent=[0, phase_bins-1, 700., 900.],aspect='auto', cmap=cm.Greys)
+    cax1 = ax1.imshow(data, extent=[0, phase_bins-1, this_file['DAT_FREQ'][0,-1], this_file['DAT_FREQ'][0,0]],aspect='auto', cmap=cm.Greys)
     cbar = plt.colorbar(cax1)
     ax2 = fig.add_subplot(412)
     ax2.set_ylabel('Mean Amp', fontsize=12)
@@ -122,7 +122,7 @@ def ploting(filename):
     ax3 = fig.add_subplot(413)
     ax3.set_ylabel('Freq(MHz)', fontsize=12)
     ax3.tick_params(axis='both', which='major', labelsize=12)
-    cax3 = ax3.imshow(data3, extent=[0, phase_bins-1, 700., 900.],aspect='auto', cmap=cm.Greys)
+    cax3 = ax3.imshow(data3, extent=[0, phase_bins-1, this_file['DAT_FREQ'][0,-1], this_file['DAT_FREQ'][0,0]],aspect='auto', cmap=cm.Greys)
     cbar = plt.colorbar(cax3)
     ax4 = fig.add_subplot(414)
     ax4.set_ylabel('Mean Amp', fontsize=12)

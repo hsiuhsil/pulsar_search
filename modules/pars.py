@@ -22,28 +22,33 @@ G = 2 # telescope gain, in the unit of K/Jy
 #DM = 31.7262
 #T = 0.312470
 
-'''Parameters of known pulsars from ATNF catalog, [RA(deg), DEC(deg), DM(pc cm*-3), folding period(s), folding period derivative, and PEPOCH.]'''
-J2139_0040 = [324.8428583333333, 0.6959230555555556, 31.7262, 0.312470]
-J0030_0451 = [bary_time.convHMS(str("00:30:27.42823")), 
+'''Parameters of known pulsars from ATNF catalog, [PSR Name, RA(deg), DEC(deg), DM(pc cm*-3), folding period(s), folding period derivative, and PEPOCH.]'''
+#J2139_0040_HL = ['J2139+0040_HL', bary_time.convHMS(str("21:39:25.20")),
+#                   bary_time.convDMS(str("+00:40:21.6")),
+#                   31.585, 0.3124695464326, 7.64E-18, 56436.5]
+J2139_0040_ATNF = ['J2139+0040_ANTF', 324.8428583333333, 0.6959230555555556, 
+                   31.7262, 0.312470, 0., 56436.5067837]
+J0030_0451 = ['J0030+0451', bary_time.convHMS(str("00:30:27.42823")), 
                    bary_time.convDMS(str("+04:51:39.7112")), 
                    4.33252, 0.0048654532109097, 1.0174E-20, 54997.00]
-J0051_0423 = [bary_time.convHMS(str("00:51:30.1")),
+J0051_0423 = ['J0051+0423', bary_time.convHMS(str("00:51:30.1")),
                    bary_time.convDMS(str("+04:22:49")),
                    13.9, 0.35473179890, 7.0E-18, 49800.0]
-J1038_0032 = [bary_time.convHMS(str("10:38:26.933")),
+J1038_0032 = ['J1038+0032', bary_time.convHMS(str("10:38:26.933")),
                    bary_time.convDMS(str("+00:32:43.6")),
                    26.59, 0.02885155795131, 0.000067E-15, 53000]
-J1046_0304 = [bary_time.convHMS(str("10:46:43.23")),
+J1046_0304 = ['J1046+0304', bary_time.convHMS(str("10:46:43.23")),
                    bary_time.convDMS(str("+03:04:06.9")),
                    25.3, 0.326271446035, 0.1242E-15, 53065.00]
 '''pulsar selected''' 
 psr_selected = J0051_0423
-RA = psr_selected[0]
-DEC = psr_selected[1]
-DM = psr_selected[2]
-T = psr_selected[3] # folding period
-T1 = psr_selected[4] # period derivative
-PEPOCH = psr_selected[5]
+PSR = psr_selected[0]
+RA = psr_selected[1]
+DEC = psr_selected[2]
+DM = psr_selected[3]
+T = psr_selected[4] # folding period
+T1 = psr_selected[5] # period derivative
+PEPOCH = psr_selected[6]
 
 '''Parameter of block mins in index select'''
 block_mins = 5. #unit: mins
@@ -69,7 +74,7 @@ PHASE_DIFF_wz_1hr_err = 0.02899884
 
 
 mid_mjd = 56436.5067837 # the average of the first and last MJD.
-TIME0 = PEPOCH   # MJD pivot 55707
+TIME0 = mid_mjd   # MJD pivot 55707
 
 
 '''fit_pars is in the sequence of period derivative, period correction, phase offset, correction of RA, correction of DEC. The units are [bins/hr/hr, bins/hr, bins, radians, radians]'''

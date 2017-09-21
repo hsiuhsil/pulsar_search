@@ -29,8 +29,8 @@ def main():
     DEC_cor_err = pars.fit_pars_err[4] * rad_to_deg
     DEC_cor_DMS = str(bary_time.deg_to_DMS(DEC_cor_err))
     print "New DEC: ", DEC_DMS, '(DMS)', '\+-', DEC_cor_DMS, '(DMS)'
-    #print 'Delta RA: ', RA_cor, '\+-', RA_cor_err, '(arcmin)'
-    #print 'Delta DEC: ', DEC_cor, '\+-', DEC_cor_err, '(arcmin)'
+    print 'Delta RA: ', RA_cor, '\+-', RA_cor_err, '(arcmin)'
+    print 'Delta DEC: ', DEC_cor, '\+-', DEC_cor_err, '(arcmin)'
 
     '''Converts pdot to (sec 1/sec) and period to sec. Show epoch and phase offset in Barycentric MJD.'''
     pdot = pars.fit_pars[0] * (bins / hr / hr) * 2 * (pars.T)**2

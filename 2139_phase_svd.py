@@ -1,3 +1,7 @@
+import sys
+import os
+import os.path
+
 import numpy as np
 import svd
 import fit_timing
@@ -9,10 +13,16 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 
+from scipy import optimize
+from scipy.optimize import curve_fit, minimize, leastsq
+
+
 def main():
     try:
-        justify_svd()
-#         two_pulses(32, 25)
+        compare_integration_lik()        
+#        generate_funcitons()
+#        justify_svd()
+#        two_pulses(32, 25)
     except (IOError, ValueError):
         print IOError
 
@@ -28,6 +38,7 @@ phase_amp_bin_1hr = pars.phase_amp_bin_1hr
 phase_amp_bin_1hr_5sec = pars.phase_amp_bin_1hr_5sec
 phase_npy_1hr = pars.phase_npy_1hr
 phase_npy_1hr_5sec = pars.phase_npy_1hr_5sec
+random_res_1hr = pars.random_res_1hr
 
 #U_1hr, s_1hr, V_1hr, phase_model_1hr = svd.svd(this_file_1hr, bin_number_1hr, phase_amp_bin_1hr, phase_npy_1hr, pars.NPHASEBIN_1hr, RESCALE=None)
 
@@ -53,7 +64,7 @@ def generate_funcitons():
     
 
 #    svd.plot_svd(this_file_wz, bin_number_wz, phase_amp_bin_wz, phase_npy_wz, 'phase_wz',pars.NPHASEBIN_wz, RESCALE=None)
-#    svd.plot_svd(this_file_1hr, bin_number_1hr_5sec, phase_amp_bin_1hr_5sec, phase_npy_1hr_5sec, 'phase_1hr_5sec', pars.NPHASEBIN_1hr, RESCALE=None)
+    svd.plot_svd(this_file_1hr, bin_number_1hr_5sec, phase_amp_bin_1hr_5sec, phase_npy_1hr_5sec, 'phase_1hr_5sec', pars.NPHASEBIN_1hr, RESCALE=None)
 #    svd.plot_two_temps(this_file_wz, bin_number_wz, phase_amp_bin_wz, phase_npy_wz, this_file_1hr, bin_number_1hr, phase_amp_bin_1hr, phase_npy_1hr, RESCALE=None)
 
 #    np.save('V_pointed_5sec.npy', V_1hr)
@@ -85,20 +96,22 @@ def justify_svd():
     '''Justify SVD is a better way'''
     all_profiles = pars.phase_npy_1hr_5sec # in the shape of (640, 800), (# of profiles, bin numbers)
     stack_profiles = pars.phase_npy_1hr_5sec_stack_40 # in the shape of (40, 800), (# of profiles, bin numbers)
-#    for ii in xrange(2):
-    for ii in [15, 23 ,31, 39]:
+    for ii in xrange(40):
+        print 'ii: ', ii
         init = ii*16 
         final = (ii+1)*16
-        '''Firstly, average 16 5sec profiles and fit'''
-#        profile_stack = 16
-#        nprof = 640
-#        nprof -= nprof % profile_stack
-#        profile = profiles[int(init) : int(final)].reshape(nprof // profile_stack, profile_stack, pars.NPHASEBIN_1hr)
-#        profile = np.mean(profile, 1)
-        svd.phase_fit(ii, stack_profiles, V_1hr, 'fitting_phase_fft_57178_stack_', pars.NPHASEBIN_1hr)
-        '''Secondly, individually fit the 16 profiles, and add the chi-squared curves.'''
-        for jj in xrange(init, final):
-            svd.phase_fit(jj, all_profiles, V_1hr, 'fitting_phase_fft_57178_5sec_', pars.NPHASEBIN_1hr)
+
+        if False:
+            '''Firstly, average 16 5sec profiles and fit'''
+            profile_stack = 16
+            nprof = 640
+            nprof -= nprof % profile_stack
+            profile = profiles[int(init) : int(final)].reshape(nprof // profile_stack, profile_stack, pars.NPHASEBIN_1hr)
+            profile = np.mean(profile, 1)
+            svd.phase_fit(ii, stack_profiles, V_1hr, 'fitting_phase_fft_57178_stack_', pars.NPHASEBIN_1hr)
+            '''Secondly, individually fit the 16 profiles, and add the chi-squared curves.'''
+            for jj in xrange(init, final):
+                svd.phase_fit(jj, all_profiles, V_1hr, 'fitting_phase_fft_57178_5sec_', pars.NPHASEBIN_1hr)
         '''lik1 is the first way, and lik2 is the second way'''
         lik_npy_file = 'lik_57178_5sec_stack_' + str(ii) + '.npy'
         sum_lik_file = 'sum_lik_57178_5sec_seg_' + str(ii) + '.npy'
@@ -118,6 +131,19 @@ def plot_two_likelihoods(lik1, lik2, NPHASEBIN, plot_name):
     norm1, mean1, std1 = svd.lik_norm_mean_std(lik1, phase_diff_samples)
     norm2, mean2, std2 = svd.lik_norm_mean_std(lik2, phase_diff_samples)
 
+    '''save [norm1, mean1, std1, norm2, mean2, std2]. Note these values are in 800 Phase bins. The first way is for the average profile, and the second way is for the individual summing up profile.'''
+    two_lik_mean_std_file = 'two_lik_mean_std.npy'
+    two_lik_mean_std = np.concatenate(([[norm1], [mean1], [std1], [norm2], [mean2], [std2]])).astype(np.float64)
+    print 'two_lik_mean_std: ', two_lik_mean_std
+
+    if False:
+        if os.path.exists(two_lik_mean_std_file):
+            sequence = np.load(two_lik_mean_std_file)
+            np.save(two_lik_mean_std_file, np.vstack((sequence, two_lik_mean_std)))
+        else:
+            np.save(two_lik_mean_std_file, two_lik_mean_std)
+
+
     fontsize = 16
     linewidth = 3.0
     plt.close('all')
@@ -135,6 +161,48 @@ def plot_two_likelihoods(lik1, lik2, NPHASEBIN, plot_name):
     plt.tick_params(axis='both', which='major', labelsize=fontsize)
     plt.savefig(plot_name, bbox_inches='tight')
 
+def compare_integration_lik():
+
+    '''Note the two_lik_mean_std_file is saved in the sequence of [norm1, mean1, std1, norm2, mean2, std2]. Note these values are in 800 Phase bins. The first way is for the average profile, and the second way is for the individual summing up profile.'''
+    two_lik_mean_std_file = np.load('two_lik_mean_std.npy')
+    lik1_mean = two_lik_mean_std_file[:,1]
+    lik1_std = two_lik_mean_std_file[:,2]
+    lik2_mean = two_lik_mean_std_file[:,4]
+    lik2_std = two_lik_mean_std_file[:,5] 
+
+    time_mjd_1hr, dBATdra_1hr, dBATddec_1hr, phase_data_1hr, phase_data_err_1hr = fit_timing.time_pattern(this_file_1hr, bin_number_1hr, phase_amp_bin_1hr, pars.NPHASEBIN_1hr)
+
+    '''change the unit from phase bins to phase'''
+    lik1_mean_phase = two_lik_mean_std_file[:,1] / pars.NPHASEBIN_1hr
+    lik1_std_phase = two_lik_mean_std_file[:,2] / pars.NPHASEBIN_1hr
+    lik2_mean_phase = two_lik_mean_std_file[:,4] / pars.NPHASEBIN_1hr
+    lik2_std_phase = two_lik_mean_std_file[:,5] / pars.NPHASEBIN_1hr
+
+    '''Least squares polynomial fit'''
+    poly1 = np.polyfit(time_mjd_1hr, lik1_mean_phase, 1, w=(1/lik1_std_phase), cov=True) 
+    poly2 = np.polyfit(time_mjd_1hr, lik2_mean_phase, 1, w=(1/lik2_std_phase), cov=True)
+    poly_fit1 = np.poly1d(poly1[0])
+    poly_fit2 = np.poly1d(poly2[0])  
+    lik1_fit = poly_fit1(time_mjd_1hr)
+    lik2_fit = poly_fit2(time_mjd_1hr) 
+
+    '''Print the phase rate of change. Change the unit from 1/MJD to 1/sec'''
+    print 'the phase rate of change of lik1 is:' + str(poly1[0][0]/86400) + '\+-' + str(poly1[1][0][0]/86400) + '(1/sec)'
+    print 'the phase rate of change of lik2 is:' + str(poly2[0][0]/86400) + '\+-' + str(poly2[1][0][0]/86400) + '(1/sec)'
+
+    zeros_line = np.zeros(len(lik1_mean))
+    markersize = 2.0
+    fontsize = 16
+
+    plt.close('all')
+    plt.plot(time_mjd_1hr, lik1_fit,'r--')
+    plt.plot(time_mjd_1hr, lik1_mean_phase, 'bo', markersize=markersize)
+    plt.errorbar(time_mjd_1hr, lik1_mean_phase, yerr= lik1_std_phase, fmt='none', ecolor='b')
+    plt.plot(time_mjd_1hr, lik2_fit,'k')
+    plt.plot(time_mjd_1hr, lik2_mean_phase, 'gs', markersize=markersize)
+    plt.errorbar(time_mjd_1hr, lik2_mean_phase, yerr= lik2_std_phase, fmt='none', ecolor='g')
+    plt.tick_params(axis='both', which='major', labelsize=fontsize)
+    plt.savefig('two_lik_mean_std.png',bbox_inches='tight')
 
    
 def pulses(index):
