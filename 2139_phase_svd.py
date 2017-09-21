@@ -185,10 +185,17 @@ def compare_integration_lik():
     poly_fit2 = np.poly1d(poly2[0])  
     lik1_fit = poly_fit1(time_mjd_1hr)
     lik2_fit = poly_fit2(time_mjd_1hr) 
+    chi_squared1 = np.sum((np.polyval(poly1[0], time_mjd_1hr) - lik1_mean_phase) ** 2)
+    chi_squared2 = np.sum((np.polyval(poly2[0], time_mjd_1hr) - lik2_mean_phase) ** 2)
+
+    print 'chi_squared1: ',chi_squared1
+    print 'chi_squared2: ',chi_squared2
+
 
     '''Print the phase rate of change. Change the unit from 1/MJD to 1/sec'''
     print 'the phase rate of change of lik1 is:' + str(poly1[0][0]/86400) + '\+-' + str(poly1[1][0][0]/86400) + '(1/sec)'
     print 'the phase rate of change of lik2 is:' + str(poly2[0][0]/86400) + '\+-' + str(poly2[1][0][0]/86400) + '(1/sec)'
+    
 
     zeros_line = np.zeros(len(lik1_mean))
     markersize = 2.0
