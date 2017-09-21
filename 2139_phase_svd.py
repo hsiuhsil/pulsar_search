@@ -201,8 +201,8 @@ def compare_integration_lik():
     print 'cov2', cov2
 
     dof = len(lik1_mean_phase) - len(poly_fit1)
-    red_chi_squared1 = np.sum((np.polyval(poly1, time_mjd_1hr) - lik1_mean_phase) ** 2) / dof
-    red_chi_squared2 = np.sum((np.polyval(poly2, time_mjd_1hr) - lik2_mean_phase) ** 2) / dof
+    red_chi_squared1 = np.sum(np.abs(lik1_fit - lik1_mean_phase) ** 2 / lik1_std_phase ** 2) / dof 
+    red_chi_squared2 = np.sum(np.abs(lik2_fit - lik2_mean_phase) ** 2 / lik2_std_phase ** 2) / dof
 
     print 'reduced chi_squared1: ', red_chi_squared1
     print 'reduced chi_squared2: ', red_chi_squared2
